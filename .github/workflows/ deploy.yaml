@@ -12,7 +12,7 @@ jobs:
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          printf "%s\n" "${{ secrets.DO_SSH_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.DO_SSH_KEY_BASE64 }}" | base64 --decode > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
       - name: Check SSH connection
         run: ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SERVER_IP }} "whoami && pwd"
