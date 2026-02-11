@@ -27,7 +27,7 @@ jobs:
       - name: Deploy via SSH
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SERVER_IP }} << 'EOF'
-            cd ~/twenty
+            cd ~/bbc-twenty-crm
             git pull origin dev
             docker-compose -f docker-compose.prod.yml up -d --build
           EOF
