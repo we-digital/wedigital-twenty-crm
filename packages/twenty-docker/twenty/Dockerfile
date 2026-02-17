@@ -50,7 +50,7 @@ FROM common-deps AS twenty-widgets-build
 COPY ./packages/twenty-shared /app/packages/twenty-shared
 COPY ./packages/twenty-widgets /app/packages/twenty-widgets
 
-RUN npx nx run twenty-widgets:build
+RUN npx nx run twenty-shared:build && npx nx run twenty-widgets:build
 
 # Final stage: Run the application
 FROM node:24-alpine AS twenty

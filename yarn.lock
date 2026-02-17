@@ -57306,6 +57306,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"twenty-widgets@workspace:packages/twenty-widgets":
+  version: 0.0.0-use.local
+  resolution: "twenty-widgets@workspace:packages/twenty-widgets"
+  dependencies:
+    "@emotion/react": "npm:^11.11.1"
+    "@emotion/styled": "npm:^11.11.0"
+    react: "npm:^18.2.0"
+    react-dom: "npm:^18.2.0"
+    twenty-shared: "workspace:*"
+  languageName: unknown
+  linkType: soft
+
 "twenty-zapier@workspace:packages/twenty-zapier":
   version: 0.0.0-use.local
   resolution: "twenty-zapier@workspace:packages/twenty-zapier"

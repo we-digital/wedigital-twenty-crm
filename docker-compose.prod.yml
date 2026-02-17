@@ -59,8 +59,11 @@ services:
     restart: always
 
   widgets:
+    build:
+      context: .
+      dockerfile: packages/twenty-docker/twenty/Dockerfile
     image: twentycrm/twenty:${TAG:-latest}
-    entrypoint: ["serve", "-s", "/app/packages/twenty-widgets/build", "-l", "4175", "--no-request-logging"]
+    entrypoint: ["serve", "-s", "/app/packages/twenty-widgets/build", "-l", "0.0.0.0:4175", "--no-request-logging"]
     ports:
       - "4175:4175"
     restart: always

@@ -14,4 +14,3 @@
     "start:prod": "NODE_ENV=production npx serve -s build"
   }
 }
-
