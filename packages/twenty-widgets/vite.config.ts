@@ -3,6 +3,7 @@ import { defineConfig } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
+  base: '/',
   root: __dirname,
   cacheDir: '../../node_modules/.vite/packages/twenty-widgets',
   server: {
@@ -10,7 +11,8 @@ export default defineConfig({
     host: true
   },
   build: {
-    outDir: 'build'
+    outDir: 'build',
+    emptyOutDir: true
   },
   plugins: [
     react({
