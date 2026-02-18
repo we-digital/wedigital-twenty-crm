@@ -34,10 +34,5 @@ jobs:
             git clean -fd
             git rev-parse --short HEAD
             sed -n '36,53p' packages/twenty-docker/twenty/Dockerfile
-            yarn
-            NODE_OPTIONS=--max-old-space-size=2048 npx nx run twenty-front:lingui:compile
-            NODE_OPTIONS=--max-old-space-size=2048 npx nx build twenty-front
-            NODE_OPTIONS=--max-old-space-size=2048 npx nx run twenty-shared:build
-            NODE_OPTIONS=--max-old-space-size=2048 npx nx run twenty-widgets:build
             docker compose -f docker-compose.prod.yml up -d --build
           EOF
