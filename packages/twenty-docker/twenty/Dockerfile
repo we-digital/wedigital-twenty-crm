@@ -15,7 +15,7 @@ COPY ./packages/twenty-ui/package.json /app/packages/twenty-ui/
 COPY ./packages/twenty-shared/package.json /app/packages/twenty-shared/
 COPY ./packages/twenty-front/package.json /app/packages/twenty-front/
 COPY ./packages/twenty-sdk/package.json /app/packages/twenty-sdk/
-COPY ./packages/twenty-widgets/package.json /app/packages/twenty-widgets/
+# COPY ./packages/twenty-widgets/package.json /app/packages/twenty-widgets/
 
 # Install all dependencies once to speed up builds
 RUN yarn install && yarn cache clean && npx nx reset
@@ -95,7 +95,7 @@ ENV APP_VERSION=$APP_VERSION
 # Copy built applications from previous stages
 COPY --chown=1000:1000 --from=twenty-server-build /app /app
 COPY --chown=1000:1000 --from=twenty-front-build /app/packages/twenty-front/build /app/packages/twenty-server/dist/front
-COPY --chown=1000:1000 --from=twenty-widgets-build /app/packages/twenty-widgets/build /app/packages/twenty-widgets/build
+# COPY --chown=1000:1000 --from=twenty-widgets-build /app/packages/twenty-widgets/build /app/packages/twenty-widgets/build
 
 # Set metadata and permissions
 LABEL org.opencontainers.image.source=https://github.com/twentyhq/twenty

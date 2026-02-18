@@ -58,21 +58,21 @@ services:
       retries: 20
     restart: always
 
-  widgets:
-    build:
-      context: .
-      dockerfile: packages/twenty-docker/twenty/Dockerfile
-    image: twentycrm/twenty:${TAG:-latest}
-    entrypoint: ["serve", "-s", "/app/packages/twenty-widgets/build", "-l", "0.0.0.0:4175", "--no-request-logging"]
-    ports:
-      - "4175:4175"
-    restart: always
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4175"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
+  # widgets:
+  #   build:
+  #     context: .
+  #     dockerfile: packages/twenty-docker/twenty/Dockerfile
+  #   image: twentycrm/twenty:${TAG:-latest}
+  #   entrypoint: ["serve", "-s", "/app/packages/twenty-widgets/build", "-l", "0.0.0.0:4175", "--no-request-logging"]
+  #   ports:
+  #     - "4175:4175"
+  #   restart: always
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:4175"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 3
+  #     start_period: 5s
 
   worker:
     image: twentycrm/twenty:${TAG:-latest}
