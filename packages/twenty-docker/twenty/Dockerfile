@@ -1,5 +1,5 @@
 # Base image for common dependencies
-FROM node:24-alpine AS common-deps
+FROM node:20-alpine AS common-deps
 
 WORKDIR /app
 
@@ -33,24 +33,24 @@ RUN npx nx run twenty-server:build
 
 RUN yarn workspaces focus --production twenty-emails twenty-shared twenty-server
 
-# Build the front
-FROM common-deps AS twenty-front-build
+# Build the front (now built outside Docker, stage kept commented for reference)
+# FROM common-deps AS twenty-front-build
+#
+# ARG REACT_APP_SERVER_BASE_URL
+#
+# COPY ./packages/twenty-front /app/packages/twenty-front
+# COPY ./packages/twenty-ui /app/packages/twenty-ui
+# COPY ./packages/twenty-shared /app/packages/twenty-shared
+# COPY ./packages/twenty-sdk /app/packages/twenty-sdk
+# RUN (npx nx run twenty-front:lingui:compile && npx nx build twenty-front) || (npx nx run twenty-front:lingui:compile && npx nx build twenty-front)
 
-ARG REACT_APP_SERVER_BASE_URL
-
-COPY ./packages/twenty-front /app/packages/twenty-front
-COPY ./packages/twenty-ui /app/packages/twenty-ui
-COPY ./packages/twenty-shared /app/packages/twenty-shared
-COPY ./packages/twenty-sdk /app/packages/twenty-sdk
-RUN (npx nx run twenty-front:lingui:compile && npx nx build twenty-front) || (npx nx run twenty-front:lingui:compile && npx nx build twenty-front)
-
-# Build widgets
-FROM common-deps AS twenty-widgets-build
-
-COPY ./packages/twenty-shared /app/packages/twenty-shared
-COPY ./packages/twenty-widgets /app/packages/twenty-widgets
-
-RUN (npx nx run twenty-shared:build && npx nx run twenty-widgets:build) || (npx nx run twenty-shared:build && npx nx run twenty-widgets:build)
+# Build widgets (now built outside Docker, stage kept commented for reference)
+# FROM common-deps AS twenty-widgets-build
+#
+# COPY ./packages/twenty-shared /app/packages/twenty-shared
+# COPY ./packages/twenty-widgets /app/packages/twenty-widgets
+#
+# RUN (npx nx run twenty-shared:build && npx nx run twenty-widgets:build) || (npx nx run twenty-shared:build && npx nx run twenty-widgets:build)
 
 # Final stage: Run the application
 FROM node:24-alpine AS twenty
@@ -75,8 +75,8 @@ ENV APP_VERSION=$APP_VERSION
 # Copy built applications from previous stages
 COPY --chown=1000 --from=twenty-server-build /app /app
 COPY --chown=1000 --from=twenty-server-build /app/packages/twenty-server /app/packages/twenty-server
-COPY --chown=1000 --from=twenty-front-build /app/packages/twenty-front/build /app/packages/twenty-server/dist/front
-COPY --chown=1000 --from=twenty-widgets-build /app/packages/twenty-widgets/build /app/packages/twenty-widgets/build
+COPY --chown=1000 ./packages/twenty-front/build /app/packages/twenty-server/dist/front
+COPY --chown=1000 ./packages/twenty-widgets/build /app/packages/twenty-widgets/build
 
 # Set metadata and labels
 LABEL org.opencontainers.image.source=https://github.com/twentyhq/twenty
