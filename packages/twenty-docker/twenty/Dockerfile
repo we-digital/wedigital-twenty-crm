@@ -42,7 +42,7 @@ COPY ./packages/twenty-front /app/packages/twenty-front
 COPY ./packages/twenty-ui /app/packages/twenty-ui
 COPY ./packages/twenty-shared /app/packages/twenty-shared
 COPY ./packages/twenty-sdk /app/packages/twenty-sdk
-RUN npx nx run twenty-front:lingui:compile && npx nx build twenty-front
+RUN (npx nx run twenty-front:lingui:compile && npx nx build twenty-front) || (npx nx run twenty-front:lingui:compile && npx nx build twenty-front)
 
 # Build widgets
 FROM common-deps AS twenty-widgets-build
@@ -50,7 +50,7 @@ FROM common-deps AS twenty-widgets-build
 COPY ./packages/twenty-shared /app/packages/twenty-shared
 COPY ./packages/twenty-widgets /app/packages/twenty-widgets
 
-RUN npx nx run twenty-shared:build && npx nx run twenty-widgets:build
+RUN (npx nx run twenty-shared:build && npx nx run twenty-widgets:build) || (npx nx run twenty-shared:build && npx nx run twenty-widgets:build)
 
 # Final stage: Run the application
 FROM node:24-alpine AS twenty
