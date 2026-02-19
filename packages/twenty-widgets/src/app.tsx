@@ -30,10 +30,10 @@ const widgets: WidgetDefinition[] = [
     url: 'https://example.com'
   },
   {
-    id: 'example-widget-2',
-    name: 'Example Widget',
+    id: 'pass-data-widget',
+    name: 'Pass Data Widget',
     description: 'Пример 2 для Twenty',
-    url: 'https://example.com'
+    url: '/pass-data-widget/'
   }
 ];
 
