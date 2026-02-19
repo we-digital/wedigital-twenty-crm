@@ -212,9 +212,7 @@ services:
     restart: always
 
   widgets:
-    build:
-      context: .
-      dockerfile: packages/twenty-docker/twenty-widgets/Dockerfile
+    image: ${WIDGETS_IMAGE}
     ports:
       - "4175:4175"
     restart: always
