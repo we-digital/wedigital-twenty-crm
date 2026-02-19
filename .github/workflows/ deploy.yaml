@@ -16,6 +16,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULE_PAT || secrets.GITHUB_TOKEN }}
 
       - name: Set image name
         id: image-name
@@ -64,6 +67,7 @@ jobs:
             cd ~/bbc-twenty-crm
             git fetch origin dev
             git reset --hard origin/dev
+            git submodule update --init --recursive
             export WIDGETS_IMAGE="${{ needs.build-widgets.outputs.image }}"
             docker compose -f docker-compose.prod.yml pull widgets
             docker compose -f docker-compose.prod.yml up -d

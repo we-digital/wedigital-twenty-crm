@@ -10,14 +10,20 @@ FROM deps AS build
 
 RUN yarn nx build twenty-widgets
 
-FROM node:24-alpine AS runner
+FROM node:24-alpine AS pass-data-widget-build
 
-WORKDIR /app
+WORKDIR /widget
 
-RUN npm install -g serve
+COPY packages/twenty-widgets/submodules/pass-data-widget ./
 
-COPY --from=build /app/packages/twenty-widgets/build ./build
+RUN npm install && npm run build
+
+FROM nginx:alpine AS runner
+
+COPY --from=build /app/packages/twenty-widgets/build /usr/share/nginx/html
+COPY --from=pass-data-widget-build /widget/dist /usr/share/nginx/html/pass-data-widget
+COPY packages/twenty-docker/twenty-widgets/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 4175
 
-CMD ["serve", "-s", "build", "-l", "4175"]
+CMD ["nginx", "-g", "daemon off;"]
