@@ -15,10 +15,16 @@ jobs:
       image: ${{ steps.image-name.outputs.name }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
           token: ${{ secrets.SUBMODULE_PAT || secrets.GITHUB_TOKEN }}
+
+      - name: Update submodules to latest main
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive --remote
 
       - name: Set image name
         id: image-name
@@ -38,6 +44,7 @@ jobs:
           file: packages/twenty-docker/twenty-widgets/Dockerfile
           push: true
           tags: ${{ steps.image-name.outputs.name }}
+
 
   deploy:
     runs-on: ubuntu-latest
