@@ -211,7 +211,7 @@ services:
       retries: 20
     restart: always
 
-    widgets:
+  widgets:
     build:
       context: .
       dockerfile: packages/twenty-docker/twenty-widgets/Dockerfile
