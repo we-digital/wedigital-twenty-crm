@@ -1,5 +1,5 @@
-import type { EmailRecipients } from 'twenty-shared/workflow';
 import styled from '@emotion/styled';
+import type { EmailRecipients } from 'twenty-shared/workflow';
 
 const sampleTwentyType: EmailRecipients = {
   to: 'widget@example.com',
@@ -27,6 +27,12 @@ const widgets: WidgetDefinition[] = [
     id: 'example-widget',
     name: 'Example Widget',
     description: 'Пример микрофронта для Twenty',
+    url: 'https://example.com'
+  },
+  {
+    id: 'example-widget-2',
+    name: 'Example Widget',
+    description: 'Пример 2 микрофронта для Twenty',
     url: 'https://example.com'
   }
 ];
