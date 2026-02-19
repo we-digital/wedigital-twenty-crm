@@ -1,3 +1,4 @@
 [submodule "packages/twenty-widgets/submodules/pass-data-widget"]
 	path = packages/twenty-widgets/submodules/pass-data-widget
 	url = https://github.com/we-digital/pass-data-widget
+	branch = main
