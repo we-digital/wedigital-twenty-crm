@@ -1,12 +1,41 @@
 name: twenty
 
 services:
+  traefik:
+    image: traefik:v3.0
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+    restart: always
+    networks:
+      - traefik-public
+
   server:
     image: twentycrm/twenty:${TAG:-latest}
     volumes:
       - server-local-data:/app/packages/twenty-server/.local-storage
-    ports:
-      - "3000:3000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.server.rule=Host(`${SERVER_DOMAIN}`)"
+      - "traefik.http.routers.server.entrypoints=websecure"
+      - "traefik.http.routers.server.tls.certresolver=letsencrypt"
+      - "traefik.http.services.server.loadbalancer.server.port=3000"
+    networks:
+      - traefik-public
+      - default
     environment:
       NODE_PORT: 3000
       PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/twenty
@@ -59,8 +88,15 @@ services:
 
   widgets:
     image: ${WIDGETS_IMAGE}
-    ports:
-      - "4175:4175"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.widgets.rule=Host(`${WIDGETS_DOMAIN}`)"
+      - "traefik.http.routers.widgets.entrypoints=websecure"
+      - "traefik.http.routers.widgets.tls.certresolver=letsencrypt"
+      - "traefik.http.services.widgets.loadbalancer.server.port=4175"
+    networks:
+      - traefik-public
+      - default
     restart: always
     # profiles:
     #   - widgets
@@ -145,6 +181,11 @@ services:
       timeout: 5s
       retries: 10
 
+networks:
+  traefik-public:
+    external: false
+
 volumes:
   db-data:
   server-local-data:
+  letsencrypt:
