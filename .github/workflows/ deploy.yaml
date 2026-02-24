@@ -71,7 +71,7 @@ jobs:
       - name: Deploy via SSH
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SERVER_IP }} << 'EOF'
-            cd ~/bbc-twenty-crm
+            cd ~/wedigital-twenty-crm
             git fetch origin dev
             git reset --hard origin/dev
             git submodule sync --recursive
