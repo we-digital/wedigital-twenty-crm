@@ -24,16 +24,10 @@ type WidgetDefinition = {
 
 const widgets: WidgetDefinition[] = [
   {
-    id: 'example-widget',
-    name: 'Example Widget',
-    description: 'Пример микрофронта для Twenty',
-    url: 'https://example.com'
-  },
-  {
     id: 'pass-data-widget',
     name: 'Pass Data Widget',
     description: 'Виджет с паспортными данными',
-    url: '/pass-data-widget/'
+    url: '/widget-mrz-input/'
   }
 ];
 
