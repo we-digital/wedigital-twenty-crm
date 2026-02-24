@@ -90,7 +90,7 @@ services:
     image: ${WIDGETS_IMAGE}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.widgets.rule=Host(`${WIDGETS_DOMAIN}`)"
+      - "traefik.http.routers.widgets.rule=Host(`${SERVER_DOMAIN}`) && PathPrefix(`/widget-mrz-input`)"
       - "traefik.http.routers.widgets.entrypoints=websecure"
       - "traefik.http.routers.widgets.tls.certresolver=letsencrypt"
       - "traefik.http.services.widgets.loadbalancer.server.port=4175"
