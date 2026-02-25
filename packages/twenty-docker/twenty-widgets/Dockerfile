@@ -18,6 +18,8 @@ RUN corepack enable && corepack prepare pnpm@10.30.1 --activate
 
 COPY packages/twenty-widgets/submodules/widget-mrz-input ./
 
+RUN sed -i "s/routeTree,/routeTree, basepath: '\/widget-mrz-input',/" src/router.tsx
+
 RUN pnpm install --frozen-lockfile && pnpm exec vite build --base /widget-mrz-input/
 
 FROM nginx:alpine AS runner
