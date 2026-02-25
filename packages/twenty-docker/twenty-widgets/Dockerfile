@@ -14,6 +14,8 @@ FROM node:24-alpine AS widget-mrz-input-build
 
 WORKDIR /widget
 
+RUN corepack enable && corepack prepare pnpm@10.30.1 --activate
+
 COPY packages/twenty-widgets/submodules/widget-mrz-input ./
 
 RUN pnpm install --frozen-lockfile && pnpm exec vite build --base /widget-mrz-input/
