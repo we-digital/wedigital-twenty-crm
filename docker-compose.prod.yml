@@ -94,13 +94,17 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=twenty_traefik-public"
-      - "traefik.http.routers.widgets.rule=Host(`${SERVER_DOMAIN}`) && PathPrefix(`/widget-mrz-input`)"
-      - "traefik.http.routers.widgets.entrypoints=websecure"
-      - "traefik.http.routers.widgets.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.widgets.service=widgets"
       - "traefik.http.services.widgets.loadbalancer.server.port=4175"
-      - "traefik.http.middlewares.widgets-strip.stripprefix.prefixes=/widget-mrz-input"
-      - "traefik.http.routers.widgets.middlewares=widgets-strip"
+      - "traefik.http.routers.bbc-widgets.rule=Host(`${SERVER_DOMAIN}`) && PathPrefix(`/bbc-widgets`)"
+      - "traefik.http.routers.bbc-widgets.entrypoints=websecure"
+      - "traefik.http.routers.bbc-widgets.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.bbc-widgets.service=widgets"
+      - "traefik.http.middlewares.bbc-widgets-strip.stripprefix.prefixes=/bbc-widgets"
+      - "traefik.http.routers.bbc-widgets.middlewares=bbc-widgets-strip"
+      - "traefik.http.routers.mrz-widget.rule=Host(`${SERVER_DOMAIN}`) && PathPrefix(`/widget-mrz-input`)"
+      - "traefik.http.routers.mrz-widget.entrypoints=websecure"
+      - "traefik.http.routers.mrz-widget.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.mrz-widget.service=widgets"
     networks:
       - traefik-public
       - default

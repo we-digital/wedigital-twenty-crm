@@ -24,7 +24,7 @@ type WidgetDefinition = {
 
 const widgets: WidgetDefinition[] = [
   {
-    id: 'pass-data-widget',
+    id: 'widget-mrz-input',
     name: 'Pass Data Widget',
     description: 'Виджет с паспортными данными',
     url: '/widget-mrz-input/'
