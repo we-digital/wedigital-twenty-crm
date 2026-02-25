@@ -14,7 +14,7 @@ FROM node:24-alpine AS widget-mrz-input-build
 
 WORKDIR /widget
 
-COPY packages/twenty-widgets/submodules/widget-mrz-input ./
+COPY packages/twenty-widgets/submodules/pass-data-widget ./
 
 RUN npm install && npm run build
 
