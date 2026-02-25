@@ -45,6 +45,13 @@ jobs:
           push: true
           tags: ${{ steps.image-name.outputs.name }}
 
+      - name: Verify widget-mrz-input in image
+        run: |
+          IMAGE="ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')/twenty-widgets:latest"
+          docker pull $IMAGE
+          docker run --rm $IMAGE ls -la /usr/share/nginx/html/widget-mrz-input/
+          docker run --rm $IMAGE ls /usr/share/nginx/html/widget-mrz-input/assets/ 2>/dev/null || echo "assets dir empty or missing"
+
 
   deploy:
     runs-on: ubuntu-latest
