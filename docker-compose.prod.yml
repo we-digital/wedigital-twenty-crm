@@ -29,6 +29,7 @@ services:
       - server-local-data:/app/packages/twenty-server/.local-storage
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=twenty_traefik-public"
       - "traefik.http.routers.server.rule=Host(`${SERVER_DOMAIN}`)"
       - "traefik.http.routers.server.entrypoints=websecure"
       - "traefik.http.routers.server.tls.certresolver=letsencrypt"
