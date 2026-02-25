@@ -32,6 +32,7 @@ services:
       - "traefik.docker.network=twenty_traefik-public"
       - "traefik.http.routers.server.rule=Host(`${SERVER_DOMAIN}`)"
       - "traefik.http.routers.server.entrypoints=websecure"
+      - "traefik.http.routers.server.priority=1"
       - "traefik.http.routers.server.tls.certresolver=letsencrypt"
       - "traefik.http.routers.server.service=server"
       - "traefik.http.services.server.loadbalancer.server.port=3000"
@@ -99,12 +100,14 @@ services:
       - "traefik.http.routers.bbc-widgets.entrypoints=websecure"
       - "traefik.http.routers.bbc-widgets.tls.certresolver=letsencrypt"
       - "traefik.http.routers.bbc-widgets.service=widgets"
+      - "traefik.http.routers.bbc-widgets.priority=100"
       - "traefik.http.middlewares.bbc-widgets-strip.stripprefix.prefixes=/bbc-widgets"
       - "traefik.http.routers.bbc-widgets.middlewares=bbc-widgets-strip"
       - "traefik.http.routers.mrz-widget.rule=Host(`${SERVER_DOMAIN}`) && PathPrefix(`/widget-mrz-input`)"
       - "traefik.http.routers.mrz-widget.entrypoints=websecure"
       - "traefik.http.routers.mrz-widget.tls.certresolver=letsencrypt"
       - "traefik.http.routers.mrz-widget.service=widgets"
+      - "traefik.http.routers.mrz-widget.priority=100"
     networks:
       - traefik-public
       - default
