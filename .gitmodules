@@ -1,4 +1,4 @@
 [submodule "packages/twenty-widgets/submodules/pass-data-widget"]
 	path = packages/twenty-widgets/submodules/pass-data-widget
-ё	url = https://github.com/we-digital/widget-mrz-input
+	url = https://github.com/we-digital/widget-mrz-input
 	branch = main
