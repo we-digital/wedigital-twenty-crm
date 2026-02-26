@@ -44,6 +44,9 @@ jobs:
           file: packages/twenty-docker/twenty-widgets/Dockerfile
           push: true
           tags: ${{ steps.image-name.outputs.name }}
+          build-args: |
+            VITE_TWENTY_URL=${{ secrets.VITE_TWENTY_URL }}
+            VITE_SCANNER_POLL_URL=${{ secrets.VITE_SCANNER_POLL_URL }}
 
       - name: Verify widget-mrz-input in image
         run: |

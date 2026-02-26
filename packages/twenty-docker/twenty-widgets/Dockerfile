@@ -12,6 +12,11 @@ RUN yarn nx build twenty-widgets
 
 FROM node:24-alpine AS widget-mrz-input-build
 
+ARG VITE_TWENTY_URL
+ARG VITE_SCANNER_POLL_URL
+ENV VITE_TWENTY_URL=${VITE_TWENTY_URL}
+ENV VITE_SCANNER_POLL_URL=${VITE_SCANNER_POLL_URL}
+
 WORKDIR /widget
 
 RUN corepack enable && corepack prepare pnpm@10.30.1 --activate
