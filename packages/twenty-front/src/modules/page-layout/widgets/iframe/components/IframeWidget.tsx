@@ -1,3 +1,4 @@
+import { currentUserState } from '@/auth/states/currentUserState';
 import { isPageLayoutInEditModeComponentState } from '@/page-layout/states/isPageLayoutInEditModeComponentState';
 import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
 import { PageLayoutWidgetNoDataDisplay } from '@/page-layout/widgets/components/PageLayoutWidgetNoDataDisplay';
@@ -5,6 +6,7 @@ import { WidgetSkeletonLoader } from '@/page-layout/widgets/components/WidgetSke
 import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
 import styled from '@emotion/styled';
 import { useState } from 'react';
+import { useRecoilValue } from 'recoil';
 import { isDefined } from 'twenty-shared/utils';
 
 const StyledContainer = styled.div<{ $isEditMode: boolean }>`
@@ -60,6 +62,8 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
     isPageLayoutInEditModeComponentState,
   );
 
+  const currentUser = useRecoilValue(currentUserState);
+
   const configuration = widget.configuration;
 
   if (!configuration || !('url' in configuration)) {
@@ -68,6 +72,17 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
 
   const url = configuration.url;
   const title = widget.title;
+  let resolvedUrl = url;
+
+  if (isDefined(resolvedUrl) && isDefined(currentUser?.id)) {
+    try {
+      const parsedUrl = new URL(resolvedUrl);
+      parsedUrl.searchParams.set('userId', currentUser?.id ?? '');
+      resolvedUrl = parsedUrl.toString();
+    } catch {
+      resolvedUrl = null;
+    }
+  }
 
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -100,7 +115,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
       )}
       <StyledIframe
         $isEditMode={isPageLayoutInEditMode}
-        src={url}
+        src={resolvedUrl}
         title={title}
         onLoad={handleIframeLoad}
         onError={handleIframeError}

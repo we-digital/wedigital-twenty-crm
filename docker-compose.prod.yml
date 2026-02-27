@@ -2,7 +2,7 @@ name: twenty
 
 services:
   traefik:
-    image: traefik:v3.0
+    image: traefik:v3
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
@@ -29,16 +29,19 @@ services:
       - server-local-data:/app/packages/twenty-server/.local-storage
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=twenty_traefik-public"
       - "traefik.http.routers.server.rule=Host(`${SERVER_DOMAIN}`)"
       - "traefik.http.routers.server.entrypoints=websecure"
+      - "traefik.http.routers.server.priority=1"
       - "traefik.http.routers.server.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.server.service=server"
       - "traefik.http.services.server.loadbalancer.server.port=3000"
     networks:
       - traefik-public
       - default
     environment:
       NODE_PORT: 3000
-      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/twenty
+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/${PG_DATABASE_NAME:-twenty}
       SERVER_URL: ${SERVER_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       DISABLE_DB_MIGRATIONS: ${DISABLE_DB_MIGRATIONS}
@@ -84,22 +87,48 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+      start_period: 120s
     restart: always
 
   widgets:
     image: ${WIDGETS_IMAGE}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.widgets.rule=Host(`${SERVER_DOMAIN}`) && PathPrefix(`/widget-mrz-input`)"
-      - "traefik.http.routers.widgets.entrypoints=websecure"
-      - "traefik.http.routers.widgets.tls.certresolver=letsencrypt"
+      - "traefik.docker.network=twenty_traefik-public"
       - "traefik.http.services.widgets.loadbalancer.server.port=4175"
+      - "traefik.http.routers.wedigital-widgets.rule=Host(`${SERVER_DOMAIN}`) && PathPrefix(`/wedigital`)"
+      - "traefik.http.routers.wedigital-widgets.entrypoints=websecure"
+      - "traefik.http.routers.wedigital-widgets.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.wedigital-widgets.service=widgets"
+      - "traefik.http.middlewares.wedigital-strip.stripprefix.prefixes=/wedigital"
+      - "traefik.http.routers.wedigital-widgets.middlewares=wedigital-strip"
+      - "traefik.http.routers.wedigital-widgets.priority=100"
     networks:
       - traefik-public
       - default
     restart: always
-    # profiles:
-    #   - widgets
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4175"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  mrz-widget:
+    image: ${WIDGETS_IMAGE}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=twenty_traefik-public"
+      - "traefik.http.services.mrz-widget.loadbalancer.server.port=4175"
+      - "traefik.http.routers.mrz-widget.rule=Host(`${SERVER_DOMAIN}`) && PathPrefix(`/wedigital/mrz-input`)"
+      - "traefik.http.routers.mrz-widget.entrypoints=websecure"
+      - "traefik.http.routers.mrz-widget.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.mrz-widget.service=mrz-widget"
+      - "traefik.http.routers.mrz-widget.priority=200"
+    networks:
+      - traefik-public
+      - default
+    restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4175"]
       interval: 10s
@@ -113,11 +142,11 @@ services:
       - server-local-data:/app/packages/twenty-server/.local-storage
     command: ["yarn", "worker:prod"]
     environment:
-      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/twenty
+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/${PG_DATABASE_NAME:-twenty}
       SERVER_URL: ${SERVER_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      DISABLE_DB_MIGRATIONS: "true" # it already runs on the server
-      DISABLE_CRON_JOBS_REGISTRATION: "true" # it already runs on the server
+      DISABLE_DB_MIGRATIONS: "true"
+      DISABLE_CRON_JOBS_REGISTRATION: "true"
 
       STORAGE_TYPE: ${STORAGE_TYPE}
       STORAGE_S3_REGION: ${STORAGE_S3_REGION}
@@ -161,9 +190,12 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: ${PG_DATABASE_NAME:-default}
+      POSTGRES_DB: ${PG_DATABASE_NAME:-twenty}
       POSTGRES_PASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
       POSTGRES_USER: ${PG_DATABASE_USER:-postgres}
+      PGPORT: 5432               # добавляем для безопасности
+    ports:
+      - "5432:5432"
     healthcheck:
       test: pg_isready -U ${PG_DATABASE_USER:-postgres} -h localhost -d postgres
       interval: 5s

@@ -3,7 +3,7 @@ name: Deploy Twenty CRM to DO
 on:
   push:
     branches:
-      - dev
+      - main
 
 jobs:
   build-widgets:
@@ -44,6 +44,16 @@ jobs:
           file: packages/twenty-docker/twenty-widgets/Dockerfile
           push: true
           tags: ${{ steps.image-name.outputs.name }}
+          build-args: |
+            VITE_TWENTY_URL=${{ secrets.VITE_TWENTY_URL }}
+            VITE_SCANNER_POLL_URL=${{ secrets.VITE_SCANNER_POLL_URL }}
+
+      - name: Verify widget-mrz-input in image
+        run: |
+          IMAGE="ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')/twenty-widgets:latest"
+          docker pull $IMAGE
+          docker run --rm $IMAGE ls -la /usr/share/nginx/html/wedigital/mrz-input/
+          docker run --rm $IMAGE ls /usr/share/nginx/html/wedigital/mrz-input/assets/ 2>/dev/null || echo "assets dir empty or missing"
 
 
   deploy:
@@ -71,12 +81,23 @@ jobs:
       - name: Deploy via SSH
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SERVER_IP }} << 'EOF'
-            cd ~/bbc-twenty-crm
-            git fetch origin dev
-            git reset --hard origin/dev
+            cd ~/wedigital-twenty-crm
+            git fetch origin main
+            git reset --hard origin/main
             git submodule sync --recursive
-            git submodule update --init --recursive --remote
+            git submodule update --init --recursive --remote || true
             export WIDGETS_IMAGE="${{ needs.build-widgets.outputs.image }}"
-            docker compose -f docker-compose.prod.yml pull widgets
+            docker compose -f docker-compose.prod.yml pull widgets server
             docker compose -f docker-compose.prod.yml up -d
+          EOF
+
+      - name: Show server logs on failure
+        if: failure()
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SERVER_IP }} << 'EOF'
+            docker logs twenty-server-1 --tail 100 2>&1 || echo 'Could not get server logs'
+            echo "--- front dir check ---"
+            docker exec twenty-server-1 ls /app/packages/twenty-server/dist/front 2>&1 || echo 'dist/front not found'
+            echo "--- root endpoint check ---"
+            docker exec twenty-server-1 curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ 2>&1
           EOF
