@@ -1,9 +1,11 @@
+import { currentUserState } from '@/auth/states/currentUserState';
 import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
 import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
 import { PageLayoutWidgetNoDataDisplay } from '@/page-layout/widgets/components/PageLayoutWidgetNoDataDisplay';
 import { WidgetSkeletonLoader } from '@/page-layout/widgets/components/WidgetSkeletonLoader';
 import { styled } from '@linaria/react';
 import { useState } from 'react';
+import { useRecoilValue } from 'recoil';
 import { getSafeUrl, isDefined } from 'twenty-shared/utils';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
@@ -58,6 +60,8 @@ export type IframeWidgetProps = {
 export const IframeWidget = ({ widget }: IframeWidgetProps) => {
   const isPageLayoutInEditMode = useIsPageLayoutInEditMode();
 
+  const currentUser = useRecoilValue(currentUserState);
+
   const configuration = widget.configuration;
 
   if (!isDefined(configuration) || !('url' in configuration)) {
@@ -66,6 +70,17 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
 
   const url = configuration.url;
   const title = widget.title;
+  let resolvedUrl = url;
+
+  if (isDefined(resolvedUrl) && isDefined(currentUser?.id)) {
+    try {
+      const parsedUrl = new URL(resolvedUrl);
+      parsedUrl.searchParams.set('userId', currentUser?.id ?? '');
+      resolvedUrl = parsedUrl.toString();
+    } catch {
+      resolvedUrl = null;
+    }
+  }
 
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -101,7 +116,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
       )}
       <StyledIframe
         $isEditMode={isPageLayoutInEditMode}
-        src={safeUrl}
+        src={resolvedUrl}
         title={title}
         onLoad={handleIframeLoad}
         onError={handleIframeError}
