@@ -3,7 +3,7 @@ import { PageLayoutComponentInstanceContext } from '@/page-layout/states/context
 import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
 import { IframeWidget } from '@/page-layout/widgets/iframe/components/IframeWidget';
 import { ThemeProvider } from '@emotion/react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { type ReactNode } from 'react';
 import { type MutableSnapshot, RecoilRoot } from 'recoil';
 import { THEME_LIGHT } from 'twenty-ui/theme';
@@ -75,7 +75,13 @@ const Wrapper = ({
 );
 
 describe('IframeWidget', () => {
-  it('appends userId query param when not present', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('keeps original URL and sends full user context via postMessage on load', () => {
+    const postMessageSpy = jest.spyOn(Window.prototype, 'postMessage');
+
     render(<IframeWidget widget={buildWidget('https://example.com/embed')} />, {
       wrapper: ({ children }) => (
         <Wrapper
@@ -89,39 +95,24 @@ describe('IframeWidget', () => {
     });
 
     const iframeElement = screen.getByTitle('Dashboard');
-    const iframeUrl = new URL(iframeElement.getAttribute('src') as string);
+    expect(iframeElement.getAttribute('src')).toBe('https://example.com/embed');
 
-    expect(iframeUrl.searchParams.get('userId')).toBe('user-id-123');
-  });
+    fireEvent.load(iframeElement);
 
-  it('overwrites existing userId and preserves other query params', () => {
-    render(
-      <IframeWidget
-        widget={buildWidget(
-          'https://example.com/embed?foo=bar&userId=old-user-id',
-        )}
-      />,
+    expect(postMessageSpy).toHaveBeenCalledWith(
       {
-        wrapper: ({ children }) => (
-          <Wrapper
-            initializeState={({ set }) => {
-              set(currentUserState, mockCurrentUser);
-            }}
-          >
-            {children}
-          </Wrapper>
-        ),
+        type: 'twenty:user-context',
+        payload: {
+          userContext: mockCurrentUser,
+        },
       },
+      'https://example.com',
     );
-
-    const iframeElement = screen.getByTitle('Dashboard');
-    const iframeUrl = new URL(iframeElement.getAttribute('src') as string);
-
-    expect(iframeUrl.searchParams.get('userId')).toBe('user-id-123');
-    expect(iframeUrl.searchParams.get('foo')).toBe('bar');
   });
 
-  it('keeps original URL when current user is not loaded', () => {
+  it('does not send postMessage when current user is not loaded', () => {
+    const postMessageSpy = jest.spyOn(Window.prototype, 'postMessage');
+
     render(
       <IframeWidget
         widget={buildWidget('https://example.com/embed?foo=bar')}
@@ -136,6 +127,10 @@ describe('IframeWidget', () => {
     expect(iframeElement.getAttribute('src')).toBe(
       'https://example.com/embed?foo=bar',
     );
+
+    fireEvent.load(iframeElement);
+
+    expect(postMessageSpy).not.toHaveBeenCalled();
   });
 
   it('renders fallback when URL cannot be parsed with user context', () => {

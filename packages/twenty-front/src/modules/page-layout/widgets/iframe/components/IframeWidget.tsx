@@ -1,55 +1,55 @@
 import { currentUserState } from '@/auth/states/currentUserState';
-import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
+import { isPageLayoutInEditModeComponentState } from '@/page-layout/states/isPageLayoutInEditModeComponentState';
 import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
 import { PageLayoutWidgetNoDataDisplay } from '@/page-layout/widgets/components/PageLayoutWidgetNoDataDisplay';
 import { WidgetSkeletonLoader } from '@/page-layout/widgets/components/WidgetSkeletonLoader';
-import { styled } from '@linaria/react';
-import { useState } from 'react';
+import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import styled from '@emotion/styled';
+import { type SyntheticEvent, useState } from 'react';
 import { useRecoilValue } from 'recoil';
-import { getSafeUrl, isDefined } from 'twenty-shared/utils';
-import { themeCssVariables } from 'twenty-ui/theme-constants';
+import { isDefined } from 'twenty-shared/utils';
 
 const StyledContainer = styled.div<{ $isEditMode: boolean }>`
-  background: ${themeCssVariables.background.primary};
-  border-radius: ${themeCssVariables.border.radius.md};
   box-sizing: border-box;
+  border-radius: ${({ theme }) => theme.border.radius.md};
+  background: ${({ theme }) => theme.background.primary};
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  pointer-events: ${({ $isEditMode }) => ($isEditMode ? 'none' : 'auto')};
   position: relative;
   width: 100%;
+  pointer-events: ${({ $isEditMode }) => ($isEditMode ? 'none' : 'auto')};
 `;
 
 const StyledIframe = styled.iframe<{ $isEditMode: boolean }>`
   border: none;
   flex: 1;
   height: 100%;
-  pointer-events: ${({ $isEditMode }) => ($isEditMode ? 'none' : 'auto')};
   width: 100%;
+  pointer-events: ${({ $isEditMode }) => ($isEditMode ? 'none' : 'auto')};
 `;
 
 const StyledLoadingContainer = styled.div`
-  background: ${themeCssVariables.background.primary};
-  bottom: 0;
-  left: 0;
-  padding-left: ${themeCssVariables.spacing[2]};
-  padding-top: ${themeCssVariables.spacing[2]};
-  pointer-events: none;
   position: absolute;
-  right: 0;
   top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding-top: ${({ theme }) => theme.spacing(2)};
+  padding-left: ${({ theme }) => theme.spacing(2)};
+  background: ${({ theme }) => theme.background.primary};
+  pointer-events: none;
   z-index: 1;
 `;
 
 const StyledErrorContainer = styled.div`
-  align-items: center;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  align-items: center;
   justify-content: center;
-  padding: ${themeCssVariables.spacing[4]};
+  height: 100%;
+  padding: ${({ theme }) => theme.spacing(4)};
   text-align: center;
 `;
 
@@ -57,36 +57,48 @@ export type IframeWidgetProps = {
   widget: PageLayoutWidget;
 };
 
+const getUrlOrigin = (url: string): string | null => {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+};
+
 export const IframeWidget = ({ widget }: IframeWidgetProps) => {
-  const isPageLayoutInEditMode = useIsPageLayoutInEditMode();
+  const isPageLayoutInEditMode = useRecoilComponentValue(
+    isPageLayoutInEditModeComponentState,
+  );
 
   const currentUser = useRecoilValue(currentUserState);
 
   const configuration = widget.configuration;
 
-  if (!isDefined(configuration) || !('url' in configuration)) {
+  if (!configuration || !('url' in configuration)) {
     throw new Error(`Invalid configuration for widget ${widget.id}`);
   }
 
   const url = configuration.url;
   const title = widget.title;
-  let resolvedUrl = url;
-
-  if (isDefined(resolvedUrl) && isDefined(currentUser?.id)) {
-    try {
-      const parsedUrl = new URL(resolvedUrl);
-      parsedUrl.searchParams.set('userId', currentUser?.id ?? '');
-      resolvedUrl = parsedUrl.toString();
-    } catch {
-      resolvedUrl = null;
-    }
-  }
+  const targetOrigin = isDefined(url) ? getUrlOrigin(url) : null;
 
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
-  const handleIframeLoad = () => {
+  const handleIframeLoad = (event: SyntheticEvent<HTMLIFrameElement>) => {
     setIsLoading(false);
+
+    if (!isDefined(currentUser) || !isDefined(targetOrigin)) {
+      return;
+    }
+
+    event.currentTarget.contentWindow?.postMessage(
+      {
+        type: 'twenty:user-context',
+        payload: { userContext: currentUser },
+      },
+      targetOrigin,
+    );
   };
 
   const handleIframeError = () => {
@@ -94,10 +106,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
     setHasError(true);
   };
 
-  const safeUrl = isDefined(url) ? getSafeUrl(url) : undefined;
-  const isHttpUrl = isDefined(safeUrl) && /^https?:\/\//i.test(safeUrl);
-
-  if (hasError || !isHttpUrl) {
+  if (hasError || !isDefined(url) || (isDefined(currentUser) && !targetOrigin)) {
     return (
       <StyledContainer $isEditMode={isPageLayoutInEditMode}>
         <StyledErrorContainer>
@@ -116,7 +125,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
       )}
       <StyledIframe
         $isEditMode={isPageLayoutInEditMode}
-        src={resolvedUrl}
+        src={url}
         title={title}
         onLoad={handleIframeLoad}
         onError={handleIframeError}
