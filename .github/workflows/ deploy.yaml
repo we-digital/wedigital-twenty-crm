@@ -104,8 +104,6 @@ jobs:
             cd ~/wedigital-twenty-crm
             git fetch origin main
             git reset --hard origin/main
-            git submodule sync --recursive
-            git submodule update --init --recursive --remote || true
             export WIDGETS_IMAGE="${{ needs.build-widgets.outputs.image }}"
             docker compose -f docker-compose.prod.yml pull widgets server
             docker compose -f docker-compose.prod.yml up -d
