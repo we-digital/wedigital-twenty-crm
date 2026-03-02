@@ -17,12 +17,32 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
           fetch-depth: 0
-          token: ${{ secrets.SUBMODULE_PAT || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate submodule token access
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.SUBMODULE_PAT }}" ]; then
+            echo "::error::SUBMODULE_PAT is missing. Create a fine-grained PAT with read access to we-digital/widget-mrz-input."
+            exit 1
+          fi
+
+          http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.SUBMODULE_PAT }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/we-digital/widget-mrz-input)
+
+          if [ "$http_code" -ne 200 ]; then
+            echo "::error::SUBMODULE_PAT cannot access we-digital/widget-mrz-input (HTTP $http_code). Check token scopes and org SSO authorization."
+            exit 1
+          fi
 
       - name: Update submodules to latest main
+        shell: bash
         run: |
+          git config --global url."https://x-access-token:${{ secrets.SUBMODULE_PAT }}@github.com/".insteadOf "https://github.com/"
           git submodule sync --recursive
           git submodule update --init --recursive --remote
 
