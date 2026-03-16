@@ -114,6 +114,9 @@ services:
       retries: 3
       start_period: 10s
 
+  # MRZ widget needs its own router with higher priority (200) to handle
+  # /wedigital/mrz-input paths WITHOUT stripprefix middleware, so nginx
+  # receives the full path and can serve the correct SPA files.
   mrz-widget:
     image: ${WIDGETS_IMAGE}
     labels:
@@ -193,9 +196,9 @@ services:
       POSTGRES_DB: ${PG_DATABASE_NAME:-twenty}
       POSTGRES_PASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
       POSTGRES_USER: ${PG_DATABASE_USER:-postgres}
-      PGPORT: 5432               # добавляем для безопасности
-    ports:
-      - "5432:5432"
+      PGPORT: 5432
+    # NOTE: Port 5432 is not exposed externally for security reasons.
+    # Use `docker compose exec db psql` for database access.
     healthcheck:
       test: pg_isready -U ${PG_DATABASE_USER:-postgres} -h localhost -d postgres
       interval: 5s

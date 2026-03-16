@@ -1,19 +1,4 @@
 import styled from '@emotion/styled';
-import type { EmailRecipients } from 'twenty-shared/workflow';
-
-const sampleTwentyType: EmailRecipients = {
-  to: 'widget@example.com',
-  cc: 'copy@twenty.local',
-};
-
-if (typeof window !== 'undefined') {
-  console.log(
-    '[Twenty] Тип из текущего проекта (twenty-shared/workflow EmailRecipients):',
-    sampleTwentyType,
-    '→ typeof sampleTwentyType:',
-    typeof sampleTwentyType,
-  );
-}
 
 type WidgetDefinition = {
   id: string;
