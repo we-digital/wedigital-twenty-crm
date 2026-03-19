@@ -34,6 +34,10 @@ jobs:
             type=sha,prefix=
             type=raw,value=latest
 
+      - name: Get app version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
       - name: Build and push CRM image
         uses: docker/build-push-action@v6
         with:
@@ -41,6 +45,8 @@ jobs:
           file: packages/twenty-docker/twenty/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
