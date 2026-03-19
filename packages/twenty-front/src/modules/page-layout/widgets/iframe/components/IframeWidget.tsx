@@ -6,7 +6,7 @@ import { WidgetSkeletonLoader } from '@/page-layout/widgets/components/WidgetSke
 import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
 import styled from '@emotion/styled';
 import { type SyntheticEvent, useState } from 'react';
-import { useRecoilValue } from 'recoil';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { isDefined } from 'twenty-shared/utils';
 
 const StyledContainer = styled.div<{ $isEditMode: boolean }>`
@@ -70,7 +70,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
     isPageLayoutInEditModeComponentState,
   );
 
-  const currentUser = useRecoilValue(currentUserState);
+  const currentUser = useAtomStateValue(currentUserState);
 
   const configuration = widget.configuration;
 

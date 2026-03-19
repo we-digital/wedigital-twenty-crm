@@ -4,8 +4,8 @@ import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
 import { IframeWidget } from '@/page-layout/widgets/iframe/components/IframeWidget';
 import { ThemeProvider } from '@emotion/react';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { Provider as JotaiProvider, createStore } from 'jotai';
 import { type ReactNode } from 'react';
-import { type MutableSnapshot, RecoilRoot } from 'recoil';
 import { THEME_LIGHT } from 'twenty-ui/theme';
 import { OnboardingStatus, WidgetType } from '~/generated-metadata/graphql';
 
@@ -56,23 +56,28 @@ const buildWidget = (url: string | null): PageLayoutWidget =>
 
 const Wrapper = ({
   children,
-  initializeState,
+  initializeStore,
 }: {
   children: ReactNode;
-  initializeState?: (snapshot: MutableSnapshot) => void;
-}) => (
-  <ThemeProvider theme={THEME_LIGHT}>
-    <RecoilRoot initializeState={initializeState}>
-      <PageLayoutComponentInstanceContext.Provider
-        value={{
-          instanceId: 'test',
-        }}
-      >
-        {children}
-      </PageLayoutComponentInstanceContext.Provider>
-    </RecoilRoot>
-  </ThemeProvider>
-);
+  initializeStore?: (store: ReturnType<typeof createStore>) => void;
+}) => {
+  const store = createStore();
+  initializeStore?.(store);
+
+  return (
+    <ThemeProvider theme={THEME_LIGHT}>
+      <JotaiProvider store={store}>
+        <PageLayoutComponentInstanceContext.Provider
+          value={{
+            instanceId: 'test',
+          }}
+        >
+          {children}
+        </PageLayoutComponentInstanceContext.Provider>
+      </JotaiProvider>
+    </ThemeProvider>
+  );
+};
 
 describe('IframeWidget', () => {
   afterEach(() => {
@@ -85,8 +90,8 @@ describe('IframeWidget', () => {
     render(<IframeWidget widget={buildWidget('https://example.com/embed')} />, {
       wrapper: ({ children }) => (
         <Wrapper
-          initializeState={({ set }) => {
-            set(currentUserState, mockCurrentUser);
+          initializeStore={(store) => {
+            store.set(currentUserState.atom, mockCurrentUser);
           }}
         >
           {children}
@@ -137,8 +142,8 @@ describe('IframeWidget', () => {
     render(<IframeWidget widget={buildWidget('not-a-valid-url')} />, {
       wrapper: ({ children }) => (
         <Wrapper
-          initializeState={({ set }) => {
-            set(currentUserState, mockCurrentUser);
+          initializeStore={(store) => {
+            store.set(currentUserState.atom, mockCurrentUser);
           }}
         >
           {children}
