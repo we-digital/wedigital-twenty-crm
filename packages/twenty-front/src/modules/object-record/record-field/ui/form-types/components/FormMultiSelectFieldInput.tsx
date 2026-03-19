@@ -1,5 +1,5 @@
+import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
-import styled from '@emotion/styled';
 
 import { FormFieldInputContainer } from '@/object-record/record-field/ui/form-types/components/FormFieldInputContainer';
 import { FormFieldInputInnerContainer } from '@/object-record/record-field/ui/form-types/components/FormFieldInputInnerContainer';
@@ -19,13 +19,13 @@ import { usePushFocusItemToFocusStack } from '@/ui/utilities/focus/hooks/usePush
 import { useRemoveFocusItemFromFocusStackById } from '@/ui/utilities/focus/hooks/useRemoveFocusItemFromFocusStackById';
 import { FocusComponentType } from '@/ui/utilities/focus/types/FocusComponentType';
 import { isStandaloneVariableString } from '@/workflow/utils/isStandaloneVariableString';
-import { useTheme } from '@emotion/react';
 import { isArray } from '@sniptt/guards';
-import { useId, useState } from 'react';
+import { useContext, useId, useState } from 'react';
 import { isDefined } from 'twenty-shared/utils';
 import { VisibilityHidden } from 'twenty-ui/accessibility';
 import { IconChevronDown } from 'twenty-ui/display';
 import { type SelectOption } from 'twenty-ui/input';
+import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
 
 type FormMultiSelectFieldInputProps = {
   label?: string;
@@ -46,26 +46,28 @@ const StyledDisplayModeReadonlyContainer = styled.div`
   border: none;
   display: flex;
   font-family: inherit;
-  padding-inline: ${({ theme }) => theme.spacing(2)};
+  padding-inline: ${themeCssVariables.spacing[2]};
   width: 100%;
 `;
 
-const StyledDisplayModeContainer = styled(StyledDisplayModeReadonlyContainer)`
+const StyledDisplayModeContainer = styled.div`
+  align-items: center;
+  background: transparent;
+  border: none;
   cursor: pointer;
-
-  &:hover,
-  &[data-open='true'] {
-    background-color: ${({ theme }) => theme.background.transparent.lighter};
-  }
+  display: flex;
+  font-family: inherit;
+  padding-inline: ${themeCssVariables.spacing[2]};
+  width: 100%;
 `;
 
 const StyledSelectInputContainer = styled.div`
   position: absolute;
+  top: ${themeCssVariables.spacing[9]};
   z-index: 1;
-  top: ${({ theme }) => theme.spacing(9)};
 `;
 
-const StyledPlaceholder = styled(FormFieldPlaceholder)`
+const StyledPlaceholderContainer = styled.div`
   width: 100%;
 `;
 
@@ -89,8 +91,8 @@ export const FormMultiSelectFieldInput = ({
   hint,
   dropdownWidth,
 }: FormMultiSelectFieldInputProps) => {
+  const { theme } = useContext(ThemeContext);
   const instanceId = useId();
-  const theme = useTheme();
 
   const { pushFocusItemToFocusStack } = usePushFocusItemToFocusStack();
   const { removeFocusItemFromFocusStackById } =
@@ -213,6 +215,7 @@ export const FormMultiSelectFieldInput = ({
         <FormFieldInputInnerContainer
           formFieldInputInstanceId={instanceId}
           hasRightElement={isDefined(VariablePicker) && !readonly}
+          hoverable={!readonly}
         >
           {draftValue.type === 'static' ? (
             readonly ? (
@@ -223,7 +226,9 @@ export const FormMultiSelectFieldInput = ({
                     options={selectedOptions}
                   />
                 ) : (
-                  <StyledPlaceholder />
+                  <StyledPlaceholderContainer>
+                    <FormFieldPlaceholder />
+                  </StyledPlaceholderContainer>
                 )}
                 <IconChevronDown
                   size={theme.icon.size.md}
@@ -243,7 +248,11 @@ export const FormMultiSelectFieldInput = ({
                     options={selectedOptions}
                   />
                 ) : (
-                  <StyledPlaceholder>{placeholderText}</StyledPlaceholder>
+                  <StyledPlaceholderContainer>
+                    <FormFieldPlaceholder>
+                      {placeholderText}
+                    </FormFieldPlaceholder>
+                  </StyledPlaceholderContainer>
                 )}
                 <IconChevronDown
                   size={theme.icon.size.md}

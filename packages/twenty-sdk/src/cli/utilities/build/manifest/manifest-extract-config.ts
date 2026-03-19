@@ -4,9 +4,16 @@ export enum TargetFunction {
   DefineApplication = 'defineApplication',
   DefineField = 'defineField',
   DefineLogicFunction = 'defineLogicFunction',
+  DefinePreInstallLogicFunction = 'definePreInstallLogicFunction',
+  DefinePostInstallLogicFunction = 'definePostInstallLogicFunction',
   DefineObject = 'defineObject',
   DefineRole = 'defineRole',
+  DefineSkill = 'defineSkill',
+  DefineAgent = 'defineAgent',
   DefineFrontComponent = 'defineFrontComponent',
+  DefineView = 'defineView',
+  DefineNavigationMenuItem = 'defineNavigationMenuItem',
+  DefinePageLayout = 'definePageLayout',
 }
 
 export enum ManifestEntityKey {
@@ -15,8 +22,13 @@ export enum ManifestEntityKey {
   LogicFunctions = 'logicFunctions',
   Objects = 'objects',
   Roles = 'roles',
+  Skills = 'skills',
+  Agents = 'agents',
   FrontComponents = 'frontComponents',
   PublicAssets = 'publicAssets',
+  Views = 'views',
+  NavigationMenuItems = 'navigationMenuItems',
+  PageLayouts = 'pageLayouts',
 }
 
 export type EntityFilePaths = Record<ManifestEntityKey, string[]>;
@@ -28,9 +40,19 @@ export const TARGET_FUNCTION_TO_ENTITY_KEY_MAPPING: Record<
   [TargetFunction.DefineApplication]: ManifestEntityKey.Application,
   [TargetFunction.DefineField]: ManifestEntityKey.Fields,
   [TargetFunction.DefineLogicFunction]: ManifestEntityKey.LogicFunctions,
+  [TargetFunction.DefinePreInstallLogicFunction]:
+    ManifestEntityKey.LogicFunctions,
+  [TargetFunction.DefinePostInstallLogicFunction]:
+    ManifestEntityKey.LogicFunctions,
   [TargetFunction.DefineObject]: ManifestEntityKey.Objects,
   [TargetFunction.DefineRole]: ManifestEntityKey.Roles,
+  [TargetFunction.DefineSkill]: ManifestEntityKey.Skills,
+  [TargetFunction.DefineAgent]: ManifestEntityKey.Agents,
   [TargetFunction.DefineFrontComponent]: ManifestEntityKey.FrontComponents,
+  [TargetFunction.DefineView]: ManifestEntityKey.Views,
+  [TargetFunction.DefineNavigationMenuItem]:
+    ManifestEntityKey.NavigationMenuItems,
+  [TargetFunction.DefinePageLayout]: ManifestEntityKey.PageLayouts,
 };
 
 const computeIsTargetFunctionCall = (node: ts.Node): string | undefined => {

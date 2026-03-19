@@ -1,11 +1,10 @@
 import { useCurrentPageLayout } from '@/page-layout/hooks/useCurrentPageLayout';
-import { isPageLayoutInEditModeComponentState } from '@/page-layout/states/isPageLayoutInEditModeComponentState';
+import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
 import { type PageLayoutTab } from '@/page-layout/types/PageLayoutTab';
 import { buildWidgetVisibilityContext } from '@/page-layout/utils/buildWidgetVisibilityContext';
 import { filterVisibleWidgets } from '@/page-layout/utils/filterVisibleWidgets';
 import { useLayoutRenderingContext } from '@/ui/layout/contexts/LayoutRenderingContext';
 import { useIsMobile } from '@/ui/utilities/responsive/hooks/useIsMobile';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
 import { isDefined } from 'twenty-shared/utils';
 
 export const usePageLayoutTabWithVisibleWidgetsOrThrow = (
@@ -13,10 +12,8 @@ export const usePageLayoutTabWithVisibleWidgetsOrThrow = (
 ): PageLayoutTab => {
   const { currentPageLayout } = useCurrentPageLayout();
   const isMobile = useIsMobile();
-  const { isInRightDrawer } = useLayoutRenderingContext();
-  const isPageLayoutInEditMode = useRecoilComponentValue(
-    isPageLayoutInEditModeComponentState,
-  );
+  const { isInSidePanel } = useLayoutRenderingContext();
+  const isPageLayoutInEditMode = useIsPageLayoutInEditMode();
 
   if (!isDefined(currentPageLayout)) {
     throw new Error('currentPageLayout is not defined');
@@ -32,7 +29,7 @@ export const usePageLayoutTabWithVisibleWidgetsOrThrow = (
     return tab;
   }
 
-  const context = buildWidgetVisibilityContext({ isMobile, isInRightDrawer });
+  const context = buildWidgetVisibilityContext({ isMobile, isInSidePanel });
 
   return {
     ...tab,

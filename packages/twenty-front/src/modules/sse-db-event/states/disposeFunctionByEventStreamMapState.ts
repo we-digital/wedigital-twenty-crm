@@ -1,6 +1,6 @@
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const disposeFunctionForEventStreamState = createState<{
+export const disposeFunctionForEventStreamState = createAtomState<{
   dispose: () => void;
 } | null>({
   key: 'disposeFunctionForEventStreamState',

@@ -1,6 +1,9 @@
 import { type PageLayoutTab } from '@/page-layout/types/PageLayoutTab';
-import { WidgetType } from '~/generated/graphql';
 import { filterVisibleWidgets } from '@/page-layout/utils/filterVisibleWidgets';
+import {
+  WidgetConfigurationType,
+  WidgetType,
+} from '~/generated-metadata/graphql';
 
 describe('filterVisibleWidgets', () => {
   const createMockWidget = (
@@ -22,9 +25,10 @@ describe('filterVisibleWidgets', () => {
     },
     configuration: {
       __typename: 'FieldsConfiguration',
-      configurationType: 'FIELDS',
-      sections: [],
+      configurationType: WidgetConfigurationType.FIELDS,
+      viewId: null,
     },
+    isOverridden: false,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
     deletedAt: null,

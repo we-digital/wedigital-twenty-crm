@@ -2,7 +2,12 @@ import { triggerAttachRelationOptimisticEffect } from '@/apollo/optimistic-effec
 import { triggerDestroyRecordsOptimisticEffect } from '@/apollo/optimistic-effect/utils/triggerDestroyRecordsOptimisticEffect';
 import { triggerDetachRelationOptimisticEffect } from '@/apollo/optimistic-effect/utils/triggerDetachRelationOptimisticEffect';
 import { CORE_OBJECT_NAMES_TO_DELETE_ON_TRIGGER_RELATION_DETACH } from '@/apollo/types/coreObjectNamesToDeleteOnRelationDetach';
-import { type CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
+import {
+  type CoreObjectNameSingular,
+  FieldMetadataType,
+  RelationType,
+  type ObjectPermissions,
+} from 'twenty-shared/types';
 import { type FieldMetadataItem } from '@/object-metadata/types/FieldMetadataItem';
 import { type FieldMetadataItemRelation } from '@/object-metadata/types/FieldMetadataItemRelation';
 import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
@@ -15,11 +20,6 @@ import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
 import { type ApolloCache } from '@apollo/client';
 import { isArray } from '@sniptt/guards';
 import {
-  FieldMetadataType,
-  RelationType,
-  type ObjectPermissions,
-} from 'twenty-shared/types';
-import {
   computeMorphRelationFieldName,
   CustomError,
   isDefined,
@@ -27,7 +27,7 @@ import {
 import { isDeeplyEqual } from '~/utils/isDeeplyEqual';
 
 type TriggerUpdateRelationsOptimisticEffectArgs = {
-  cache: ApolloCache<unknown>;
+  cache: ApolloCache;
   sourceObjectMetadataItem: ObjectMetadataItem;
   currentSourceRecord: RecordGqlNode | null;
   updatedSourceRecord: RecordGqlNode | null;
@@ -106,7 +106,7 @@ const triggerUpdateRelationOptimisticEffect = ({
   currentSourceRecord: RecordGqlNode | null;
   objectMetadataItems: ObjectMetadataItem[];
   sourceObjectMetadataItem: ObjectMetadataItem;
-  cache: ApolloCache<unknown>;
+  cache: ApolloCache;
   isDeletion: boolean;
   upsertRecordsInStore: (props: { partialRecords: ObjectRecord[] }) => void;
   objectPermissionsByObjectMetadataId: Record<
@@ -262,7 +262,7 @@ const triggerUpdateMorphRelationOptimisticEffect = ({
   currentSourceRecord: RecordGqlNode | null;
   objectMetadataItems: ObjectMetadataItem[];
   sourceObjectMetadataItem: ObjectMetadataItem;
-  cache: ApolloCache<unknown>;
+  cache: ApolloCache;
   isDeletion: boolean;
   upsertRecordsInStore: (props: { partialRecords: ObjectRecord[] }) => void;
   objectPermissionsByObjectMetadataId: Record<

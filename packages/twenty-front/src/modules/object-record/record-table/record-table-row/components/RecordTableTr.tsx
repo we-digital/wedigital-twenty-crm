@@ -2,17 +2,14 @@ import { getBasePathToShowPage } from '@/object-metadata/utils/getBasePathToShow
 import { useIsRecordReadOnly } from '@/object-record/read-only/hooks/useIsRecordReadOnly';
 import { useRecordTableContextOrThrow } from '@/object-record/record-table/contexts/RecordTableContext';
 import { RecordTableRowContextProvider } from '@/object-record/record-table/contexts/RecordTableRowContext';
-import { RecordTableFirstRowOfGroup } from '@/object-record/record-table/record-table-row/components/RecordTableFirstRowOfGroup';
 import { RecordTableRowDiv } from '@/object-record/record-table/record-table-row/components/RecordTableRowDiv';
-import { isRecordIdFirstOfGroupComponentFamilySelector } from '@/object-record/record-table/record-table-row/states/isRecordIdFirstOfGroupComponentFamilySelector';
 import { isRowSelectedComponentFamilyState } from '@/object-record/record-table/record-table-row/states/isRowSelectedComponentFamilyState';
 import { isRecordTableRowActiveComponentFamilyState } from '@/object-record/record-table/states/isRecordTableRowActiveComponentFamilyState';
 import { isRecordTableRowFocusActiveComponentState } from '@/object-record/record-table/states/isRecordTableRowFocusActiveComponentState';
 import { isRecordTableRowFocusedComponentFamilyState } from '@/object-record/record-table/states/isRecordTableRowFocusedComponentFamilyState';
-import { recordIdByRealIndexComponentFamilySelector } from '@/object-record/record-table/virtualization/states/recordIdByRealIndexComponentFamilySelector';
 
-import { useRecoilComponentFamilyValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentFamilyValue';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentFamilyStateValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { forwardRef, type ReactNode } from 'react';
 
 type RecordTableTrProps = {
@@ -20,68 +17,33 @@ type RecordTableTrProps = {
   recordId: string;
   focusIndex: number;
   isDragging?: boolean;
-  isFirstRowOfGroup?: boolean;
 } & Omit<
   React.ComponentProps<typeof RecordTableRowDiv>,
   'isActive' | 'isNextRowActiveOrFocused' | 'isFocused'
 >;
 
 export const RecordTableTr = forwardRef<HTMLDivElement, RecordTableTrProps>(
-  (
-    {
-      children,
-      recordId,
-      focusIndex,
-      isDragging = false,
-      isFirstRowOfGroup,
-      ...props
-    },
-    ref,
-  ) => {
+  ({ children, recordId, focusIndex, isDragging = false, ...props }, ref) => {
     const { objectMetadataItem } = useRecordTableContextOrThrow();
 
-    const currentRowSelected = useRecoilComponentFamilyValue(
+    const isRowSelected = useAtomComponentFamilyStateValue(
       isRowSelectedComponentFamilyState,
       recordId,
     );
 
-    const isActive = useRecoilComponentFamilyValue(
+    const isRecordTableRowActive = useAtomComponentFamilyStateValue(
       isRecordTableRowActiveComponentFamilyState,
       focusIndex,
     );
 
-    const isNextRowActive = useRecoilComponentFamilyValue(
-      isRecordTableRowActiveComponentFamilyState,
-      focusIndex + 1,
-    );
-
-    const nextRecordId = useRecoilComponentFamilyValue(
-      recordIdByRealIndexComponentFamilySelector,
-      focusIndex + 1,
-    );
-
-    const isNextRecordIdFirstOfGroup = useRecoilComponentFamilyValue(
-      isRecordIdFirstOfGroupComponentFamilySelector,
-      nextRecordId,
-    );
-
-    const isFocused = useRecoilComponentFamilyValue(
+    const isRecordTableRowFocused = useAtomComponentFamilyStateValue(
       isRecordTableRowFocusedComponentFamilyState,
       focusIndex,
     );
 
-    const isRowFocusActive = useRecoilComponentValue(
+    const isRecordTableRowFocusActive = useAtomComponentStateValue(
       isRecordTableRowFocusActiveComponentState,
     );
-
-    const isNextRowFocused = useRecoilComponentFamilyValue(
-      isRecordTableRowFocusedComponentFamilyState,
-      focusIndex + 1,
-    );
-
-    const isNextRowActiveOrFocused =
-      !isNextRecordIdFirstOfGroup &&
-      ((isRowFocusActive && isNextRowFocused) || isNextRowActive);
 
     const isRecordReadOnly = useIsRecordReadOnly({
       recordId,
@@ -98,44 +60,25 @@ export const RecordTableTr = forwardRef<HTMLDivElement, RecordTableTrProps>(
               objectNameSingular: objectMetadataItem.nameSingular,
             }) + recordId,
           objectNameSingular: objectMetadataItem.nameSingular,
-          isSelected: currentRowSelected,
+          isSelected: isRowSelected,
           isRecordReadOnly,
         }}
       >
-        {isFirstRowOfGroup ? (
-          <RecordTableFirstRowOfGroup
-            className="table-row"
-            data-virtualized-id={recordId}
-            isDragging={isDragging}
-            ref={ref}
-            data-active={isActive}
-            data-focused={isRowFocusActive && isFocused && !isActive}
-            data-next-row-active-or-focused={isNextRowActiveOrFocused}
-            isNextRowActiveOrFocused={isNextRowActiveOrFocused}
-            focusIndex={focusIndex}
-            isFocused={isFocused}
-            isRowFocusActive={isRowFocusActive}
-            recordId={recordId}
-            // eslint-disable-next-line react/jsx-props-no-spreading
-            {...props}
-          >
-            {children}
-          </RecordTableFirstRowOfGroup>
-        ) : (
-          <RecordTableRowDiv
-            className="table-row"
-            data-virtualized-id={recordId}
-            isDragging={isDragging}
-            ref={ref}
-            data-active={isActive}
-            data-focused={isRowFocusActive && isFocused && !isActive}
-            data-next-row-active-or-focused={isNextRowActiveOrFocused}
-            // eslint-disable-next-line react/jsx-props-no-spreading
-            {...props}
-          >
-            {children}
-          </RecordTableRowDiv>
-        )}
+        <RecordTableRowDiv
+          className="table-row"
+          isDragging={isDragging}
+          ref={ref}
+          data-active={isRecordTableRowActive}
+          data-focused={
+            isRecordTableRowFocusActive &&
+            isRecordTableRowFocused &&
+            !isRecordTableRowActive
+          }
+          // oxlint-disable-next-line react/jsx-props-no-spreading
+          {...props}
+        >
+          {children}
+        </RecordTableRowDiv>
       </RecordTableRowContextProvider>
     );
   },

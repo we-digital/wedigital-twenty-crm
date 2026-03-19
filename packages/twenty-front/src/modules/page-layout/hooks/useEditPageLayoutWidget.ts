@@ -1,17 +1,17 @@
 import { useCallback } from 'react';
-import { useSetRecoilState } from 'recoil';
 
-import { useCommandMenu } from '@/command-menu/hooks/useCommandMenu';
-import { commandMenuPageState } from '@/command-menu/states/commandMenuPageState';
-import { CommandMenuPages } from '@/command-menu/types/CommandMenuPages';
-import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
+import { useSidePanelMenu } from '@/side-panel/hooks/useSidePanelMenu';
+import { sidePanelPageState } from '@/side-panel/states/sidePanelPageState';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
+import { SidePanelPages } from 'twenty-shared/types';
 
-import { useNavigatePageLayoutCommandMenu } from '@/command-menu/pages/page-layout/hooks/useNavigatePageLayoutCommandMenu';
 import { PageLayoutComponentInstanceContext } from '@/page-layout/states/contexts/PageLayoutComponentInstanceContext';
 import { pageLayoutEditingWidgetIdComponentState } from '@/page-layout/states/pageLayoutEditingWidgetIdComponentState';
+import { useNavigatePageLayoutSidePanel } from '@/side-panel/pages/page-layout/hooks/useNavigatePageLayoutSidePanel';
 import { useAvailableComponentInstanceIdOrThrow } from '@/ui/utilities/state/component-state/hooks/useAvailableComponentInstanceIdOrThrow';
+import { useSetAtomState } from '@/ui/utilities/state/jotai/hooks/useSetAtomState';
 import { t } from '@lingui/core/macro';
-import { WidgetType } from '~/generated/graphql';
+import { WidgetType } from '~/generated-metadata/graphql';
 
 export const useEditPageLayoutWidget = (pageLayoutIdFromProps?: string) => {
   const pageLayoutId = useAvailableComponentInstanceIdOrThrow(
@@ -19,14 +19,14 @@ export const useEditPageLayoutWidget = (pageLayoutIdFromProps?: string) => {
     pageLayoutIdFromProps,
   );
 
-  const setPageLayoutEditingWidgetId = useSetRecoilComponentState(
+  const setPageLayoutEditingWidgetId = useSetAtomComponentState(
     pageLayoutEditingWidgetIdComponentState,
     pageLayoutId,
   );
 
-  const { navigatePageLayoutCommandMenu } = useNavigatePageLayoutCommandMenu();
-  const { closeCommandMenu } = useCommandMenu();
-  const setCommandMenuPage = useSetRecoilState(commandMenuPageState);
+  const { navigatePageLayoutSidePanel } = useNavigatePageLayoutSidePanel();
+  const { closeSidePanelMenu } = useSidePanelMenu();
+  const setSidePanelPage = useSetAtomState(sidePanelPageState);
 
   const handleEditWidget = useCallback(
     ({
@@ -36,43 +36,44 @@ export const useEditPageLayoutWidget = (pageLayoutIdFromProps?: string) => {
       widgetId: string;
       widgetType: WidgetType;
     }) => {
-      setPageLayoutEditingWidgetId(widgetId);
-
       if (widgetType === WidgetType.IFRAME) {
-        navigatePageLayoutCommandMenu({
-          commandMenuPage: CommandMenuPages.PageLayoutIframeSettings,
+        navigatePageLayoutSidePanel({
+          sidePanelPage: SidePanelPages.PageLayoutIframeSettings,
           pageTitle: t`Edit iFrame`,
           resetNavigationStack: true,
         });
+        setPageLayoutEditingWidgetId(widgetId);
         return;
       }
 
       if (widgetType === WidgetType.GRAPH) {
-        navigatePageLayoutCommandMenu({
-          commandMenuPage: CommandMenuPages.PageLayoutGraphTypeSelect,
+        navigatePageLayoutSidePanel({
+          sidePanelPage: SidePanelPages.PageLayoutGraphTypeSelect,
           pageTitle: t`Edit Graph`,
           resetNavigationStack: true,
         });
+        setPageLayoutEditingWidgetId(widgetId);
         return;
       }
 
       if (widgetType === WidgetType.FIELDS) {
-        navigatePageLayoutCommandMenu({
-          commandMenuPage: CommandMenuPages.PageLayoutFieldsSettings,
+        navigatePageLayoutSidePanel({
+          sidePanelPage: SidePanelPages.PageLayoutFieldsSettings,
           pageTitle: t`Edit Fields`,
           resetNavigationStack: true,
         });
+        setPageLayoutEditingWidgetId(widgetId);
         return;
       }
 
-      setCommandMenuPage(CommandMenuPages.Root);
-      closeCommandMenu();
+      setSidePanelPage(SidePanelPages.Root);
+      closeSidePanelMenu();
     },
     [
       setPageLayoutEditingWidgetId,
-      navigatePageLayoutCommandMenu,
-      closeCommandMenu,
-      setCommandMenuPage,
+      navigatePageLayoutSidePanel,
+      closeSidePanelMenu,
+      setSidePanelPage,
     ],
   );
 

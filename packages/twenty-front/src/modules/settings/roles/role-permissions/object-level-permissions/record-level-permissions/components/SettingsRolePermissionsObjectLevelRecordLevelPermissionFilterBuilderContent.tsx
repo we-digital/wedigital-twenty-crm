@@ -1,13 +1,13 @@
 /* @license Enterprise */
 
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
-import { useRecoilValue } from 'recoil';
 import { isDefined } from 'twenty-shared/utils';
 import { IconFilter, IconPlus } from 'twenty-ui/display';
 import { Button } from 'twenty-ui/input';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 
-import { ActionButton } from '@/action-menu/actions/display/components/ActionButton';
+import { CommandMenuButton } from '@/command-menu/components/CommandMenuButton';
 import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
 import { useChildRecordFiltersAndRecordFilterGroups } from '@/object-record/advanced-filter/hooks/useChildRecordFiltersAndRecordFilterGroups';
 import { useSetRecordFilterUsedInAdvancedFilterDropdownRow } from '@/object-record/advanced-filter/hooks/useSetRecordFilterUsedInAdvancedFilterDropdownRow';
@@ -23,25 +23,27 @@ import { useRecordLevelPermissionFilterActions } from '@/settings/roles/role-per
 import { useRecordLevelPermissionFilterInitialization } from '@/settings/roles/role-permissions/object-level-permissions/record-level-permissions/hooks/useRecordLevelPermissionFilterInitialization';
 import { useRecordLevelPermissionSyncToDraftRole } from '@/settings/roles/role-permissions/object-level-permissions/record-level-permissions/hooks/useRecordLevelPermissionSyncToDraftRole';
 import { settingsDraftRoleFamilyState } from '@/settings/roles/states/settingsDraftRoleFamilyState';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
-import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
+import { useAtomComponentSelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentSelectorValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { useAtomFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilyStateValue';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
 
 const StyledContainer = styled.div`
   align-items: start;
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.spacing(2)};
+  gap: ${themeCssVariables.spacing[2]};
 `;
 
 const StyledFiltersContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.spacing(2)};
+  gap: ${themeCssVariables.spacing[2]};
   width: 100%;
 `;
 
 const StyledActionButtonWrapper = styled.div`
-  margin-top: ${({ theme }) => theme.spacing(2)};
+  margin-top: ${themeCssVariables.spacing[2]};
 `;
 
 type SettingsRolePermissionsObjectLevelRecordLevelPermissionFilterBuilderContentProps =
@@ -55,34 +57,35 @@ export const SettingsRolePermissionsObjectLevelRecordLevelPermissionFilterBuilde
     roleId,
     objectMetadataItem,
   }: SettingsRolePermissionsObjectLevelRecordLevelPermissionFilterBuilderContentProps) => {
-    const settingsDraftRole = useRecoilValue(
-      settingsDraftRoleFamilyState(roleId),
+    const settingsDraftRole = useAtomFamilyStateValue(
+      settingsDraftRoleFamilyState,
+      roleId,
     );
 
     const { filterableFieldMetadataItems } = useFilterableFieldMetadataItems(
       objectMetadataItem.id,
     );
 
-    const setCurrentRecordFilters = useSetRecoilComponentState(
+    const setCurrentRecordFilters = useSetAtomComponentState(
       currentRecordFiltersComponentState,
     );
 
-    const setCurrentRecordFilterGroups = useSetRecoilComponentState(
+    const setCurrentRecordFilterGroups = useSetAtomComponentState(
       currentRecordFilterGroupsComponentState,
     );
 
-    const currentRecordFilters = useRecoilComponentValue(
+    const currentRecordFilters = useAtomComponentStateValue(
       currentRecordFiltersComponentState,
     );
 
-    const currentRecordFilterGroups = useRecoilComponentValue(
+    const currentRecordFilterGroups = useAtomComponentStateValue(
       currentRecordFilterGroupsComponentState,
     );
 
     const { setRecordFilterUsedInAdvancedFilterDropdownRow } =
       useSetRecordFilterUsedInAdvancedFilterDropdownRow();
 
-    const rootRecordFilterGroup = useRecoilComponentValue(
+    const rootRecordFilterGroup = useAtomComponentSelectorValue(
       rootLevelRecordFilterGroupComponentSelector,
     );
 
@@ -134,8 +137,8 @@ export const SettingsRolePermissionsObjectLevelRecordLevelPermissionFilterBuilde
                 ))}
             </StyledFiltersContainer>
             <StyledActionButtonWrapper>
-              <ActionButton
-                action={{
+              <CommandMenuButton
+                command={{
                   Icon: IconPlus,
                   label: t`Add rule`,
                   shortLabel: t`Add rule`,

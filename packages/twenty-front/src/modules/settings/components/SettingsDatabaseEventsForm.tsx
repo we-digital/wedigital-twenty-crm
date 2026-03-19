@@ -1,17 +1,12 @@
-import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
+import { WebhookEntitySelect } from '@/settings/developers/components/WebhookEntitySelect';
 import { Select } from '@/ui/input/components/Select';
 import { useIsMobile } from '@/ui/utilities/responsive/hooks/useIsMobile';
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
 import { isDefined } from 'twenty-shared/utils';
-import {
-  IconBox,
-  IconNorthStar,
-  IconPlus,
-  IconTrash,
-  useIcons,
-} from 'twenty-ui/display';
+import { IconBox, IconNorthStar, IconPlus, IconTrash } from 'twenty-ui/display';
 import { IconButton, type SelectOption } from 'twenty-ui/input';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 const OBJECT_DROPDOWN_WIDTH = 240;
 const ACTION_DROPDOWN_WIDTH = 240;
@@ -19,19 +14,19 @@ const OBJECT_MOBILE_WIDTH = 150;
 const ACTION_MOBILE_WIDTH = 140;
 
 const StyledFilterRow = styled.div<{ isMobile: boolean }>`
+  align-items: center;
   display: grid;
+  gap: ${themeCssVariables.spacing[2]};
   grid-template-columns: ${({ isMobile }) =>
     isMobile
       ? `${OBJECT_MOBILE_WIDTH}px ${ACTION_MOBILE_WIDTH}px auto`
       : `${OBJECT_DROPDOWN_WIDTH}px ${ACTION_DROPDOWN_WIDTH}px auto`};
-  gap: ${({ theme }) => theme.spacing(2)};
-  margin-bottom: ${({ theme }) => theme.spacing(2)};
-  align-items: center;
+  margin-bottom: ${themeCssVariables.spacing[2]};
 `;
 
 const StyledPlaceholder = styled.div`
-  height: ${({ theme }) => theme.spacing(8)};
-  width: ${({ theme }) => theme.spacing(8)};
+  height: ${themeCssVariables.spacing[8]};
+  width: ${themeCssVariables.spacing[8]};
 `;
 
 export const SettingsDatabaseEventsForm = ({
@@ -50,19 +45,6 @@ export const SettingsDatabaseEventsForm = ({
   disabled?: boolean;
 }) => {
   const isMobile = useIsMobile();
-
-  const { objectMetadataItems } = useObjectMetadataItems();
-
-  const { getIcon } = useIcons();
-
-  const objectOptions: SelectOption<string>[] = [
-    { label: t`All Objects`, value: '*', Icon: IconNorthStar },
-    ...objectMetadataItems.map((item) => ({
-      label: item.labelPlural,
-      value: item.nameSingular,
-      Icon: getIcon(item.icon),
-    })),
-  ];
 
   const getActionOptions = (
     updatedFields?: string[],
@@ -86,15 +68,12 @@ export const SettingsDatabaseEventsForm = ({
     <>
       {events.map((operation, index) => (
         <StyledFilterRow key={index} isMobile={isMobile}>
-          <Select
+          <WebhookEntitySelect
             dropdownId={`object-webhook-type-select-${index}`}
             value={operation.object}
-            options={objectOptions}
             onChange={(newValue) =>
               updateOperation?.(index, 'object', newValue)
             }
-            fullWidth
-            emptyOption={{ label: t`Object`, value: null }}
             disabled={disabled}
           />
           <Select

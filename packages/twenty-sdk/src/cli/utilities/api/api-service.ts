@@ -1,650 +1,105 @@
-import { ConfigService } from '@/cli/utilities/config/config-service';
-import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
-import chalk from 'chalk';
-import * as fs from 'fs';
-import { createClient } from 'graphql-sse';
-import {
-  buildClientSchema,
-  getIntrospectionQuery,
-  printSchema,
-} from 'graphql/index';
-import * as path from 'path';
-import {
-  type ApplicationManifest,
-  type Manifest,
-} from 'twenty-shared/application';
-import { type FileFolder } from 'twenty-shared/types';
+import { ApiClient } from '@/cli/utilities/api/api-client';
 import { type ApiResponse } from '@/cli/utilities/api/api-response-type';
-import { pascalCase } from 'twenty-shared/utils';
+import { ApplicationApi } from '@/cli/utilities/api/application-api';
+import { FileApi } from '@/cli/utilities/api/file-api';
+import { LogicFunctionApi } from '@/cli/utilities/api/logic-function-api';
+import { SchemaApi } from '@/cli/utilities/api/schema-api';
+import { type Manifest } from 'twenty-shared/application';
+
+type ApiServiceOptions = {
+  disableInterceptors?: boolean;
+  serverUrl?: string;
+  token?: string;
+};
 
 export class ApiService {
-  private client: AxiosInstance;
-  private configService: ConfigService;
+  private apiClient: ApiClient;
+  private applicationApi: ApplicationApi;
+  private schemaApi: SchemaApi;
+  private logicFunctionApi: LogicFunctionApi;
+  private fileApi: FileApi;
 
-  constructor(options?: { disableInterceptors: boolean }) {
-    const { disableInterceptors = false } = options || {};
-    this.configService = new ConfigService();
-    this.client = axios.create();
-
-    this.client.interceptors.request.use(async (config) => {
-      const twentyConfig = await this.configService.getConfig();
-
-      config.baseURL = twentyConfig.apiUrl;
-
-      if (twentyConfig.apiKey) {
-        config.headers.Authorization = `Bearer ${twentyConfig.apiKey}`;
-      }
-
-      return config;
-    });
-
-    if (disableInterceptors) {
-      return;
-    }
-
-    this.client.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          console.error(
-            chalk.red(
-              'Authentication failed. Please run `twenty auth:login` first.',
-            ),
-          );
-        } else if (error.response?.status === 403) {
-          console.error(
-            chalk.red(
-              'Access denied. Check your API key and workspace permissions.',
-            ),
-          );
-        } else if (error.code === 'ECONNREFUSED') {
-          console.error(
-            chalk.red('Cannot connect to Twenty server. Is it running?'),
-          );
-        }
-        throw error;
-      },
-    );
+  constructor(options?: ApiServiceOptions) {
+    this.apiClient = new ApiClient(options);
+    this.applicationApi = new ApplicationApi(this.apiClient.client);
+    this.schemaApi = new SchemaApi(this.apiClient.client);
+    this.logicFunctionApi = new LogicFunctionApi(this.apiClient);
+    this.fileApi = new FileApi(this.apiClient.client);
   }
 
-  async validateAuth(): Promise<{ authValid: boolean; serverUp: boolean }> {
-    try {
-      const query = `
-        query CurrentWorkspace {
-          currentWorkspace {
-            id
-          }
-        }
-      `;
-
-      const response = await this.client.post(
-        '/metadata',
-        {
-          query,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: '*/*',
-          },
-        },
-      );
-
-      return {
-        authValid: response.status === 200 && !response.data.errors,
-        serverUp: response.status === 200,
-      };
-    } catch {
-      return {
-        authValid: false,
-        serverUp: false,
-      };
-    }
+  validateAuth(): Promise<{ authValid: boolean; serverUp: boolean }> {
+    return this.apiClient.validateAuth();
   }
 
-  async checkApplicationExist(
-    universalIdentifier: string,
-  ): Promise<ApiResponse<boolean>> {
-    try {
-      const query = `
-        query CheckApplicationExist($universalIdentifier: UUID!) {
-          checkApplicationExist(universalIdentifier: $universalIdentifier)
-        }
-      `;
-      const response = await this.client.post(
-        '/metadata',
-        {
-          query,
-          variables: { universalIdentifier },
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: '*/*',
-          },
-        },
-      );
-
-      if (response.data.errors) {
-        return {
-          success: false,
-          error: response.data.errors[0],
-        };
-      }
-
-      return {
-        success: true,
-        data: response.data.data.checkApplicationExist,
-        message: `Successfully find application`,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error,
-      };
-    }
+  refreshToken(): Promise<string | null> {
+    return this.apiClient.refreshToken();
   }
 
-  async createApplication(
-    manifest: Manifest,
-  ): Promise<ApiResponse<ApplicationManifest>> {
-    try {
-      const mutation = `
-        mutation CreateOneApplication($input: CreateApplicationInput!) {
-          createOneApplication(input: $input) {
-            id
-            universalIdentifier
-          }
-        }
-      `;
-
-      const variables = {
-        input: {
-          universalIdentifier: manifest.application.universalIdentifier,
-          name: manifest.application.displayName,
-          version: '0.0.1',
-          sourcePath: 'cli-sync',
-        },
-      };
-
-      const response: AxiosResponse = await this.client.post(
-        '/metadata',
-        {
-          query: mutation,
-          variables,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: '*/*',
-          },
-        },
-      );
-
-      if (response.data.errors) {
-        return {
-          success: false,
-          error: response.data.errors[0],
-        };
-      }
-
-      return {
-        success: true,
-        data: response.data.data.createOneApplication,
-        message: `Successfully create application: ${manifest.application.displayName}`,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error,
-      };
-    }
-  }
-
-  async syncApplication(manifest: Manifest): Promise<ApiResponse> {
-    try {
-      const mutation = `
-        mutation SyncApplication($manifest: JSON!) {
-          syncApplication(manifest: $manifest)
-        }
-      `;
-
-      const variables = { manifest };
-
-      const response: AxiosResponse = await this.client.post(
-        '/metadata',
-        {
-          query: mutation,
-          variables,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: '*/*',
-          },
-        },
-      );
-
-      if (response.data.errors) {
-        return {
-          success: false,
-          error: response.data.errors[0],
-        };
-      }
-
-      return {
-        success: true,
-        data: response.data.data.syncApplication,
-        message: `Successfully synced application: ${manifest.application.displayName}`,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error,
-      };
-    }
-  }
-
-  async uninstallApplication(
-    universalIdentifier: string,
-  ): Promise<ApiResponse> {
-    try {
-      const mutation = `
-        mutation UninstallApplication($universalIdentifier: String!) {
-          uninstallApplication(universalIdentifier: $universalIdentifier)
-        }
-      `;
-
-      const variables = { universalIdentifier };
-
-      const response: AxiosResponse = await this.client.post(
-        '/metadata',
-        {
-          query: mutation,
-          variables,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: '*/*',
-          },
-        },
-      );
-
-      if (response.data.errors) {
-        return {
-          success: false,
-          error:
-            response.data.errors[0]?.message || 'Failed to delete application',
-        };
-      }
-
-      return {
-        success: true,
-        data: response.data.data.uninstallApplication,
-        message: 'Successfully uninstalled application',
-      };
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        return {
-          success: false,
-          error: error.response.data?.errors?.[0]?.message || error.message,
-        };
-      }
-      throw error;
-    }
-  }
-
-  async getSchema(): Promise<ApiResponse<string>> {
-    try {
-      const introspectionQuery = getIntrospectionQuery();
-
-      const response = await this.client.post(
-        '/graphql',
-        {
-          query: introspectionQuery,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: '*/*',
-          },
-        },
-      );
-
-      if (response.data.errors) {
-        return {
-          success: false,
-          error: `GraphQL introspection errors: ${JSON.stringify(response.data.errors)}`,
-        };
-      }
-
-      const schema = buildClientSchema(response.data.data);
-
-      return {
-        success: true,
-        data: printSchema(schema),
-        message: 'Successfully load schema',
-      };
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        return {
-          success: false,
-          error:
-            error.response.data.errors[0]?.message ||
-            'Failed to load graphql Schema',
-        };
-      }
-      throw error;
-    }
-  }
-
-  async findLogicFunctions(): Promise<
-    ApiResponse<
-      Array<{
-        id: string;
-        name: string;
-        universalIdentifier: string;
-        applicationId: string | null;
-      }>
+  findApplicationRegistrationByUniversalIdentifier(
+    ...args: Parameters<
+      ApplicationApi['findApplicationRegistrationByUniversalIdentifier']
     >
-  > {
-    try {
-      const query = `
-        query FindManyLogicFunctions {
-          findManyLogicFunctions {
-            id
-            name
-            universalIdentifier
-            applicationId
-          }
-        }
-      `;
-
-      const response = await this.client.post(
-        '/metadata',
-        { query },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: '*/*',
-          },
-        },
-      );
-
-      if (response.data.errors) {
-        return {
-          success: false,
-          error:
-            response.data.errors[0]?.message || 'Failed to fetch functions',
-        };
-      }
-
-      return {
-        success: true,
-        data: response.data.data.findManyLogicFunctions,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error,
-      };
-    }
-  }
-
-  async executeLogicFunction({
-    functionId,
-    payload,
-  }: {
-    functionId: string;
-    payload: Record<string, unknown>;
-  }): Promise<
-    ApiResponse<{
-      data: unknown;
-      logs: string;
-      duration: number;
-      status: string;
-      error?: {
-        errorType: string;
-        errorMessage: string;
-        stackTrace: string;
-      };
-    }>
-  > {
-    try {
-      const mutation = `
-        mutation ExecuteOneLogicFunction($input: ExecuteOneLogicFunctionInput!) {
-          executeOneLogicFunction(input: $input) {
-            data
-            logs
-            duration
-            status
-            error
-          }
-        }
-      `;
-
-      const variables = {
-        input: {
-          id: functionId,
-          payload,
-        },
-      };
-
-      const response = await this.client.post(
-        '/metadata',
-        {
-          query: mutation,
-          variables,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: '*/*',
-          },
-        },
-      );
-
-      if (response.data.errors) {
-        return {
-          success: false,
-          error:
-            response.data.errors[0]?.message ||
-            'Failed to execute logic function',
-        };
-      }
-
-      return {
-        success: true,
-        data: response.data.data.executeOneLogicFunction,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error,
-      };
-    }
-  }
-
-  async subscribeToLogs({
-    applicationUniversalIdentifier,
-    functionUniversalIdentifier,
-    functionName,
-  }: {
-    applicationUniversalIdentifier: string;
-    functionUniversalIdentifier?: string;
-    functionName?: string;
-  }) {
-    const twentyConfig = await this.configService.getConfig();
-
-    const wsClient = createClient({
-      url: twentyConfig.apiUrl + '/graphql',
-      headers: {
-        Authorization: `Bearer ${twentyConfig.apiKey}`,
-        'Content-Type': 'application/json',
-        Accept: 'text/event-stream',
-      },
-    });
-
-    const query = `
-        subscription SubscribeToLogs($input: LogicFunctionLogsInput!) {
-          logicFunctionLogs(input: $input) {
-            logs
-          }
-        }
-      `;
-
-    const variables = {
-      input: {
-        applicationUniversalIdentifier,
-        universalIdentifier: functionUniversalIdentifier,
-        name: functionName,
-      },
-    };
-
-    wsClient.subscribe<{ logicFunctionLogs: { logs: string } }>(
-      {
-        query,
-        variables,
-      },
-      {
-        next: ({ data }) => console.log(data?.logicFunctionLogs.logs),
-        error: (err: unknown) => console.error(err),
-        complete: () => console.log('Completed'),
-      },
+  ) {
+    return this.applicationApi.findApplicationRegistrationByUniversalIdentifier(
+      ...args,
     );
   }
 
-  async uploadFile({
-    filePath,
-    builtHandlerPath,
-    fileFolder,
-    applicationUniversalIdentifier,
-  }: {
-    filePath: string;
-    builtHandlerPath: string;
-    fileFolder: FileFolder;
-    applicationUniversalIdentifier: string;
-  }): Promise<ApiResponse<boolean>> {
-    try {
-      const absolutePath = path.resolve(filePath);
-
-      if (!fs.existsSync(absolutePath)) {
-        return {
-          success: false,
-          error: `File not found: ${absolutePath}`,
-        };
-      }
-
-      const filename = path.basename(absolutePath);
-      const buffer = fs.readFileSync(absolutePath);
-      const mimeType = this.getMimeType(filename);
-
-      const mutation = `
-      mutation UploadApplicationFile($file: Upload!, $applicationUniversalIdentifier: String!, $fileFolder: FileFolder!, $filePath: String!) {
-        uploadApplicationFile(file: $file, applicationUniversalIdentifier: $applicationUniversalIdentifier, fileFolder: $fileFolder, filePath: $filePath)
-        { path }
-      }
-    `;
-
-      const graphqlEnumFileFolder = pascalCase(fileFolder);
-
-      const operations = JSON.stringify({
-        query: mutation,
-        variables: {
-          file: null,
-          applicationUniversalIdentifier,
-          filePath: builtHandlerPath,
-          fileFolder: graphqlEnumFileFolder,
-        },
-      });
-
-      const map = JSON.stringify({
-        '0': ['variables.file'],
-      });
-
-      const formData = new FormData();
-
-      formData.append('operations', operations);
-      formData.append('map', map);
-      formData.append(
-        '0',
-        new Blob([new Uint8Array(buffer)], { type: mimeType }),
-        filename,
-      );
-
-      const response: AxiosResponse = await this.client.post(
-        '/graphql',
-        formData,
-      );
-
-      if (response.data.errors) {
-        return {
-          success: false,
-          error: response.data.errors[0]?.message || 'Failed to upload file',
-        };
-      }
-
-      return {
-        success: true,
-        data: response.data.data.uploadApplicationFile,
-        message: `Successfully uploaded ${filename}`,
-      };
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        return {
-          success: false,
-          error: error.response.data?.errors?.[0]?.message || error.message,
-        };
-      }
-
-      return {
-        success: false,
-        error,
-      };
-    }
+  createApplicationRegistration(
+    ...args: Parameters<ApplicationApi['createApplicationRegistration']>
+  ) {
+    return this.applicationApi.createApplicationRegistration(...args);
   }
 
-  private getMimeType(filename: string): string {
-    const ext = path.extname(filename).toLowerCase();
-    const mimeTypes: Record<string, string> = {
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.png': 'image/png',
-      '.gif': 'image/gif',
-      '.webp': 'image/webp',
-      '.svg': 'image/svg+xml',
-      '.bmp': 'image/bmp',
-      '.ico': 'image/x-icon',
-      '.pdf': 'application/pdf',
-      '.doc': 'application/msword',
-      '.docx':
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      '.xls': 'application/vnd.ms-excel',
-      '.xlsx':
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      '.ppt': 'application/vnd.ms-powerpoint',
-      '.pptx':
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      '.txt': 'text/plain',
-      '.csv': 'text/csv',
-      '.json': 'application/json',
-      '.xml': 'application/xml',
-      '.zip': 'application/zip',
-      '.tar': 'application/x-tar',
-      '.gz': 'application/gzip',
-      '.mp3': 'audio/mpeg',
-      '.mp4': 'video/mp4',
-      '.avi': 'video/x-msvideo',
-      '.mov': 'video/quicktime',
-      '.js': 'application/javascript',
-      '.ts': 'application/typescript',
-      '.jsx': 'application/javascript',
-      '.tsx': 'application/typescript',
-      '.html': 'text/html',
-      '.css': 'text/css',
-    };
+  createDevelopmentApplication(
+    ...args: Parameters<ApplicationApi['createDevelopmentApplication']>
+  ) {
+    return this.applicationApi.createDevelopmentApplication(...args);
+  }
 
-    return mimeTypes[ext] || 'application/octet-stream';
+  syncApplication(manifest: Manifest): Promise<ApiResponse> {
+    return this.applicationApi.syncApplication(manifest);
+  }
+
+  uninstallApplication(universalIdentifier: string): Promise<ApiResponse> {
+    return this.applicationApi.uninstallApplication(universalIdentifier);
+  }
+
+  getSchema(options?: { authToken?: string }): Promise<ApiResponse<string>> {
+    return this.schemaApi.getSchema(options);
+  }
+
+  getMetadataSchema(options?: {
+    authToken?: string;
+  }): Promise<ApiResponse<string>> {
+    return this.schemaApi.getMetadataSchema(options);
+  }
+
+  findLogicFunctions(
+    ...args: Parameters<LogicFunctionApi['findLogicFunctions']>
+  ) {
+    return this.logicFunctionApi.findLogicFunctions(...args);
+  }
+
+  executeLogicFunction(
+    ...args: Parameters<LogicFunctionApi['executeLogicFunction']>
+  ) {
+    return this.logicFunctionApi.executeLogicFunction(...args);
+  }
+
+  subscribeToLogs(...args: Parameters<LogicFunctionApi['subscribeToLogs']>) {
+    return this.logicFunctionApi.subscribeToLogs(...args);
+  }
+
+  uploadAppTarball(...args: Parameters<FileApi['uploadAppTarball']>) {
+    return this.fileApi.uploadAppTarball(...args);
+  }
+
+  installTarballApp(...args: Parameters<FileApi['installTarballApp']>) {
+    return this.fileApi.installTarballApp(...args);
+  }
+
+  uploadFile(...args: Parameters<FileApi['uploadFile']>) {
+    return this.fileApi.uploadFile(...args);
   }
 }

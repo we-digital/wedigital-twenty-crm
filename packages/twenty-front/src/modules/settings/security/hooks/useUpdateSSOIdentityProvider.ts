@@ -1,17 +1,19 @@
 /* @license Enterprise */
 
 import { SSOIdentitiesProvidersState } from '@/settings/security/states/SSOIdentitiesProvidersState';
-import { useSetRecoilState } from 'recoil';
+import { useSetAtomState } from '@/ui/utilities/state/jotai/hooks/useSetAtomState';
+import { useMutation } from '@apollo/client/react';
 import {
   type EditSsoIdentityProviderMutationVariables,
-  useEditSsoIdentityProviderMutation,
+  EditSsoIdentityProviderDocument,
 } from '~/generated-metadata/graphql';
 
 export const useUpdateSSOIdentityProvider = () => {
-  const [editSsoIdentityProviderMutation] =
-    useEditSsoIdentityProviderMutation();
+  const [editSsoIdentityProviderMutation] = useMutation(
+    EditSsoIdentityProviderDocument,
+  );
 
-  const setSSOIdentitiesProviders = useSetRecoilState(
+  const setSSOIdentitiesProviders = useSetAtomState(
     SSOIdentitiesProvidersState,
   );
 

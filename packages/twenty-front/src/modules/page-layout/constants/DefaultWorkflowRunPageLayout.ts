@@ -3,8 +3,9 @@ import { type PageLayout } from '@/page-layout/types/PageLayout';
 import {
   PageLayoutTabLayoutMode,
   PageLayoutType,
+  WidgetConfigurationType,
   WidgetType,
-} from '~/generated/graphql';
+} from '~/generated-metadata/graphql';
 
 /**
  * Default WorkflowRun PageLayout.
@@ -24,12 +25,14 @@ export const DEFAULT_WORKFLOW_RUN_PAGE_LAYOUT: PageLayout = {
     // Fields tab (position 100)
     {
       __typename: 'PageLayoutTab',
+      applicationId: '',
       id: 'workflow-run-tab-fields',
       title: 'Home',
       position: 100,
       layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       icon: 'IconHome',
       pageLayoutId: DEFAULT_WORKFLOW_RUN_PAGE_LAYOUT_ID,
+      isOverridden: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       deletedAt: null,
@@ -50,9 +53,10 @@ export const DEFAULT_WORKFLOW_RUN_PAGE_LAYOUT: PageLayout = {
           },
           configuration: {
             __typename: 'FieldsConfiguration',
-            configurationType: 'FIELDS',
-            sections: [],
+            configurationType: WidgetConfigurationType.FIELDS,
+            viewId: null,
           },
+          isOverridden: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           deletedAt: null,
@@ -62,12 +66,14 @@ export const DEFAULT_WORKFLOW_RUN_PAGE_LAYOUT: PageLayout = {
     // Flow tab (position 200)
     {
       __typename: 'PageLayoutTab',
+      applicationId: '',
       id: 'workflow-run-tab-flow',
       title: 'Flow',
       position: 200,
       layoutMode: PageLayoutTabLayoutMode.CANVAS,
       icon: 'IconSettings',
       pageLayoutId: DEFAULT_WORKFLOW_RUN_PAGE_LAYOUT_ID,
+      isOverridden: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       deletedAt: null,
@@ -88,9 +94,10 @@ export const DEFAULT_WORKFLOW_RUN_PAGE_LAYOUT: PageLayout = {
           },
           configuration: {
             __typename: 'FieldsConfiguration',
-            configurationType: 'FIELDS',
-            sections: [],
+            configurationType: WidgetConfigurationType.FIELDS,
+            viewId: null,
           },
+          isOverridden: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           deletedAt: null,

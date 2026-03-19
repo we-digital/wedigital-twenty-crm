@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
+import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
 import { RecordTableContextProvider as RecordTableContextInternalProvider } from '@/object-record/record-table/contexts/RecordTableContext';
 
 import { useObjectPermissionsForObject } from '@/object-record/hooks/useObjectPermissionsForObject';
@@ -9,9 +10,9 @@ import { visibleRecordFieldsComponentSelector } from '@/object-record/record-fie
 import { recordIndexOpenRecordInState } from '@/object-record/record-index/states/recordIndexOpenRecordInState';
 import { RECORD_TABLE_CELL_INPUT_ID_PREFIX } from '@/object-record/record-table/constants/RecordTableCellInputIdPrefix';
 import { RECORD_TABLE_COLUMN_MIN_WIDTH } from '@/object-record/record-table/constants/RecordTableColumnMinWidth';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
-import { ViewOpenRecordInType } from '@/views/types/ViewOpenRecordInType';
-import { useRecoilValue } from 'recoil';
+import { useAtomComponentSelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentSelectorValue';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { ViewOpenRecordIn } from '~/generated-metadata/graphql';
 
 type RecordTableContextProviderProps = {
   viewBarId: string;
@@ -32,18 +33,21 @@ export const RecordTableContextProvider = ({
     objectNameSingular,
   });
 
+  const { objectMetadataItems } = useObjectMetadataItems();
+
   const objectPermissions = useObjectPermissionsForObject(
     objectMetadataItem.id,
   );
 
-  const visibleRecordFields = useRecoilComponentValue(
+  const visibleRecordFields = useAtomComponentSelectorValue(
     visibleRecordFieldsComponentSelector,
-    recordTableId,
   );
 
-  const recordIndexOpenRecordIn = useRecoilValue(recordIndexOpenRecordInState);
+  const recordIndexOpenRecordIn = useAtomStateValue(
+    recordIndexOpenRecordInState,
+  );
   const triggerEvent =
-    recordIndexOpenRecordIn === ViewOpenRecordInType.SIDE_PANEL
+    recordIndexOpenRecordIn === ViewOpenRecordIn.SIDE_PANEL
       ? 'CLICK'
       : 'MOUSE_DOWN';
 
@@ -55,6 +59,7 @@ export const RecordTableContextProvider = ({
         value={{
           viewBarId,
           objectMetadataItem,
+          objectMetadataItems,
           recordTableId,
           objectNameSingular,
           objectPermissions,

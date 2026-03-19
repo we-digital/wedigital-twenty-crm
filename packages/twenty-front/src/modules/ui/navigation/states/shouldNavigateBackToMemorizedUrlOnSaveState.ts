@@ -1,8 +1,7 @@
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const shouldNavigateBackToMemorizedUrlOnSaveState = createState<boolean>(
-  {
+export const shouldNavigateBackToMemorizedUrlOnSaveState =
+  createAtomState<boolean>({
     key: 'shouldNavigateBackToMemorizedUrlOnSaveState',
     defaultValue: false,
-  },
-);
+  });

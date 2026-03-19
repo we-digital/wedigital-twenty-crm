@@ -3,39 +3,41 @@ import { DropdownMenuItemsContainer } from '@/ui/layout/dropdown/components/Drop
 import { DropdownMenuSearchInput } from '@/ui/layout/dropdown/components/DropdownMenuSearchInput';
 import { DropdownMenuSeparator } from '@/ui/layout/dropdown/components/DropdownMenuSeparator';
 import { GenericDropdownContentWidth } from '@/ui/layout/dropdown/constants/GenericDropdownContentWidth';
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
 import { useLingui } from '@lingui/react/macro';
 import { useMemo, useState } from 'react';
+import { useQuery } from '@apollo/client/react';
 import {
   type Agent,
-  useFindManyAgentsQuery,
-  useGetApiKeysQuery,
+  type ApiKeyForRole,
+  FindManyAgentsDocument,
+  GetApiKeysDocument,
 } from '~/generated-metadata/graphql';
-import { type ApiKeyForRole } from '~/generated/graphql';
 import { normalizeSearchText } from '~/utils/normalizeSearchText';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 const StyledLoadingContainer = styled.div`
-  padding: ${({ theme }) => theme.spacing(2)};
+  padding: ${themeCssVariables.spacing[2]};
   text-align: center;
 `;
 
 const StyledDropdownItem = styled.div`
-  padding: ${({ theme }) => theme.spacing(2)};
   cursor: pointer;
+  padding: ${themeCssVariables.spacing[2]};
 
   &:hover {
-    background-color: ${({ theme }) => theme.background.transparent.lighter};
+    background-color: ${themeCssVariables.background.transparent.lighter};
   }
 `;
 
 const StyledItemName = styled.div`
-  color: ${({ theme }) => theme.font.color.secondary};
-  font-weight: ${({ theme }) => theme.font.weight.medium};
+  color: ${themeCssVariables.font.color.secondary};
+  font-weight: ${themeCssVariables.font.weight.medium};
 `;
 
 const StyledEmptyState = styled.div`
-  color: ${({ theme }) => theme.font.color.tertiary};
-  padding: ${({ theme }) => theme.spacing(2)};
+  color: ${themeCssVariables.font.color.tertiary};
+  padding: ${themeCssVariables.spacing[2]};
   text-align: center;
 `;
 
@@ -57,12 +59,18 @@ export const SettingsRoleAssignmentEntityPickerDropdown = ({
 
   const isAgent = entityType === 'agent';
 
-  const { data: agentsData, loading: agentsLoading } = useFindManyAgentsQuery({
-    skip: !isAgent,
-  });
-  const { data: apiKeysData, loading: apiKeysLoading } = useGetApiKeysQuery({
-    skip: isAgent,
-  });
+  const { data: agentsData, loading: agentsLoading } = useQuery(
+    FindManyAgentsDocument,
+    {
+      skip: !isAgent,
+    },
+  );
+  const { data: apiKeysData, loading: apiKeysLoading } = useQuery(
+    GetApiKeysDocument,
+    {
+      skip: isAgent,
+    },
+  );
 
   const loading = isAgent ? agentsLoading : apiKeysLoading;
 

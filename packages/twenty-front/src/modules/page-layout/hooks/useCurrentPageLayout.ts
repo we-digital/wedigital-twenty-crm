@@ -1,23 +1,26 @@
-import { isPageLayoutInEditModeComponentState } from '@/page-layout/states/isPageLayoutInEditModeComponentState';
+import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
 import { pageLayoutDraftComponentState } from '@/page-layout/states/pageLayoutDraftComponentState';
 import { pageLayoutPersistedComponentState } from '@/page-layout/states/pageLayoutPersistedComponentState';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { isNonEmptyString } from '@sniptt/guards';
 
 export const useCurrentPageLayout = () => {
-  const pageLayoutPersisted = useRecoilComponentValue(
+  const pageLayoutPersisted = useAtomComponentStateValue(
     pageLayoutPersistedComponentState,
   );
 
-  const pageLayoutDraft = useRecoilComponentValue(
+  const pageLayoutDraft = useAtomComponentStateValue(
     pageLayoutDraftComponentState,
   );
 
-  const isPageLayoutInEditMode = useRecoilComponentValue(
-    isPageLayoutInEditModeComponentState,
-  );
+  const isPageLayoutInEditMode = useIsPageLayoutInEditMode();
+
+  const isDraftInitialized = isNonEmptyString(pageLayoutDraft.id);
 
   const currentPageLayout = isPageLayoutInEditMode
-    ? pageLayoutDraft
+    ? isDraftInitialized
+      ? pageLayoutDraft
+      : pageLayoutPersisted
     : pageLayoutPersisted;
 
   return { currentPageLayout };

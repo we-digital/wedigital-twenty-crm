@@ -1,41 +1,38 @@
-import styled from '@emotion/styled';
-import { useRecoilState, useSetRecoilState } from 'recoil';
+import { styled } from '@linaria/react';
 
 import { currentWorkspaceMemberState } from '@/auth/states/currentWorkspaceMemberState';
-import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
+import { useAtomState } from '@/ui/utilities/state/jotai/hooks/useAtomState';
+import { CoreObjectNameSingular } from 'twenty-shared/types';
 import { useUpdateOneRecord } from '@/object-record/hooks/useUpdateOneRecord';
-import { getDateFnsLocale } from '@/ui/field/display/utils/getDateFnsLocale.util';
+import { getDateFnsLocale } from '@/ui/field/display/utils/getDateFnsLocale';
 import { Select } from '@/ui/input/components/Select';
 
-import { useRefreshObjectMetadataItems } from '@/object-metadata/hooks/useRefreshObjectMetadataItems';
-import { useRefreshAllCoreViews } from '@/views/hooks/useRefreshAllCoreViews';
+import { useMetadataStore } from '@/metadata-store/hooks/useMetadataStore';
+import { useStore } from 'jotai';
 import { useLingui } from '@lingui/react/macro';
 import { enUS } from 'date-fns/locale';
 import { APP_LOCALES } from 'twenty-shared/translations';
 import { isDefined } from 'twenty-shared/utils';
 import { dateLocaleState } from '~/localization/states/dateLocaleState';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 import { dynamicActivate } from '~/utils/i18n/dynamicActivate';
 import { logError } from '~/utils/logError';
 
 const StyledContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.spacing(4)};
+  gap: ${themeCssVariables.spacing[4]};
 `;
 
 export const LocalePicker = () => {
   const { t } = useLingui();
-  const [currentWorkspaceMember, setCurrentWorkspaceMember] = useRecoilState(
+  const store = useStore();
+  const [currentWorkspaceMember, setCurrentWorkspaceMember] = useAtomState(
     currentWorkspaceMemberState,
   );
-  const setDateLocale = useSetRecoilState(dateLocaleState);
-
   const { updateOneRecord } = useUpdateOneRecord();
 
-  const { refreshObjectMetadataItems } =
-    useRefreshObjectMetadataItems('network-only');
-
-  const { refreshAllCoreViews } = useRefreshAllCoreViews('network-only');
+  const { resetMetadataStore } = useMetadataStore();
 
   const updateWorkspaceMember = async (changedFields: any) => {
     if (!currentWorkspaceMember?.id) {
@@ -63,20 +60,20 @@ export const LocalePicker = () => {
     await updateWorkspaceMember({ locale: value });
 
     const dateFnsLocale = await getDateFnsLocale(value);
-    setDateLocale({
+    const newDateLocale = {
       locale: value,
       localeCatalog: dateFnsLocale || enUS,
-    });
+    };
+    store.set(dateLocaleState.atom, newDateLocale);
 
     await dynamicActivate(value);
     try {
       localStorage.setItem('locale', value);
     } catch (error) {
-      // eslint-disable-next-line no-console
+      // oxlint-disable-next-line no-console
       console.log('Failed to save locale to localStorage:', error);
     }
-    await refreshObjectMetadataItems();
-    await refreshAllCoreViews();
+    resetMetadataStore();
   };
 
   const unsortedLocaleOptions: Array<{

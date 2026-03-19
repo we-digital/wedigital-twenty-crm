@@ -1,12 +1,10 @@
 import { type RecordSort } from '@/object-record/record-sort/types/RecordSort';
-import { type CoreViewSort } from '~/generated/graphql';
+import { type ViewSort } from '@/views/types/ViewSort';
 
-export const mapRecordSortToViewSort = (
-  recordSort: RecordSort,
-  viewId: string,
-): Pick<CoreViewSort, 'id' | 'fieldMetadataId' | 'direction' | 'viewId'> => {
+export const mapRecordSortToViewSort = (recordSort: RecordSort): ViewSort => {
   return {
-    ...recordSort,
-    viewId,
+    id: recordSort.id,
+    fieldMetadataId: recordSort.fieldMetadataId,
+    direction: recordSort.direction,
   };
 };

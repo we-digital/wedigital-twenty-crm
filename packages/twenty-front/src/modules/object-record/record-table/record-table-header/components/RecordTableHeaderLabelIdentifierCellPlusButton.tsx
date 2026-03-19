@@ -1,15 +1,20 @@
+import { isLayoutCustomizationModeEnabledState } from '@/layout-customization/states/isLayoutCustomizationModeEnabledState';
 import { isObjectMetadataReadOnly } from '@/object-record/read-only/utils/isObjectMetadataReadOnly';
 import { hasAnySoftDeleteFilterOnViewComponentSelector } from '@/object-record/record-filter/states/hasAnySoftDeleteFilterOnView';
 import { useRecordTableContextOrThrow } from '@/object-record/record-table/contexts/RecordTableContext';
 import { useCreateNewIndexRecord } from '@/object-record/record-table/hooks/useCreateNewIndexRecord';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
-import styled from '@emotion/styled';
+import { isRecordTableCreateDisabled } from '@/object-record/record-table/utils/isRecordTableCreateDisabled';
+import { useAtomComponentSelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentSelectorValue';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { styled } from '@linaria/react';
 import { IconPlus } from 'twenty-ui/display';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 import { LightIconButton } from 'twenty-ui/input';
 import { useIsMobile } from 'twenty-ui/utilities';
 
 const StyledHeaderIcon = styled.div`
-  margin: ${({ theme }) => theme.spacing(1, 1, 1, 1.5)};
+  margin: ${themeCssVariables.spacing[1]} ${themeCssVariables.spacing[1]}
+    ${themeCssVariables.spacing[1]} ${themeCssVariables.spacing['1.5']};
 `;
 
 export const RecordTableHeaderLabelIdentifierCellPlusButton = () => {
@@ -17,6 +22,9 @@ export const RecordTableHeaderLabelIdentifierCellPlusButton = () => {
     useRecordTableContextOrThrow();
 
   const isMobile = useIsMobile();
+  const isLayoutCustomizationModeEnabled = useAtomStateValue(
+    isLayoutCustomizationModeEnabledState,
+  );
 
   const { createNewIndexRecord } = useCreateNewIndexRecord({
     objectMetadataItem,
@@ -28,12 +36,14 @@ export const RecordTableHeaderLabelIdentifierCellPlusButton = () => {
     });
   };
 
-  const isReadOnly = isObjectMetadataReadOnly({
-    objectPermissions,
-    objectMetadataItem,
-  });
+  const isReadOnly =
+    isLayoutCustomizationModeEnabled ||
+    isObjectMetadataReadOnly({
+      objectPermissions,
+      objectMetadataItem,
+    });
 
-  const hasAnySoftDeleteFilterOnView = useRecoilComponentValue(
+  const hasAnySoftDeleteFilterOnView = useAtomComponentSelectorValue(
     hasAnySoftDeleteFilterOnViewComponentSelector,
   );
 
@@ -43,7 +53,8 @@ export const RecordTableHeaderLabelIdentifierCellPlusButton = () => {
     !isMobile &&
     !isReadOnly &&
     hasObjectUpdatePermissions &&
-    !hasAnySoftDeleteFilterOnView && (
+    !hasAnySoftDeleteFilterOnView &&
+    !isRecordTableCreateDisabled(objectMetadataItem) && (
       <StyledHeaderIcon>
         <LightIconButton
           Icon={IconPlus}

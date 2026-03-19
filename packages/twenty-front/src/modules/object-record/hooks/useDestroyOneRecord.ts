@@ -9,7 +9,7 @@ import { useGetRecordFromCache } from '@/object-record/cache/hooks/useGetRecordF
 import { useDestroyOneRecordMutation } from '@/object-record/hooks/useDestroyOneRecordMutation';
 import { useObjectPermissions } from '@/object-record/hooks/useObjectPermissions';
 import { useUpsertRecordsInStore } from '@/object-record/record-store/hooks/useUpsertRecordsInStore';
-import { dispatchObjectRecordOperationBrowserEvent } from '@/object-record/utils/dispatchObjectRecordOperationBrowserEvent';
+import { dispatchObjectRecordOperationBrowserEvent } from '@/browser-event/utils/dispatchObjectRecordOperationBrowserEvent';
 import { getDestroyOneRecordMutationResponseField } from '@/object-record/utils/getDestroyOneRecordMutationResponseField';
 import { capitalize, isDefined } from 'twenty-shared/utils';
 
@@ -58,7 +58,9 @@ export const useDestroyOneRecord = ({
             },
           },
           update: (cache, { data }) => {
-            const record = data?.[mutationResponseField];
+            const record = (data as Record<string, any>)?.[
+              mutationResponseField
+            ];
             if (!isDefined(record)) return;
 
             const cachedRecord = getRecordFromCache(record.id, cache);
@@ -95,7 +97,10 @@ export const useDestroyOneRecord = ({
         },
       });
 
-      return deletedRecord.data?.[mutationResponseField] ?? null;
+      return (
+        (deletedRecord.data as Record<string, any>)?.[mutationResponseField] ??
+        null
+      );
     },
     [
       getRecordFromCache,

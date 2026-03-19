@@ -1,67 +1,75 @@
 import { PageLayoutComponentInstanceContext } from '@/page-layout/states/contexts/PageLayoutComponentInstanceContext';
 import { pageLayoutCurrentLayoutsComponentState } from '@/page-layout/states/pageLayoutCurrentLayoutsComponentState';
 import { pageLayoutDraftComponentState } from '@/page-layout/states/pageLayoutDraftComponentState';
-import { getTabListInstanceIdFromPageLayoutId } from '@/page-layout/utils/getTabListInstanceIdFromPageLayoutId';
 import { removeTabLayouts } from '@/page-layout/utils/removeTabLayouts';
 import { sortTabsByPosition } from '@/page-layout/utils/sortTabsByPosition';
 import { activeTabIdComponentState } from '@/ui/layout/tab-list/states/activeTabIdComponentState';
 import { useAvailableComponentInstanceIdOrThrow } from '@/ui/utilities/state/component-state/hooks/useAvailableComponentInstanceIdOrThrow';
-import { useRecoilComponentCallbackState } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentCallbackState';
-import { useRecoilCallback } from 'recoil';
+import { useAtomComponentStateCallbackState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateCallbackState';
+import { useStore } from 'jotai';
+import { useCallback } from 'react';
 
-export const useDeletePageLayoutTab = (pageLayoutIdFromProps?: string) => {
+export const useDeletePageLayoutTab = ({
+  pageLayoutId: pageLayoutIdFromProps,
+  tabListInstanceId,
+}: {
+  pageLayoutId: string;
+  tabListInstanceId: string;
+}) => {
   const pageLayoutId = useAvailableComponentInstanceIdOrThrow(
     PageLayoutComponentInstanceContext,
     pageLayoutIdFromProps,
   );
 
-  const pageLayoutDraftState = useRecoilComponentCallbackState(
+  const pageLayoutDraftState = useAtomComponentStateCallbackState(
     pageLayoutDraftComponentState,
     pageLayoutId,
   );
 
-  const pageLayoutCurrentLayoutsState = useRecoilComponentCallbackState(
+  const pageLayoutCurrentLayoutsState = useAtomComponentStateCallbackState(
     pageLayoutCurrentLayoutsComponentState,
     pageLayoutId,
   );
 
-  const tabListInstanceId = getTabListInstanceIdFromPageLayoutId(pageLayoutId);
-  const activeTabIdState = useRecoilComponentCallbackState(
-    activeTabIdComponentState,
-    tabListInstanceId,
-  );
+  const store = useStore();
 
-  const deleteTab = useRecoilCallback(
-    ({ set, snapshot }) =>
-      (tabId: string) => {
-        const draft = snapshot.getLoadable(pageLayoutDraftState).getValue();
-        if (draft.tabs.length <= 1) {
-          return;
-        }
+  const activeTabIdAtom = activeTabIdComponentState.atomFamily({
+    instanceId: tabListInstanceId,
+  });
 
-        const sorted = sortTabsByPosition(draft.tabs);
-        const index = sorted.findIndex((t) => t.id === tabId);
+  const deleteTab = useCallback(
+    (tabId: string) => {
+      const draft = store.get(pageLayoutDraftState);
+      if (draft.tabs.length <= 1) {
+        return;
+      }
 
-        const activeTabId = snapshot.getLoadable(activeTabIdState).getValue();
+      const sorted = sortTabsByPosition(draft.tabs);
+      const index = sorted.findIndex((t) => t.id === tabId);
 
-        const allLayouts = snapshot
-          .getLoadable(pageLayoutCurrentLayoutsState)
-          .getValue();
-        const updatedLayouts = removeTabLayouts(allLayouts, tabId);
-        set(pageLayoutCurrentLayoutsState, updatedLayouts);
+      const activeTabId = store.get(activeTabIdAtom);
 
-        set(pageLayoutDraftState, (prev) => ({
-          ...prev,
-          tabs: prev.tabs.filter((t) => t.id !== tabId),
-        }));
+      const allLayouts = store.get(pageLayoutCurrentLayoutsState);
+      const updatedLayouts = removeTabLayouts(allLayouts, tabId);
+      store.set(pageLayoutCurrentLayoutsState, updatedLayouts);
 
-        if (activeTabId === tabId) {
-          const neighbor = index > 0 ? sorted[index - 1] : sorted[index + 1];
-          const nextActiveId = neighbor?.id ?? null;
-          set(activeTabIdState, nextActiveId);
-        }
-      },
-    [pageLayoutCurrentLayoutsState, pageLayoutDraftState, activeTabIdState],
+      store.set(pageLayoutDraftState, (prev) => ({
+        ...prev,
+        tabs: prev.tabs.filter((t) => t.id !== tabId),
+      }));
+
+      if (activeTabId === tabId) {
+        const neighbor = index > 0 ? sorted[index - 1] : sorted[index + 1];
+        const nextActiveId = neighbor?.id ?? null;
+        store.set(activeTabIdAtom, nextActiveId);
+      }
+    },
+    [
+      pageLayoutCurrentLayoutsState,
+      pageLayoutDraftState,
+      activeTabIdAtom,
+      store,
+    ],
   );
 
   return { deleteTab };

@@ -1,5 +1,5 @@
-import { createState } from 'twenty-ui/utilities';
-export const isMicrosoftMessagingEnabledState = createState<boolean>({
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
+export const isMicrosoftMessagingEnabledState = createAtomState<boolean>({
   key: 'isMicrosoftMessagingEnabled',
   defaultValue: false,
 });

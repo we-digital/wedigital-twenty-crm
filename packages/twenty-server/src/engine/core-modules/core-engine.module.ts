@@ -7,8 +7,13 @@ import { ActorModule } from 'src/engine/core-modules/actor/actor.module';
 import { AdminPanelModule } from 'src/engine/core-modules/admin-panel/admin-panel.module';
 import { ApiKeyModule } from 'src/engine/core-modules/api-key/api-key.module';
 import { AppTokenModule } from 'src/engine/core-modules/app-token/app-token.module';
-import { ApplicationSyncModule } from 'src/engine/core-modules/application/application-sync.module';
+import { ApplicationOAuthModule } from 'src/engine/core-modules/application/application-oauth/application-oauth.module';
+import { ApplicationRegistrationModule } from 'src/engine/core-modules/application/application-registration/application-registration.module';
+import { ApplicationDevelopmentModule } from 'src/engine/core-modules/application/application-development/application-development.module';
+import { ApplicationInstallModule } from 'src/engine/core-modules/application/application-install/application-install.module';
+import { ApplicationUpgradeModule } from 'src/engine/core-modules/application/application-upgrade/application-upgrade.module';
 import { ApplicationModule } from 'src/engine/core-modules/application/application.module';
+import { MarketplaceModule } from 'src/engine/core-modules/application/application-marketplace/marketplace.module';
 import { EnvironmentModule } from 'src/engine/core-modules/environment/environment.module';
 import { ApprovedAccessDomainModule } from 'src/engine/core-modules/approved-access-domain/approved-access-domain.module';
 import { AuthModule } from 'src/engine/core-modules/auth/auth.module';
@@ -17,9 +22,7 @@ import { BillingModule } from 'src/engine/core-modules/billing/billing.module';
 import { CacheStorageModule } from 'src/engine/core-modules/cache-storage/cache-storage.module';
 import { TimelineCalendarEventModule } from 'src/engine/core-modules/calendar/timeline-calendar-event.module';
 import { CaptchaModule } from 'src/engine/core-modules/captcha/captcha.module';
-import { captchaModuleFactory } from 'src/engine/core-modules/captcha/captcha.module-factory';
 import { CloudflareModule } from 'src/engine/core-modules/cloudflare/cloudflare.module';
-import { codeInterpreterModuleFactory } from 'src/engine/core-modules/code-interpreter/code-interpreter-module.factory';
 import { CodeInterpreterModule } from 'src/engine/core-modules/code-interpreter/code-interpreter.module';
 import { DnsManagerModule } from 'src/engine/core-modules/dns-manager/dns-manager.module';
 import { EmailModule } from 'src/engine/core-modules/email/email.module';
@@ -46,7 +49,6 @@ import { PublicDomainModule } from 'src/engine/core-modules/public-domain/public
 import { RedisClientModule } from 'src/engine/core-modules/redis-client/redis-client.module';
 import { RedisClientService } from 'src/engine/core-modules/redis-client/redis-client.service';
 import { SearchModule } from 'src/engine/core-modules/search/search.module';
-import { logicFunctionModuleFactory } from 'src/engine/core-modules/logic-function/logic-function-drivers/factories/logic-function-module.factory';
 import { LogicFunctionModule } from 'src/engine/core-modules/logic-function/logic-function.module';
 import { WorkspaceSSOModule } from 'src/engine/core-modules/sso/sso.module';
 import { TelemetryModule } from 'src/engine/core-modules/telemetry/telemetry.module';
@@ -63,12 +65,10 @@ import { RoleModule } from 'src/engine/metadata-modules/role/role.module';
 import { RowLevelPermissionModule } from 'src/engine/metadata-modules/row-level-permission-predicate/row-level-permission.module';
 import { SubscriptionsModule } from 'src/engine/subscriptions/subscriptions.module';
 import { TrashCleanupModule } from 'src/engine/trash-cleanup/trash-cleanup.module';
+import { MetadataEventEmitterModule } from 'src/engine/metadata-event-emitter/metadata-event-emitter.module';
 import { WorkspaceEventEmitterModule } from 'src/engine/workspace-event-emitter/workspace-event-emitter.module';
 import { ChannelSyncModule } from 'src/modules/connected-account/channel-sync/channel-sync.module';
 import { DashboardModule } from 'src/modules/dashboard/dashboard.module';
-import { ApplicationLayerModule } from 'src/engine/core-modules/application-layer/application-layer.module';
-import { LogicFunctionResourceService } from 'src/engine/core-modules/logic-function/logic-function-resource/logic-function-resource.service';
-
 import { AuditModule } from './audit/audit.module';
 import { ClientConfigModule } from './client-config/client-config.module';
 import { EventLogsModule } from './event-logs/event-logs.module';
@@ -88,9 +88,13 @@ import { FileModule } from './file/file.module';
     FileModule,
     RowLevelPermissionModule,
     OpenApiModule,
+    ApplicationRegistrationModule,
+    ApplicationOAuthModule,
     ApplicationModule,
-    ApplicationLayerModule,
-    ApplicationSyncModule,
+    ApplicationInstallModule,
+    ApplicationUpgradeModule,
+    ApplicationDevelopmentModule,
+    MarketplaceModule,
     AppTokenModule,
     TimelineMessagingModule,
     TimelineCalendarEventModule,
@@ -106,6 +110,7 @@ import { FileModule } from './file/file.module';
     PostgresCredentialsModule,
     WorkflowApiModule,
     WorkspaceEventEmitterModule,
+    MetadataEventEmitterModule,
     ActorModule,
     TelemetryModule,
     AdminPanelModule,
@@ -132,24 +137,15 @@ import { FileModule } from './file/file.module';
       inject: [TwentyConfigService, HttpAdapterHost],
     }),
     EmailModule.forRoot(),
-    CaptchaModule.forRoot({
-      useFactory: captchaModuleFactory,
-      inject: [TwentyConfigService],
-    }),
+    CaptchaModule.forRoot(),
     EventEmitterModule.forRoot({
       wildcard: true,
     }),
     CacheStorageModule,
     AiModelsModule,
     AiBillingModule,
-    LogicFunctionModule.forRootAsync({
-      useFactory: logicFunctionModuleFactory,
-      inject: [TwentyConfigService, LogicFunctionResourceService],
-    }),
-    CodeInterpreterModule.forRootAsync({
-      useFactory: codeInterpreterModuleFactory,
-      inject: [TwentyConfigService],
-    }),
+    LogicFunctionModule.forRoot(),
+    CodeInterpreterModule.forRoot(),
     SearchModule,
     ApiKeyModule,
     PageLayoutModule,

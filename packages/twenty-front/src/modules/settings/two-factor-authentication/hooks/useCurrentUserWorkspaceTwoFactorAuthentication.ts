@@ -1,18 +1,20 @@
 import { currentUserWorkspaceState } from '@/auth/states/currentUserWorkspaceState';
 import { useMemo } from 'react';
-import { useRecoilValue } from 'recoil';
+import { useMutation } from '@apollo/client/react';
 import {
-  type TwoFactorAuthenticationMethodDto,
-  useInitiateOtpProvisioningMutation,
+  type TwoFactorAuthenticationMethodSummary,
+  InitiateOtpProvisioningDocument,
 } from '~/generated-metadata/graphql';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 
 export const useCurrentUserWorkspaceTwoFactorAuthentication = () => {
-  const currentUserWorkspace = useRecoilValue(currentUserWorkspaceState);
-  const [initiateCurrentUserWorkspaceOtpProvisioning] =
-    useInitiateOtpProvisioningMutation();
+  const currentUserWorkspace = useAtomStateValue(currentUserWorkspaceState);
+  const [initiateCurrentUserWorkspaceOtpProvisioning] = useMutation(
+    InitiateOtpProvisioningDocument,
+  );
 
   const currentUserWorkspaceTwoFactorAuthenticationMethods = useMemo(() => {
-    const methods: Record<string, TwoFactorAuthenticationMethodDto> = {};
+    const methods: Record<string, TwoFactorAuthenticationMethodSummary> = {};
 
     (currentUserWorkspace?.twoFactorAuthenticationMethodSummary ?? []).forEach(
       (method) => (methods[method.strategy] = method),

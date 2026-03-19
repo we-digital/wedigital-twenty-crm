@@ -6,21 +6,23 @@ describe('filterAttachmentsToRestore', () => {
     const softDeletedAttachments = [
       {
         id: '1',
-        fullPath: 'https://exemple.com/test.txt',
+        file: [{ url: 'https://exemple.com/test.txt' }],
       },
     ] as Attachment[];
-    const attachmentIdsToRestore = filterAttachmentsToRestore(
-      [],
+    const attachmentIdsToRestore = filterAttachmentsToRestore({
+      attachmentPathsToRestore: [],
       softDeletedAttachments,
-    );
+    });
     expect(attachmentIdsToRestore).toEqual([]);
   });
 
   it('should not return any ids if there are no soft deleted attachments', () => {
-    const attachmentIdsToRestore = filterAttachmentsToRestore(
-      ['https://exemple.com/files/attachment/test.txt'],
-      [],
-    );
+    const attachmentIdsToRestore = filterAttachmentsToRestore({
+      attachmentPathsToRestore: [
+        'https://exemple.com/files/attachment/test.txt',
+      ],
+      softDeletedAttachments: [],
+    });
     expect(attachmentIdsToRestore).toEqual([]);
   });
 
@@ -28,17 +30,17 @@ describe('filterAttachmentsToRestore', () => {
     const softDeletedAttachments = [
       {
         id: '1',
-        fullPath: 'https://exemple.com/files/images/test.txt',
+        file: [{ url: 'https://exemple.com/files/images/test.txt' }],
       },
       {
         id: '2',
-        fullPath: 'https://exemple.com/files/images/test2.txt',
+        file: [{ url: 'https://exemple.com/files/images/test2.txt' }],
       },
     ] as Attachment[];
-    const attachmentIdsToRestore = filterAttachmentsToRestore(
-      ['https://exemple.com/files/images/test.txt'],
+    const attachmentIdsToRestore = filterAttachmentsToRestore({
+      attachmentPathsToRestore: ['https://exemple.com/files/images/test.txt'],
       softDeletedAttachments,
-    );
+    });
     expect(attachmentIdsToRestore).toEqual(['1']);
   });
 });

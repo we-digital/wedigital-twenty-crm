@@ -1,7 +1,7 @@
-import { type Captcha } from '~/generated/graphql';
-import { createState } from 'twenty-ui/utilities';
+import { type Captcha } from '~/generated-metadata/graphql';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const captchaState = createState<Captcha | null>({
+export const captchaState = createAtomState<Captcha | null>({
   key: 'captchaState',
   defaultValue: null,
 });

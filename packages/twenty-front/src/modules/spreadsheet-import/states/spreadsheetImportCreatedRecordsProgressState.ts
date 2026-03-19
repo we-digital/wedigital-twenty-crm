@@ -1,6 +1,6 @@
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const spreadsheetImportCreatedRecordsProgressState = createState({
+export const spreadsheetImportCreatedRecordsProgressState = createAtomState({
   key: 'spreadsheetImportCreatedRecordsProgressState',
   defaultValue: 0,
 });

@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 
 import { isDefined } from 'twenty-shared/utils';
 
-import { ApplicationService } from 'src/engine/core-modules/application/services/application.service';
-import { transformRichTextV2Value } from 'src/engine/core-modules/record-transformer/utils/transform-rich-text-v2.util';
+import { ApplicationService } from 'src/engine/core-modules/application/application.service';
+import { transformRichTextValue } from 'src/engine/core-modules/record-transformer/utils/transform-rich-text.util';
 import { WorkspaceManyOrAllFlatEntityMapsCacheService } from 'src/engine/metadata-modules/flat-entity/services/workspace-many-or-all-flat-entity-maps-cache.service';
 import { findFlatEntityByIdInFlatEntityMapsOrThrow } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-id-in-flat-entity-maps-or-throw.util';
 import { findFlatEntityByIdInFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-id-in-flat-entity-maps.util';
@@ -90,7 +90,7 @@ export class PageLayoutWidgetService {
         },
       );
 
-    if (isDefined(validateAndBuildResult)) {
+    if (validateAndBuildResult.status === 'fail') {
       throw new WorkspaceMigrationBuilderException(
         validateAndBuildResult,
         errorMessage,
@@ -115,7 +115,7 @@ export class PageLayoutWidgetService {
     try {
       return {
         ...configuration,
-        body: await transformRichTextV2Value(configuration.body),
+        body: await transformRichTextValue(configuration.body),
       };
     } catch {
       return configuration;
@@ -243,6 +243,9 @@ export class PageLayoutWidgetService {
       flatPageLayoutTabMaps,
       flatObjectMetadataMaps,
       flatFieldMetadataMaps,
+      flatFrontComponentMaps,
+      flatViewFieldGroupMaps,
+      flatViewMaps,
     } =
       await this.workspaceManyOrAllFlatEntityMapsCacheService.getOrRecomputeManyOrAllFlatEntityMaps(
         {
@@ -251,6 +254,9 @@ export class PageLayoutWidgetService {
             'flatPageLayoutTabMaps',
             'flatObjectMetadataMaps',
             'flatFieldMetadataMaps',
+            'flatFrontComponentMaps',
+            'flatViewFieldGroupMaps',
+            'flatViewMaps',
           ],
         },
       );
@@ -263,6 +269,9 @@ export class PageLayoutWidgetService {
         flatPageLayoutTabMaps,
         flatObjectMetadataMaps,
         flatFieldMetadataMaps,
+        flatFrontComponentMaps,
+        flatViewFieldGroupMaps,
+        flatViewMaps,
       });
 
     if (isDefined(createInput.configuration)) {
@@ -318,16 +327,32 @@ export class PageLayoutWidgetService {
       existingFlatPageLayoutWidgetMaps,
     );
 
-    const {
-      flatObjectMetadataMaps: existingFlatObjectMetadataMaps,
-      flatFieldMetadataMaps: existingFlatFieldMetadataMaps,
-    } =
-      await this.workspaceManyOrAllFlatEntityMapsCacheService.getOrRecomputeManyOrAllFlatEntityMaps(
+    const [
+      {
+        flatObjectMetadataMaps: existingFlatObjectMetadataMaps,
+        flatFieldMetadataMaps: existingFlatFieldMetadataMaps,
+        flatFrontComponentMaps: existingFlatFrontComponentMaps,
+        flatViewFieldGroupMaps: existingFlatViewFieldGroupMaps,
+        flatViewMaps: existingFlatViewMaps,
+      },
+      { workspaceCustomFlatApplication },
+    ] = await Promise.all([
+      this.workspaceManyOrAllFlatEntityMapsCacheService.getOrRecomputeManyOrAllFlatEntityMaps(
         {
           workspaceId,
-          flatMapsKeys: ['flatObjectMetadataMaps', 'flatFieldMetadataMaps'],
+          flatMapsKeys: [
+            'flatObjectMetadataMaps',
+            'flatFieldMetadataMaps',
+            'flatFrontComponentMaps',
+            'flatViewFieldGroupMaps',
+            'flatViewMaps',
+          ],
         },
-      );
+      ),
+      this.applicationService.findWorkspaceTwentyStandardAndCustomApplicationOrThrow(
+        { workspaceId },
+      ),
+    ]);
 
     const isConfigurationBeingUpdated = Object.prototype.hasOwnProperty.call(
       updateData,
@@ -357,6 +382,13 @@ export class PageLayoutWidgetService {
         flatPageLayoutWidgetMaps: existingFlatPageLayoutWidgetMaps,
         flatObjectMetadataMaps: existingFlatObjectMetadataMaps,
         flatFieldMetadataMaps: existingFlatFieldMetadataMaps,
+        flatFrontComponentMaps: existingFlatFrontComponentMaps,
+        flatViewFieldGroupMaps: existingFlatViewFieldGroupMaps,
+        flatViewMaps: existingFlatViewMaps,
+        callerApplicationUniversalIdentifier:
+          workspaceCustomFlatApplication.universalIdentifier,
+        workspaceCustomApplicationUniversalIdentifier:
+          workspaceCustomFlatApplication.universalIdentifier,
       });
 
     const shouldValidateChartFields =

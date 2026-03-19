@@ -1,8 +1,9 @@
 import gql from 'graphql-tag';
-import { useRecoilValue } from 'recoil';
+import { useMemo } from 'react';
 
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
-import { objectMetadataItemsState } from '@/object-metadata/states/objectMetadataItemsState';
+import { objectMetadataItemsSelector } from '@/object-metadata/states/objectMetadataItemsSelector';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { isAggregationEnabled } from '@/object-metadata/utils/isAggregationEnabled';
 import { mapObjectMetadataToGraphQLQuery } from '@/object-metadata/utils/mapObjectMetadataToGraphQLQuery';
 import { useObjectPermissions } from '@/object-record/hooks/useObjectPermissions';
@@ -20,9 +21,10 @@ export const useFindDuplicateRecordsQuery = ({
 
   const { objectPermissionsByObjectMetadataId } = useObjectPermissions();
 
-  const objectMetadataItems = useRecoilValue(objectMetadataItemsState);
+  const objectMetadataItems = useAtomStateValue(objectMetadataItemsSelector);
 
-  const findDuplicateRecordsQuery = gql`
+  const findDuplicateRecordsQuery = useMemo(
+    () => gql`
     query FindDuplicate${capitalize(
       objectMetadataItem.nameSingular,
     )}($ids: [UUID!]!) {
@@ -44,7 +46,13 @@ export const useFindDuplicateRecordsQuery = ({
         }
       }
     }
-  `;
+  `,
+    [
+      objectMetadataItem,
+      objectMetadataItems,
+      objectPermissionsByObjectMetadataId,
+    ],
+  );
 
   return {
     findDuplicateRecordsQuery,

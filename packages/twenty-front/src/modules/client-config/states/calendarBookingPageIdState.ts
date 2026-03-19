@@ -1,6 +1,6 @@
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const calendarBookingPageIdState = createState<string | null>({
+export const calendarBookingPageIdState = createAtomState<string | null>({
   key: 'calendarBookingPageIdState',
   defaultValue: null,
 });

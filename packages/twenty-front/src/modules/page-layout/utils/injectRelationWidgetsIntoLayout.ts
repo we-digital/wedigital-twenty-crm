@@ -1,15 +1,20 @@
 import { type FieldMetadataItem } from '@/object-metadata/types/FieldMetadataItem';
 import { type PageLayout } from '@/page-layout/types/PageLayout';
 import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
+import { DYNAMIC_RELATION_WIDGET_ID_PREFIX } from '@/page-layout/utils/isDynamicRelationWidget';
 import { isDefined } from 'twenty-shared/utils';
-import { WidgetConfigurationType, WidgetType } from '~/generated/graphql';
+import {
+  PageLayoutTabLayoutMode,
+  WidgetConfigurationType,
+  WidgetType,
+} from '~/generated-metadata/graphql';
 
 const getRelationFieldWidgetToInsert = (
   field: FieldMetadataItem,
   tabId: string,
 ): PageLayoutWidget => ({
   __typename: 'PageLayoutWidget' as const,
-  id: `dynamic-relation-widget-${field.id}-${field.label}`,
+  id: `${DYNAMIC_RELATION_WIDGET_ID_PREFIX}${field.id}-${field.label}`,
   pageLayoutTabId: tabId,
   title: field.label,
   type: WidgetType.FIELD,
@@ -21,12 +26,21 @@ const getRelationFieldWidgetToInsert = (
     rowSpan: 1,
     columnSpan: 12,
   },
+  position: {
+    __typename: 'PageLayoutWidgetGridPosition' as const,
+    layoutMode: PageLayoutTabLayoutMode.GRID,
+    row: 0,
+    column: 0,
+    rowSpan: 1,
+    columnSpan: 12,
+  },
   configuration: {
     __typename: 'FieldConfiguration' as const,
     configurationType: WidgetConfigurationType.FIELD,
     fieldMetadataId: field.id,
     layout: 'CARD' as const,
   },
+  isOverridden: false,
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
   deletedAt: null,

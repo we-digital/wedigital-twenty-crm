@@ -1,20 +1,19 @@
 import { expectOneNotInternalServerErrorSnapshot } from 'test/integration/graphql/utils/expect-one-not-internal-server-error-snapshot.util';
 import { findManyObjectMetadata } from 'test/integration/metadata/suites/object-metadata/utils/find-many-object-metadata.util';
-import { createOneCoreViewFilterGroup } from 'test/integration/metadata/suites/view-filter-group/utils/create-one-core-view-filter-group.util';
-import { destroyOneCoreViewFilterGroup } from 'test/integration/metadata/suites/view-filter-group/utils/destroy-one-core-view-filter-group.util';
-import { updateOneCoreViewFilterGroup } from 'test/integration/metadata/suites/view-filter-group/utils/update-one-core-view-filter-group.util';
-import { createOneCoreView } from 'test/integration/metadata/suites/view/utils/create-one-core-view.util';
-import { destroyOneCoreView } from 'test/integration/metadata/suites/view/utils/destroy-one-core-view.util';
+import { createOneViewFilterGroup } from 'test/integration/metadata/suites/view-filter-group/utils/create-one-view-filter-group.util';
+import { destroyOneViewFilterGroup } from 'test/integration/metadata/suites/view-filter-group/utils/destroy-one-view-filter-group.util';
+import { updateOneViewFilterGroup } from 'test/integration/metadata/suites/view-filter-group/utils/update-one-view-filter-group.util';
+import { createOneView } from 'test/integration/metadata/suites/view/utils/create-one-view.util';
+import { destroyOneView } from 'test/integration/metadata/suites/view/utils/destroy-one-view.util';
 import { jestExpectToBeDefined } from 'test/utils/jest-expect-to-be-defined.util.test';
 import {
   eachTestingContextFilter,
   type EachTestingContext,
 } from 'twenty-shared/testing';
 import { v4 } from 'uuid';
+import { ViewFilterGroupLogicalOperator, ViewType } from 'twenty-shared/types';
 
 import { type UpdateViewFilterGroupInput } from 'src/engine/metadata-modules/view-filter-group/dtos/inputs/update-view-filter-group.input';
-import { ViewFilterGroupLogicalOperator } from 'src/engine/metadata-modules/view-filter-group/enums/view-filter-group-logical-operator';
-import { ViewType } from 'src/engine/metadata-modules/view/enums/view-type.enum';
 
 type TestContext = {
   id: string;
@@ -68,7 +67,7 @@ describe('View Filter Group update should fail', () => {
 
     jestExpectToBeDefined(companyObjectMetadata);
 
-    const { data: viewData } = await createOneCoreView({
+    const { data: viewData } = await createOneView({
       expectToFail: false,
       input: {
         name: 'Test View For Failing Filter Group Update',
@@ -78,10 +77,10 @@ describe('View Filter Group update should fail', () => {
       },
     });
 
-    createdViewId = viewData?.createCoreView?.id;
+    createdViewId = viewData?.createView?.id;
     jestExpectToBeDefined(createdViewId);
 
-    const { data: filterGroupData } = await createOneCoreViewFilterGroup({
+    const { data: filterGroupData } = await createOneViewFilterGroup({
       expectToFail: false,
       input: {
         viewId: createdViewId,
@@ -89,20 +88,20 @@ describe('View Filter Group update should fail', () => {
       },
     });
 
-    createdViewFilterGroupId = filterGroupData?.createCoreViewFilterGroup?.id;
+    createdViewFilterGroupId = filterGroupData?.createViewFilterGroup?.id;
     jestExpectToBeDefined(createdViewFilterGroupId);
   });
 
   afterAll(async () => {
     if (createdViewFilterGroupId) {
-      await destroyOneCoreViewFilterGroup({
+      await destroyOneViewFilterGroup({
         expectToFail: false,
         id: createdViewFilterGroupId,
       });
     }
 
     if (createdViewId) {
-      await destroyOneCoreView({
+      await destroyOneView({
         expectToFail: false,
         viewId: createdViewId,
       });
@@ -115,7 +114,7 @@ describe('View Filter Group update should fail', () => {
       const id =
         context.id === 'USE_CREATED_ID' ? createdViewFilterGroupId : context.id;
 
-      const { errors } = await updateOneCoreViewFilterGroup({
+      const { errors } = await updateOneViewFilterGroup({
         id,
         expectToFail: true,
         input: context.input,

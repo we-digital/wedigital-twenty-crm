@@ -1,5 +1,5 @@
-import { useLazyQuery } from '@apollo/client';
-import { useRecoilCallback } from 'recoil';
+import { useLazyQuery } from '@apollo/client/react';
+import { useCallback, useMemo } from 'react';
 
 import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
@@ -16,6 +16,7 @@ import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
 import { getQueryIdentifier } from '@/object-record/utils/getQueryIdentifier';
 import { QUERY_DEFAULT_LIMIT_RECORDS } from 'twenty-shared/constants';
 import { isDefined } from 'twenty-shared/utils';
+import { useStore } from 'jotai';
 
 type UseLazyFindManyRecordsParams<T> = Omit<
   UseFindManyRecordsParams<T>,
@@ -30,6 +31,7 @@ export const useLazyFindManyRecords = <T extends ObjectRecord = ObjectRecord>({
   recordGqlFields,
   fetchPolicy = 'cache-first',
 }: UseLazyFindManyRecordsParams<T>) => {
+  const store = useStore();
   const { objectMetadataItem } = useObjectMetadataItem({
     objectNameSingular,
   });
@@ -58,13 +60,17 @@ export const useLazyFindManyRecords = <T extends ObjectRecord = ObjectRecord>({
 
   const hasReadPermission = objectPermissions.canReadObjectRecords;
 
+  const defaultVariables = useMemo(
+    () => ({
+      filter,
+      limit,
+      orderBy,
+    }),
+    [filter, limit, orderBy],
+  );
+
   const [findManyRecords, { data, error, fetchMore }] =
     useLazyQuery<RecordGqlOperationFindManyResult>(findManyRecordsQuery, {
-      variables: {
-        filter,
-        limit,
-        orderBy,
-      },
       fetchPolicy,
       client: apolloCoreClient,
     });
@@ -75,75 +81,78 @@ export const useLazyFindManyRecords = <T extends ObjectRecord = ObjectRecord>({
     orderBy,
     limit,
     fetchMore,
-    data,
+    data: data as RecordGqlOperationFindManyResult | undefined,
     error,
     objectMetadataItem,
   });
 
-  const findManyRecordsLazy = useRecoilCallback(
-    ({ set }) =>
-      async () => {
-        if (!hasReadPermission) {
-          set(hasNextPageFamilyState(queryIdentifier), false);
-          set(cursorFamilyState(queryIdentifier), '');
+  const findManyRecordsLazy = useCallback(async () => {
+    if (!hasReadPermission) {
+      store.set(hasNextPageFamilyState.atomFamily(queryIdentifier), false);
+      store.set(cursorFamilyState.atomFamily(queryIdentifier), '');
 
-          return {
-            data: null,
-            records: null,
-            totalCount: 0,
-            hasNextPage: false,
-            error: undefined,
-          };
-        }
+      return {
+        data: null,
+        records: null,
+        totalCount: 0,
+        hasNextPage: false,
+        error: undefined,
+      };
+    }
 
-        const result = await findManyRecords();
-        if (isDefined(result?.error)) {
-          handleFindManyRecordsError(result.error);
-        }
+    // In Apollo v4, useLazyQuery's execute aborts in-flight queries when
+    // the query document changes (e.g. metadata/permissions loading).
+    // Calling .retain() keeps the query running to completion even if
+    // the ObservableQuery is updated, preventing AbortError rejections.
+    const result = await findManyRecords({
+      variables: defaultVariables,
+    }).retain();
 
-        const hasNextPage =
-          result?.data?.[objectMetadataItem.namePlural]?.pageInfo.hasNextPage ??
-          false;
+    if (isDefined(result?.error)) {
+      handleFindManyRecordsError(result.error);
+    }
 
-        const lastCursor =
-          result?.data?.[objectMetadataItem.namePlural]?.pageInfo.endCursor ??
-          '';
+    const hasNextPage =
+      result?.data?.[objectMetadataItem.namePlural]?.pageInfo.hasNextPage ??
+      false;
 
-        set(hasNextPageFamilyState(queryIdentifier), hasNextPage);
-        set(cursorFamilyState(queryIdentifier), lastCursor);
+    const lastCursor =
+      result?.data?.[objectMetadataItem.namePlural]?.pageInfo.endCursor ?? '';
 
-        const records = getRecordsFromRecordConnection({
-          recordConnection: {
-            edges: result?.data?.[objectMetadataItem.namePlural]?.edges ?? [],
-            pageInfo: result?.data?.[objectMetadataItem.namePlural]
-              ?.pageInfo ?? {
-              hasNextPage: false,
-              hasPreviousPage: false,
-              startCursor: '',
-              endCursor: '',
-            },
-          },
-        });
+    store.set(hasNextPageFamilyState.atomFamily(queryIdentifier), hasNextPage);
+    store.set(cursorFamilyState.atomFamily(queryIdentifier), lastCursor);
 
-        const totalCount =
-          result?.data?.[objectMetadataItem.namePlural]?.totalCount ?? 0;
-
-        return {
-          data: result?.data,
-          records,
-          totalCount,
-          hasNextPage,
-          error: result?.error,
-        };
+    const records = getRecordsFromRecordConnection({
+      recordConnection: {
+        edges: result?.data?.[objectMetadataItem.namePlural]?.edges ?? [],
+        pageInfo: result?.data?.[objectMetadataItem.namePlural]?.pageInfo ?? {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: '',
+          endCursor: '',
+        },
       },
-    [
-      hasReadPermission,
-      findManyRecords,
-      objectMetadataItem.namePlural,
-      queryIdentifier,
-      handleFindManyRecordsError,
-    ],
-  );
+    });
+
+    const totalCount =
+      result?.data?.[objectMetadataItem.namePlural]?.totalCount ?? 0;
+
+    return {
+      data: result?.data,
+      records,
+      totalCount,
+      hasNextPage,
+      error: result?.error,
+    };
+  }, [
+    hasReadPermission,
+    findManyRecords,
+    defaultVariables,
+    objectMetadataItem.namePlural,
+    queryIdentifier,
+    handleFindManyRecordsError,
+    store,
+  ]);
 
   return {
     findManyRecordsLazy,

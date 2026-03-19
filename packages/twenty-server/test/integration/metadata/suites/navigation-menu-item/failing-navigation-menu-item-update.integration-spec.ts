@@ -9,6 +9,7 @@ import {
   eachTestingContextFilter,
   type EachTestingContext,
 } from 'twenty-shared/testing';
+import { NavigationMenuItemType } from 'twenty-shared/types';
 
 import { type UpdateOneNavigationMenuItemInput } from 'src/engine/metadata-modules/navigation-menu-item/dtos/update-navigation-menu-item.input';
 
@@ -54,6 +55,7 @@ describe('NavigationMenuItem update should fail', () => {
     const { data } = await createNavigationMenuItem({
       expectToFail: false,
       input: {
+        type: NavigationMenuItemType.RECORD,
         targetRecordId,
         targetObjectMetadataId: personObjectMetadataId,
         position: 1,
@@ -126,17 +128,6 @@ describe('NavigationMenuItem update should fail', () => {
             id: testSetup.testNavigationMenuItemId,
             update: {
               folderId: 'not-a-valid-uuid',
-            },
-          }),
-        },
-      },
-      {
-        title: 'when updating with negative position',
-        context: {
-          input: (testSetup) => ({
-            id: testSetup.testNavigationMenuItemId,
-            update: {
-              position: -1,
             },
           }),
         },

@@ -3,7 +3,8 @@ import { SettingsRoleSettingsDeleteRoleConfirmationModalSubtitle } from '@/setti
 import { ConfirmationModal } from '@/ui/layout/modal/components/ConfirmationModal';
 import { t } from '@lingui/core/macro';
 import { SettingsPath } from 'twenty-shared/types';
-import { useDeleteOneRoleMutation } from '~/generated-metadata/graphql';
+import { useMutation } from '@apollo/client/react';
+import { DeleteOneRoleDocument } from '~/generated-metadata/graphql';
 import { useNavigateSettings } from '~/hooks/useNavigateSettings';
 
 type SettingsRoleSettingsDeleteRoleConfirmationModalProps = {
@@ -13,7 +14,7 @@ type SettingsRoleSettingsDeleteRoleConfirmationModalProps = {
 export const SettingsRoleSettingsDeleteRoleConfirmationModal = ({
   roleId,
 }: SettingsRoleSettingsDeleteRoleConfirmationModalProps) => {
-  const [deleteRole] = useDeleteOneRoleMutation();
+  const [deleteRole] = useMutation(DeleteOneRoleDocument);
 
   const navigateSettings = useNavigateSettings();
 
@@ -26,7 +27,7 @@ export const SettingsRoleSettingsDeleteRoleConfirmationModal = ({
 
   return (
     <ConfirmationModal
-      modalId={ROLE_SETTINGS_DELETE_ROLE_CONFIRMATION_MODAL_ID}
+      modalInstanceId={ROLE_SETTINGS_DELETE_ROLE_CONFIRMATION_MODAL_ID}
       title={t`Delete Role Permanently`}
       subtitle={
         <SettingsRoleSettingsDeleteRoleConfirmationModalSubtitle

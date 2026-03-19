@@ -29,7 +29,6 @@ export const generateFieldFilterZodSchema = (
 
     case FieldMetadataType.TEXT:
     case FieldMetadataType.RICH_TEXT:
-    case FieldMetadataType.RICH_TEXT_V2:
       return z
         .object({
           eq: z.string().optional().describe('Equals'),
@@ -44,6 +43,7 @@ export const generateFieldFilterZodSchema = (
             .optional()
             .describe('Case-insensitive pattern match (use % for wildcards)'),
           startsWith: z.string().optional().describe('Starts with'),
+          endsWith: z.string().optional().describe('Ends with'),
           is: NullCheckEnum.optional().describe('Is null or not null'),
         })
         .optional()
@@ -256,6 +256,7 @@ export const generateFieldFilterZodSchema = (
                 .string()
                 .optional()
                 .describe('First name starts with'),
+              endsWith: z.string().optional().describe('First name ends with'),
               is: NullCheckEnum.optional().describe(
                 'First name is null or not null',
               ),
@@ -278,6 +279,7 @@ export const generateFieldFilterZodSchema = (
                 .string()
                 .optional()
                 .describe('Last name starts with'),
+              endsWith: z.string().optional().describe('Last name ends with'),
               is: NullCheckEnum.optional().describe(
                 'Last name is null or not null',
               ),

@@ -22,7 +22,7 @@ export const triggerDestroyRecordsOptimisticEffect = ({
   upsertRecordsInStore,
   objectPermissionsByObjectMetadataId,
 }: {
-  cache: ApolloCache<unknown>;
+  cache: ApolloCache;
   objectMetadataItem: ObjectMetadataItem;
   recordsToDestroy: RecordGqlNode[];
   objectMetadataItems: ObjectMetadataItem[];
@@ -94,7 +94,7 @@ export const triggerDestroyRecordsOptimisticEffect = ({
           cachedEdges?.filter((cachedEdge) => {
             const nodeId = readField<string>('id', cachedEdge.node);
 
-            return nodeId && !recordIdsToDestroy.includes(nodeId);
+            return isDefined(nodeId) && !recordIdsToDestroy.includes(nodeId);
           }) || [];
 
         if (nextCachedEdges.length === cachedEdges?.length)

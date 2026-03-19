@@ -1,4 +1,3 @@
-import { type ApolloError } from '@apollo/client';
 import { useCallback } from 'react';
 
 import { triggerUpdateRecordOptimisticEffect } from '@/apollo/optimistic-effect/utils/triggerUpdateRecordOptimisticEffect';
@@ -14,7 +13,7 @@ import { useObjectPermissions } from '@/object-record/hooks/useObjectPermissions
 import { useRefetchAggregateQueries } from '@/object-record/hooks/useRefetchAggregateQueries';
 import { useUpsertRecordsInStore } from '@/object-record/record-store/hooks/useUpsertRecordsInStore';
 import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
-import { dispatchObjectRecordOperationBrowserEvent } from '@/object-record/utils/dispatchObjectRecordOperationBrowserEvent';
+import { dispatchObjectRecordOperationBrowserEvent } from '@/browser-event/utils/dispatchObjectRecordOperationBrowserEvent';
 import { getDeleteOneRecordMutationResponseField } from '@/object-record/utils/getDeleteOneRecordMutationResponseField';
 import { isNull } from '@sniptt/guards';
 import { isDefined } from 'twenty-shared/utils';
@@ -111,7 +110,9 @@ export const useDeleteOneRecord = ({
             idToDelete: idToDelete,
           },
           update: (cache, { data }) => {
-            const record = data?.[mutationResponseField];
+            const record = (data as Record<string, any>)?.[
+              mutationResponseField
+            ];
             if (!isDefined(record) || !shouldHandleOptimisticCache) {
               return;
             }
@@ -127,7 +128,7 @@ export const useDeleteOneRecord = ({
             });
           },
         })
-        .catch((error: ApolloError) => {
+        .catch((error) => {
           if (!shouldHandleOptimisticCache) {
             throw error;
           }
@@ -172,7 +173,10 @@ export const useDeleteOneRecord = ({
         },
       });
 
-      return deletedRecord.data?.[mutationResponseField] ?? null;
+      return (
+        (deletedRecord.data as Record<string, any>)?.[mutationResponseField] ??
+        null
+      );
     },
     [
       getRecordFromCache,

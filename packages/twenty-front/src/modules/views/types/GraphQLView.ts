@@ -1,31 +1,33 @@
 import { type AggregateOperations } from '@/object-record/record-table/constants/AggregateOperations';
-import { type CoreViewSortEssential } from '@/views/types/CoreViewSortEssential';
 import { type ViewField } from '@/views/types/ViewField';
 import { type ViewFilter } from '@/views/types/ViewFilter';
 import { type ViewFilterGroup } from '@/views/types/ViewFilterGroup';
 import { type ViewGroup } from '@/views/types/ViewGroup';
 import { type ViewKey } from '@/views/types/ViewKey';
-import { type ViewOpenRecordInType } from '@/views/types/ViewOpenRecordInType';
 import { type ViewType } from '@/views/types/ViewType';
-import { type ViewVisibility } from '~/generated-metadata/graphql';
-import { type ViewCalendarLayout } from '~/generated/graphql';
+import {
+  type ViewCalendarLayout,
+  type ViewOpenRecordIn,
+  type ViewVisibility,
+} from '~/generated-metadata/graphql';
+import { type ViewSort } from '@/views/types/ViewSort';
 
 export type GraphQLView = {
   id: string;
   name: string;
   type: ViewType;
-  key: ViewKey | null;
+  key?: ViewKey | null;
   mainGroupByFieldMetadataId?: string | null;
   shouldHideEmptyGroups: boolean;
   kanbanAggregateOperation?: AggregateOperations | null;
   kanbanAggregateOperationFieldMetadataId?: string | null;
   objectMetadataId: string;
   isCompact: boolean;
-  openRecordIn: ViewOpenRecordInType;
+  openRecordIn: ViewOpenRecordIn;
   viewFields: ViewField[];
   viewFilters: ViewFilter[];
   viewFilterGroups?: ViewFilterGroup[];
-  viewSorts: CoreViewSortEssential[];
+  viewSorts: ViewSort[];
   viewGroups: ViewGroup[];
   position: number;
   icon: string;

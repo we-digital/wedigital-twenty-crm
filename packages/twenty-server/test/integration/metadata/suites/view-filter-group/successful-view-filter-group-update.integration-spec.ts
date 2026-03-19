@@ -1,13 +1,11 @@
 import { findManyObjectMetadata } from 'test/integration/metadata/suites/object-metadata/utils/find-many-object-metadata.util';
-import { createOneCoreViewFilterGroup } from 'test/integration/metadata/suites/view-filter-group/utils/create-one-core-view-filter-group.util';
-import { destroyOneCoreViewFilterGroup } from 'test/integration/metadata/suites/view-filter-group/utils/destroy-one-core-view-filter-group.util';
-import { updateOneCoreViewFilterGroup } from 'test/integration/metadata/suites/view-filter-group/utils/update-one-core-view-filter-group.util';
-import { createOneCoreView } from 'test/integration/metadata/suites/view/utils/create-one-core-view.util';
-import { destroyOneCoreView } from 'test/integration/metadata/suites/view/utils/destroy-one-core-view.util';
+import { createOneViewFilterGroup } from 'test/integration/metadata/suites/view-filter-group/utils/create-one-view-filter-group.util';
+import { destroyOneViewFilterGroup } from 'test/integration/metadata/suites/view-filter-group/utils/destroy-one-view-filter-group.util';
+import { updateOneViewFilterGroup } from 'test/integration/metadata/suites/view-filter-group/utils/update-one-view-filter-group.util';
+import { createOneView } from 'test/integration/metadata/suites/view/utils/create-one-view.util';
+import { destroyOneView } from 'test/integration/metadata/suites/view/utils/destroy-one-view.util';
 import { jestExpectToBeDefined } from 'test/utils/jest-expect-to-be-defined.util.test';
-
-import { ViewFilterGroupLogicalOperator } from 'src/engine/metadata-modules/view-filter-group/enums/view-filter-group-logical-operator';
-import { ViewType } from 'src/engine/metadata-modules/view/enums/view-type.enum';
+import { ViewFilterGroupLogicalOperator, ViewType } from 'twenty-shared/types';
 
 describe('View Filter Group update should succeed', () => {
   let companyObjectMetadataId: string;
@@ -36,7 +34,7 @@ describe('View Filter Group update should succeed', () => {
     jestExpectToBeDefined(companyObjectMetadata);
     companyObjectMetadataId = companyObjectMetadata.id;
 
-    const { data: viewData } = await createOneCoreView({
+    const { data: viewData } = await createOneView({
       expectToFail: false,
       input: {
         name: 'Test View For Filter Group Update',
@@ -46,12 +44,12 @@ describe('View Filter Group update should succeed', () => {
       },
     });
 
-    createdViewId = viewData?.createCoreView?.id;
+    createdViewId = viewData?.createView?.id;
   });
 
   afterAll(async () => {
     if (createdViewId) {
-      await destroyOneCoreView({
+      await destroyOneView({
         expectToFail: false,
         viewId: createdViewId,
       });
@@ -59,7 +57,7 @@ describe('View Filter Group update should succeed', () => {
   });
 
   beforeEach(async () => {
-    const { data } = await createOneCoreViewFilterGroup({
+    const { data } = await createOneViewFilterGroup({
       expectToFail: false,
       input: {
         viewId: createdViewId,
@@ -67,12 +65,12 @@ describe('View Filter Group update should succeed', () => {
       },
     });
 
-    createdViewFilterGroupId = data?.createCoreViewFilterGroup?.id;
+    createdViewFilterGroupId = data?.createViewFilterGroup?.id;
   });
 
   afterEach(async () => {
     if (createdViewFilterGroupId) {
-      await destroyOneCoreViewFilterGroup({
+      await destroyOneViewFilterGroup({
         expectToFail: false,
         id: createdViewFilterGroupId,
       });
@@ -81,7 +79,7 @@ describe('View Filter Group update should succeed', () => {
   });
 
   it('should update the logical operator', async () => {
-    const { data } = await updateOneCoreViewFilterGroup({
+    const { data } = await updateOneViewFilterGroup({
       id: createdViewFilterGroupId,
       expectToFail: false,
       input: {
@@ -89,14 +87,14 @@ describe('View Filter Group update should succeed', () => {
       },
     });
 
-    expect(data.updateCoreViewFilterGroup).toMatchObject({
+    expect(data.updateViewFilterGroup).toMatchObject({
       id: createdViewFilterGroupId,
       logicalOperator: ViewFilterGroupLogicalOperator.OR,
     });
   });
 
   it('should update the position', async () => {
-    const { data } = await updateOneCoreViewFilterGroup({
+    const { data } = await updateOneViewFilterGroup({
       id: createdViewFilterGroupId,
       expectToFail: false,
       input: {
@@ -104,7 +102,7 @@ describe('View Filter Group update should succeed', () => {
       },
     });
 
-    expect(data.updateCoreViewFilterGroup).toMatchObject({
+    expect(data.updateViewFilterGroup).toMatchObject({
       id: createdViewFilterGroupId,
       positionInViewFilterGroup: 5,
     });

@@ -1,9 +1,9 @@
 import { EXECUTE_ONE_LOGIC_FUNCTION } from '@/logic-functions/graphql/mutations/executeOneLogicFunction';
-import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
+import { useAtomFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilyStateValue';
+import { useSetAtomFamilyState } from '@/ui/utilities/state/jotai/hooks/useSetAtomFamilyState';
 import { logicFunctionTestDataFamilyState } from '@/workflow/workflow-steps/workflow-actions/code-action/states/logicFunctionTestDataFamilyState';
-import { useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
 import { useState } from 'react';
-import { useRecoilState } from 'recoil';
 import { isDefined } from 'twenty-shared/utils';
 import { LogicFunctionExecutionStatus } from '~/generated-metadata/graphql';
 import { sleep } from '~/utils/sleep';
@@ -11,7 +11,6 @@ import { sleep } from '~/utils/sleep';
 type ExecuteOneLogicFunctionInput = {
   id: string;
   payload: object;
-  forceRebuild?: boolean;
 };
 
 type ExecuteOneLogicFunctionResult = {
@@ -34,21 +33,33 @@ export const useExecuteLogicFunction = ({
   callback?: (result: object) => void;
 }) => {
   const [isExecuting, setIsExecuting] = useState(false);
-  const apolloMetadataClient = useApolloCoreClient();
   const [executeOneLogicFunctionMutation] = useMutation<
     { executeOneLogicFunction: ExecuteOneLogicFunctionResult },
     { input: ExecuteOneLogicFunctionInput }
-  >(EXECUTE_ONE_LOGIC_FUNCTION, {
-    client: apolloMetadataClient,
-  });
+  >(EXECUTE_ONE_LOGIC_FUNCTION);
 
-  const [logicFunctionTestData, setLogicFunctionTestData] = useRecoilState(
-    logicFunctionTestDataFamilyState(logicFunctionId),
+  const logicFunctionTestData = useAtomFamilyStateValue(
+    logicFunctionTestDataFamilyState,
+    logicFunctionId,
   );
 
-  const executeLogicFunction = async ({
-    forceRebuild = false,
-  }: { forceRebuild?: boolean } = {}) => {
+  const setLogicFunctionTestData = useSetAtomFamilyState(
+    logicFunctionTestDataFamilyState,
+    logicFunctionId,
+  );
+
+  const updateLogicFunctionInput = (input: object) => {
+    setLogicFunctionTestData((prev) => ({
+      ...prev,
+      input,
+    }));
+  };
+
+  const executeLogicFunction = async () => {
+    if (isExecuting) {
+      return;
+    }
+
     try {
       setIsExecuting(true);
       await sleep(200); // Delay artificially to avoid flashing the UI
@@ -57,7 +68,6 @@ export const useExecuteLogicFunction = ({
           input: {
             id: logicFunctionId,
             payload: logicFunctionTestData.input,
-            forceRebuild,
           },
         },
       });
@@ -73,7 +83,6 @@ export const useExecuteLogicFunction = ({
       setLogicFunctionTestData((prev) => ({
         ...prev,
         language: 'json',
-        height: 300,
         output: {
           data: executionResult?.data
             ? JSON.stringify(executionResult.data, null, 4)
@@ -93,5 +102,10 @@ export const useExecuteLogicFunction = ({
     }
   };
 
-  return { executeLogicFunction, isExecuting };
+  return {
+    executeLogicFunction,
+    updateLogicFunctionInput,
+    logicFunctionTestData,
+    isExecuting,
+  };
 };

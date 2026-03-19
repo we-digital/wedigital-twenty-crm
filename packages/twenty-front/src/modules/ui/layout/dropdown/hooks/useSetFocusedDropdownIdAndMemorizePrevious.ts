@@ -1,24 +1,32 @@
-import { useRecoilCallback } from 'recoil';
+import { useCallback } from 'react';
 
 import { activeDropdownFocusIdState } from '@/ui/layout/dropdown/states/activeDropdownFocusIdState';
-import { previousDropdownFocusIdState } from '@/ui/layout/dropdown/states/previousDropdownFocusIdState';
+import { previousDropdownFocusIdStackState } from '@/ui/layout/dropdown/states/previousDropdownFocusIdStackState';
+import { useStore } from 'jotai';
+import { isDefined } from 'twenty-shared/utils';
 
 export const useSetActiveDropdownFocusIdAndMemorizePrevious = () => {
-  const setActiveDropdownFocusIdAndMemorizePrevious = useRecoilCallback(
-    ({ snapshot, set }) =>
-      (dropdownId: string | null) => {
-        const activeDropdownFocusId = snapshot
-          .getLoadable(activeDropdownFocusIdState)
-          .getValue();
+  const store = useStore();
 
-        if (activeDropdownFocusId === dropdownId) {
-          return;
-        }
+  const setActiveDropdownFocusIdAndMemorizePrevious = useCallback(
+    (dropdownId: string | null) => {
+      const activeDropdownFocusId = store.get(activeDropdownFocusIdState.atom);
 
-        set(previousDropdownFocusIdState, activeDropdownFocusId);
-        set(activeDropdownFocusIdState, dropdownId);
-      },
-    [],
+      if (activeDropdownFocusId === dropdownId) {
+        return;
+      }
+
+      if (isDefined(activeDropdownFocusId) && isDefined(dropdownId)) {
+        const previousStack = store.get(previousDropdownFocusIdStackState.atom);
+        store.set(previousDropdownFocusIdStackState.atom, [
+          ...previousStack,
+          activeDropdownFocusId,
+        ]);
+      }
+
+      store.set(activeDropdownFocusIdState.atom, dropdownId);
+    },
+    [store],
   );
 
   return {

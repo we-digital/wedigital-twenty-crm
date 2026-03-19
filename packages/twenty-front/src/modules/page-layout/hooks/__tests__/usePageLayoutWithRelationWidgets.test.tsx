@@ -12,7 +12,7 @@ import {
   PageLayoutType,
   WidgetConfigurationType,
   WidgetType,
-} from '~/generated/graphql';
+} from '~/generated-metadata/graphql';
 
 jest.mock('@/ui/layout/contexts/LayoutRenderingContext');
 jest.mock(
@@ -32,12 +32,14 @@ describe('usePageLayoutWithRelationWidgets', () => {
     tabs: [
       {
         __typename: 'PageLayoutTab',
+        applicationId: '',
         id: 'tab-1',
         title: 'Fields',
         icon: 'IconList',
         position: 100,
         layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
         pageLayoutId: 'test-layout',
+        isOverridden: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         deletedAt: null,
@@ -59,8 +61,9 @@ describe('usePageLayoutWithRelationWidgets', () => {
             configuration: {
               __typename: 'FieldsConfiguration',
               configurationType: WidgetConfigurationType.FIELDS,
-              sections: [],
+              viewId: null,
             },
+            isOverridden: false,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             deletedAt: null,
@@ -83,6 +86,7 @@ describe('usePageLayoutWithRelationWidgets', () => {
               __typename: 'NotesConfiguration',
               configurationType: WidgetConfigurationType.NOTES,
             },
+            isOverridden: false,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             deletedAt: null,
@@ -111,6 +115,7 @@ describe('usePageLayoutWithRelationWidgets', () => {
               primaryAxisOrderBy: GraphOrderBy.FIELD_ASC,
               displayDataLabel: false,
             },
+            isOverridden: false,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             deletedAt: null,
@@ -123,6 +128,7 @@ describe('usePageLayoutWithRelationWidgets', () => {
   const mockRelationFields: FieldMetadataItem[] = [
     {
       id: 'field-1',
+      universalIdentifier: 'field-1',
       label: 'Related Companies',
       name: 'relatedCompanies',
       type: 'RELATION',
@@ -141,6 +147,7 @@ describe('usePageLayoutWithRelationWidgets', () => {
     } as FieldMetadataItem,
     {
       id: 'field-2',
+      universalIdentifier: 'field-2',
       label: 'Related People',
       name: 'relatedPeople',
       type: 'RELATION',
@@ -233,6 +240,7 @@ describe('usePageLayoutWithRelationWidgets', () => {
                 primaryAxisOrderBy: GraphOrderBy.FIELD_ASC,
                 displayDataLabel: false,
               },
+              isOverridden: false,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
               deletedAt: null,

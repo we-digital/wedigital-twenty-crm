@@ -1,11 +1,13 @@
-import { useTheme } from '@emotion/react';
 import { Draggable } from '@hello-pangea/dnd';
 import { isFunction } from '@sniptt/guards';
+import { useContext } from 'react';
 import { isDefined } from 'twenty-shared/utils';
+import { ThemeContext } from 'twenty-ui/theme-constants';
 
 type DraggableItemProps = {
   draggableId: string;
   isDragDisabled?: boolean;
+  disableInteractiveElementBlocking?: boolean;
   index: number;
   itemComponent:
     | JSX.Element
@@ -19,6 +21,7 @@ type DraggableItemProps = {
 export const DraggableItem = ({
   draggableId,
   isDragDisabled = false,
+  disableInteractiveElementBlocking = false,
   index,
   itemComponent,
   isInsideScrollableContainer,
@@ -26,14 +29,14 @@ export const DraggableItem = ({
   disableDraggingBackground,
   containerOffsetY,
 }: DraggableItemProps) => {
-  const theme = useTheme();
-
+  const { theme } = useContext(ThemeContext);
   return (
     <Draggable
       key={draggableId}
       draggableId={draggableId}
       index={index}
       isDragDisabled={isDragDisabled}
+      disableInteractiveElementBlocking={disableInteractiveElementBlocking}
     >
       {(draggableProvided, draggableSnapshot) => {
         const draggableStyle = draggableProvided.draggableProps.style;
@@ -42,9 +45,9 @@ export const DraggableItem = ({
         return (
           <div
             ref={draggableProvided.innerRef}
-            // eslint-disable-next-line react/jsx-props-no-spreading
+            // oxlint-disable-next-line react/jsx-props-no-spreading
             {...draggableProvided.draggableProps}
-            // eslint-disable-next-line react/jsx-props-no-spreading
+            // oxlint-disable-next-line react/jsx-props-no-spreading
             {...draggableProvided.dragHandleProps}
             style={{
               ...draggableComponentStyles,

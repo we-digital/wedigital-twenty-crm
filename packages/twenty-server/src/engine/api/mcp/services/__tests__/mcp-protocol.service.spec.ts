@@ -1,179 +1,122 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
 
-import { jsonSchema } from 'ai';
-
-import { MCP_SERVER_METADATA } from 'src/engine/api/mcp/constants/mcp.const';
+import { JSON_RPC_ERROR_CODE } from 'src/engine/api/mcp/constants/json-rpc-error-code.const';
+import { MCP_PROTOCOL_VERSION } from 'src/engine/api/mcp/constants/mcp-protocol-version.const';
+import { MCP_SERVER_INFO } from 'src/engine/api/mcp/constants/mcp-server-info.const';
+import { MCP_SERVER_INSTRUCTIONS } from 'src/engine/api/mcp/constants/mcp-server-instructions.const';
 import { type JsonRpc } from 'src/engine/api/mcp/dtos/json-rpc';
 import { McpProtocolService } from 'src/engine/api/mcp/services/mcp-protocol.service';
 import { McpToolExecutorService } from 'src/engine/api/mcp/services/mcp-tool-executor.service';
 import { type ApiKeyEntity } from 'src/engine/core-modules/api-key/api-key.entity';
 import { ApiKeyRoleService } from 'src/engine/core-modules/api-key/services/api-key-role.service';
-import { FeatureFlagKey } from 'src/engine/core-modules/feature-flag/enums/feature-flag-key.enum';
-import { FeatureFlagService } from 'src/engine/core-modules/feature-flag/services/feature-flag.service';
+import { EXECUTE_TOOL_TOOL_NAME } from 'src/engine/core-modules/tool-provider/tools/execute-tool.tool';
+import { GET_TOOL_CATALOG_TOOL_NAME } from 'src/engine/core-modules/tool-provider/tools/get-tool-catalog.tool';
+import { LEARN_TOOLS_TOOL_NAME } from 'src/engine/core-modules/tool-provider/tools/learn-tools.tool';
+import { LOAD_SKILL_TOOL_NAME } from 'src/engine/core-modules/tool-provider/tools/load-skill.tool';
 import { ToolRegistryService } from 'src/engine/core-modules/tool-provider/services/tool-registry.service';
-import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
 import { type WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
+import { SkillService } from 'src/engine/metadata-modules/skill/skill.service';
 import { UserRoleService } from 'src/engine/metadata-modules/user-role/user-role.service';
-import { WorkspaceCacheService } from 'src/engine/workspace-cache/services/workspace-cache.service';
 
 describe('McpProtocolService', () => {
   let service: McpProtocolService;
-  let featureFlagService: jest.Mocked<FeatureFlagService>;
-  let toolRegistryService: jest.Mocked<ToolRegistryService>;
+  let _toolRegistryService: jest.Mocked<ToolRegistryService>;
   let userRoleService: jest.Mocked<UserRoleService>;
   let mcpToolExecutorService: jest.Mocked<McpToolExecutorService>;
   let apiKeyRoleService: jest.Mocked<ApiKeyRoleService>;
-  let userWorkspaceRepository: jest.Mocked<{ findOne: jest.Mock }>;
-  let workspaceCacheService: jest.Mocked<{ getOrRecompute: jest.Mock }>;
 
   const mockWorkspace = { id: 'workspace-1' } as WorkspaceEntity;
   const mockUserWorkspaceId = 'user-workspace-1';
-  const mockUserId = 'user-1';
-  const mockWorkspaceMemberId = 'workspace-member-1';
   const mockRoleId = 'role-1';
   const mockAdminRoleId = 'admin-role-1';
   const mockApiKey = {
     id: 'api-key-1',
     workspaceId: mockWorkspace.id,
   } as ApiKeyEntity;
-  const mockUser = { id: mockUserId };
-  const mockUserWorkspace = {
-    id: mockUserWorkspaceId,
-    user: mockUser,
-  };
-  const mockWorkspaceMember = {
-    id: mockWorkspaceMemberId,
-    userId: mockUserId,
-  };
-  const mockFlatWorkspaceMemberMaps = {
-    idByUserId: { [mockUserId]: mockWorkspaceMemberId },
-    byId: { [mockWorkspaceMemberId]: mockWorkspaceMember },
-  };
+
+  const EXPECTED_MCP_TOOL_NAMES = [
+    GET_TOOL_CATALOG_TOOL_NAME,
+    LEARN_TOOLS_TOOL_NAME,
+    EXECUTE_TOOL_TOOL_NAME,
+    LOAD_SKILL_TOOL_NAME,
+    'search_help_center',
+  ];
 
   beforeEach(async () => {
-    const mockFeatureFlagService = {
-      isFeatureEnabled: jest.fn(),
-    };
-
-    const mockToolRegistryService = {
-      getToolsByCategories: jest.fn(),
-    };
-
-    const mockUserRoleService = {
-      getRoleIdForUserWorkspace: jest.fn(),
-    };
-
-    const mockMcpToolExecutorService = {
-      handleToolCall: jest.fn(),
-      handleToolsListing: jest.fn(),
-    };
-
-    const mockApiKeyRoleService = {
-      getRoleIdForApiKeyId: jest.fn().mockResolvedValue(mockAdminRoleId),
-    };
-
-    const mockWorkspaceCacheService = {
-      getOrRecompute: jest.fn(),
-      invalidateAndRecompute: jest.fn(),
-    };
-
-    const mockUserWorkspaceRepository = {
-      findOne: jest.fn(),
+    const mockSearchHelpCenterTool = {
+      description: 'Search help center',
+      inputSchema: { jsonSchema: { type: 'object' } },
+      execute: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         McpProtocolService,
         {
-          provide: FeatureFlagService,
-          useValue: mockFeatureFlagService,
-        },
-        {
           provide: ToolRegistryService,
-          useValue: mockToolRegistryService,
+          useValue: {
+            buildToolIndex: jest.fn().mockResolvedValue([]),
+            getToolsByName: jest.fn().mockResolvedValue({
+              search_help_center: mockSearchHelpCenterTool,
+            }),
+            getToolInfo: jest.fn().mockResolvedValue([]),
+            resolveAndExecute: jest.fn(),
+          },
         },
         {
           provide: UserRoleService,
-          useValue: mockUserRoleService,
+          useValue: { getRoleIdForUserWorkspace: jest.fn() },
         },
         {
           provide: McpToolExecutorService,
-          useValue: mockMcpToolExecutorService,
+          useValue: {
+            handleToolCall: jest.fn(),
+            handleToolsListing: jest.fn(),
+          },
         },
         {
           provide: ApiKeyRoleService,
-          useValue: mockApiKeyRoleService,
+          useValue: {
+            getRoleIdForApiKeyId: jest.fn().mockResolvedValue(mockAdminRoleId),
+          },
         },
         {
-          provide: WorkspaceCacheService,
-          useValue: mockWorkspaceCacheService,
-        },
-        {
-          provide: getRepositoryToken(UserWorkspaceEntity),
-          useValue: mockUserWorkspaceRepository,
+          provide: SkillService,
+          useValue: { findFlatSkillsByNames: jest.fn().mockResolvedValue([]) },
         },
       ],
     }).compile();
 
     service = module.get<McpProtocolService>(McpProtocolService);
-    featureFlagService = module.get(FeatureFlagService);
-    toolRegistryService = module.get(ToolRegistryService);
+    _toolRegistryService = module.get(ToolRegistryService);
     userRoleService = module.get(UserRoleService);
     mcpToolExecutorService = module.get(McpToolExecutorService);
     apiKeyRoleService = module.get(ApiKeyRoleService);
-    userWorkspaceRepository = module.get(
-      getRepositoryToken(UserWorkspaceEntity),
-    );
-    workspaceCacheService = module.get(WorkspaceCacheService);
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  describe('checkAiEnabled', () => {
-    it('should not throw when AI is enabled', async () => {
-      featureFlagService.isFeatureEnabled.mockResolvedValue(true);
-
-      await expect(
-        service.checkAiEnabled('workspace-1'),
-      ).resolves.not.toThrow();
-      expect(featureFlagService.isFeatureEnabled).toHaveBeenCalledWith(
-        FeatureFlagKey.IS_AI_ENABLED,
-        'workspace-1',
-      );
-    });
-
-    it('should throw when AI is disabled', async () => {
-      featureFlagService.isFeatureEnabled.mockResolvedValue(false);
-
-      await expect(service.checkAiEnabled('workspace-1')).rejects.toThrow(
-        new HttpException(
-          'AI feature is not enabled for this workspace',
-          HttpStatus.FORBIDDEN,
-        ),
-      );
-    });
-  });
-
   describe('handleInitialize', () => {
-    it('should return correct initialization response', () => {
+    it('should return spec-compliant initialization response', () => {
       const requestId = '123';
       const result = service.handleInitialize(requestId);
 
-      expect(result).toMatchObject({
+      expect(result).toEqual({
         id: requestId,
         jsonrpc: '2.0',
-        result: expect.objectContaining({
-          ...MCP_SERVER_METADATA,
+        result: {
+          protocolVersion: MCP_PROTOCOL_VERSION,
           capabilities: {
             tools: { listChanged: false },
             resources: { listChanged: false },
             prompts: { listChanged: false },
           },
-        }),
+          serverInfo: MCP_SERVER_INFO,
+          instructions: MCP_SERVER_INSTRUCTIONS,
+        },
       });
     });
   });
@@ -226,8 +169,6 @@ describe('McpProtocolService', () => {
 
   describe('handleMCPCoreQuery', () => {
     it('should handle initialize method', async () => {
-      featureFlagService.isFeatureEnabled.mockResolvedValue(true);
-
       const mockRequest: JsonRpc = {
         jsonrpc: '2.0',
         method: 'initialize',
@@ -240,51 +181,45 @@ describe('McpProtocolService', () => {
         apiKey: undefined,
       });
 
-      expect(result).toMatchObject({
+      expect(result).toEqual({
         id: '123',
         jsonrpc: '2.0',
-        result: expect.objectContaining({
-          ...MCP_SERVER_METADATA,
+        result: {
+          protocolVersion: MCP_PROTOCOL_VERSION,
           capabilities: {
             tools: { listChanged: false },
             resources: { listChanged: false },
             prompts: { listChanged: false },
           },
-        }),
+          serverInfo: MCP_SERVER_INFO,
+          instructions: MCP_SERVER_INSTRUCTIONS,
+        },
       });
     });
 
-    it('should handle tools/call method with userWorkspaceId', async () => {
-      featureFlagService.isFeatureEnabled.mockResolvedValue(true);
-      userRoleService.getRoleIdForUserWorkspace.mockResolvedValue(mockRoleId);
-      userWorkspaceRepository.findOne.mockResolvedValue(mockUserWorkspace);
-      workspaceCacheService.getOrRecompute.mockResolvedValue({
-        flatWorkspaceMemberMaps: mockFlatWorkspaceMemberMaps,
+    it('should return null for notifications (no id)', async () => {
+      const mockRequest: JsonRpc = {
+        jsonrpc: '2.0',
+        method: 'notifications/initialized',
+      };
+
+      const result = await service.handleMCPCoreQuery(mockRequest, {
+        workspace: mockWorkspace,
+        userWorkspaceId: mockUserWorkspaceId,
+        apiKey: undefined,
       });
 
-      const mockTool = {
-        description: 'Test tool',
-        inputSchema: jsonSchema({ type: 'object', properties: {} }),
-        execute: jest.fn().mockResolvedValue({ result: 'success' }),
-      };
+      expect(result).toBeNull();
+    });
 
-      const mockToolsMap = {
-        testTool: mockTool,
-      };
-
-      toolRegistryService.getToolsByCategories.mockResolvedValue(mockToolsMap);
+    it('should build a ToolSet with exactly 5 tools and pass it to executor for tools/call', async () => {
+      userRoleService.getRoleIdForUserWorkspace.mockResolvedValue(mockRoleId);
 
       const mockToolCallResponse = {
         id: '123',
         jsonrpc: '2.0',
         result: {
-          ...MCP_SERVER_METADATA,
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({ result: 'success' }),
-            },
-          ],
+          content: [{ type: 'text', text: '{}' }],
           isError: false,
         },
       };
@@ -296,7 +231,76 @@ describe('McpProtocolService', () => {
       const mockRequest: JsonRpc = {
         jsonrpc: '2.0',
         method: 'tools/call',
-        params: { name: 'testTool', arguments: { arg1: 'value1' } },
+        params: {
+          name: 'execute_tool',
+          arguments: { toolName: 'find_companies', arguments: {} },
+        },
+        id: '123',
+      };
+
+      await service.handleMCPCoreQuery(mockRequest, {
+        workspace: mockWorkspace,
+        userWorkspaceId: mockUserWorkspaceId,
+        apiKey: undefined,
+      });
+
+      expect(mcpToolExecutorService.handleToolCall).toHaveBeenCalledWith(
+        '123',
+        expect.objectContaining(
+          Object.fromEntries(
+            EXPECTED_MCP_TOOL_NAMES.map((name) => [
+              name,
+              expect.objectContaining({
+                description: expect.any(String),
+                execute: expect.any(Function),
+              }),
+            ]),
+          ),
+        ),
+        mockRequest.params,
+      );
+    });
+
+    it('should build a ToolSet with exactly 5 tools and pass it to executor for tools/list', async () => {
+      userRoleService.getRoleIdForUserWorkspace.mockResolvedValue(mockRoleId);
+
+      mcpToolExecutorService.handleToolsListing.mockReturnValue({
+        id: '123',
+        jsonrpc: '2.0',
+        result: { tools: [] },
+      });
+
+      const mockRequest: JsonRpc = {
+        jsonrpc: '2.0',
+        method: 'tools/list',
+        id: '123',
+      };
+
+      await service.handleMCPCoreQuery(mockRequest, {
+        workspace: mockWorkspace,
+        userWorkspaceId: mockUserWorkspaceId,
+        apiKey: undefined,
+      });
+
+      expect(mcpToolExecutorService.handleToolsListing).toHaveBeenCalledWith(
+        '123',
+        expect.objectContaining(
+          Object.fromEntries(
+            EXPECTED_MCP_TOOL_NAMES.map((name) => [
+              name,
+              expect.objectContaining({
+                description: expect.any(String),
+              }),
+            ]),
+          ),
+        ),
+      );
+    });
+
+    it('should return prompts list without role resolution', async () => {
+      const mockRequest: JsonRpc = {
+        jsonrpc: '2.0',
+        method: 'prompts/list',
         id: '123',
       };
 
@@ -306,42 +310,63 @@ describe('McpProtocolService', () => {
         apiKey: undefined,
       });
 
-      expect(result).toEqual(mockToolCallResponse);
-      expect(mcpToolExecutorService.handleToolCall).toHaveBeenCalledWith(
-        '123',
-        mockToolsMap,
-        { name: 'testTool', arguments: { arg1: 'value1' } },
-      );
+      expect(result).toEqual({
+        id: '123',
+        jsonrpc: '2.0',
+        result: { prompts: [] },
+      });
+      expect(userRoleService.getRoleIdForUserWorkspace).not.toHaveBeenCalled();
     });
 
-    it('should handle tools/call method with apiKey', async () => {
-      featureFlagService.isFeatureEnabled.mockResolvedValue(true);
-
-      const mockTool = {
-        description: 'Test tool',
-        inputSchema: jsonSchema({ type: 'object', properties: {} }),
-        execute: jest.fn().mockResolvedValue({ result: 'success' }),
+    it('should return resources list without role resolution', async () => {
+      const mockRequest: JsonRpc = {
+        jsonrpc: '2.0',
+        method: 'resources/list',
+        id: '123',
       };
 
-      const mockToolsMap = {
-        testTool: mockTool,
+      const result = await service.handleMCPCoreQuery(mockRequest, {
+        workspace: mockWorkspace,
+        userWorkspaceId: mockUserWorkspaceId,
+        apiKey: undefined,
+      });
+
+      expect(result).toEqual({
+        id: '123',
+        jsonrpc: '2.0',
+        result: { resources: [] },
+      });
+      expect(userRoleService.getRoleIdForUserWorkspace).not.toHaveBeenCalled();
+    });
+
+    it('should return method not found for unknown methods', async () => {
+      const mockRequest: JsonRpc = {
+        jsonrpc: '2.0',
+        method: 'unknown/method',
+        id: '123',
       };
 
-      toolRegistryService.getToolsByCategories.mockResolvedValue(mockToolsMap);
+      const result = await service.handleMCPCoreQuery(mockRequest, {
+        workspace: mockWorkspace,
+        userWorkspaceId: mockUserWorkspaceId,
+        apiKey: undefined,
+      });
 
+      expect(result).toEqual({
+        id: '123',
+        jsonrpc: '2.0',
+        error: {
+          code: JSON_RPC_ERROR_CODE.METHOD_NOT_FOUND,
+          message: "Method 'unknown/method' not found",
+        },
+      });
+    });
+
+    it('should handle tools/call with apiKey authentication', async () => {
       const mockToolCallResponse = {
         id: '123',
         jsonrpc: '2.0',
-        result: {
-          ...MCP_SERVER_METADATA,
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({ result: 'success' }),
-            },
-          ],
-          isError: false,
-        },
+        result: { content: [{ type: 'text', text: '{}' }], isError: false },
       };
 
       mcpToolExecutorService.handleToolCall.mockResolvedValue(
@@ -351,7 +376,7 @@ describe('McpProtocolService', () => {
       const mockRequest: JsonRpc = {
         jsonrpc: '2.0',
         method: 'tools/call',
-        params: { name: 'testTool', arguments: { arg1: 'value1' } },
+        params: { name: 'get_tool_catalog', arguments: {} },
         id: '123',
       };
 
@@ -361,109 +386,23 @@ describe('McpProtocolService', () => {
       });
 
       expect(result).toEqual(mockToolCallResponse);
-      expect(toolRegistryService.getToolsByCategories).toHaveBeenCalled();
-    });
-
-    it('should handle tools listing', async () => {
-      featureFlagService.isFeatureEnabled.mockResolvedValue(true);
-      userRoleService.getRoleIdForUserWorkspace.mockResolvedValue(mockRoleId);
-      userWorkspaceRepository.findOne.mockResolvedValue(mockUserWorkspace);
-      workspaceCacheService.getOrRecompute.mockResolvedValue({
-        flatWorkspaceMemberMaps: mockFlatWorkspaceMemberMaps,
-      });
-
-      const mockToolsMap = {
-        testTool: {
-          description: 'Test tool',
-          inputSchema: jsonSchema({ type: 'object', properties: {} }),
-        },
-      };
-
-      toolRegistryService.getToolsByCategories.mockResolvedValue(mockToolsMap);
-
-      const mockToolsListingResponse = {
-        id: '123',
-        jsonrpc: '2.0',
-        result: expect.objectContaining({
-          ...MCP_SERVER_METADATA,
-          capabilities: {
-            tools: { listChanged: false },
-          },
-          tools: [
-            {
-              name: 'testTool',
-              description: 'Test tool',
-              inputSchema: { type: 'object', properties: {} },
-            },
-          ],
-        }),
-      };
-
-      mcpToolExecutorService.handleToolsListing.mockReturnValue(
-        mockToolsListingResponse,
+      expect(apiKeyRoleService.getRoleIdForApiKeyId).toHaveBeenCalledWith(
+        mockApiKey.id,
+        mockWorkspace.id,
       );
-
-      const mockRequest: JsonRpc = {
-        jsonrpc: '2.0',
-        method: 'tools/list',
-        id: '123',
-      };
-
-      const result = await service.handleMCPCoreQuery(mockRequest, {
-        workspace: mockWorkspace,
-        userWorkspaceId: mockUserWorkspaceId,
-        apiKey: undefined,
-      });
-
-      expect(result).toMatchObject(mockToolsListingResponse);
     });
 
-    it('should handle error when AI is disabled', async () => {
-      featureFlagService.isFeatureEnabled.mockResolvedValue(false);
-
-      const mockRequest: JsonRpc = {
-        jsonrpc: '2.0',
-        method: 'tools/list',
-        id: '123',
-      };
-
-      const result = await service.handleMCPCoreQuery(mockRequest, {
-        workspace: mockWorkspace,
-        userWorkspaceId: mockUserWorkspaceId,
-        apiKey: undefined,
-      });
-
-      expect(result).toEqual({
-        id: '123',
-        jsonrpc: '2.0',
-        error: {
-          ...MCP_SERVER_METADATA,
-          code: HttpStatus.FORBIDDEN,
-          message: 'AI feature is not enabled for this workspace',
-        },
-      });
-    });
-
-    it('should handle error when tool is not found', async () => {
-      featureFlagService.isFeatureEnabled.mockResolvedValue(true);
+    it('should wrap unexpected errors with INTERNAL_ERROR code', async () => {
       userRoleService.getRoleIdForUserWorkspace.mockResolvedValue(mockRoleId);
-      userWorkspaceRepository.findOne.mockResolvedValue(mockUserWorkspace);
-      workspaceCacheService.getOrRecompute.mockResolvedValue({
-        flatWorkspaceMemberMaps: mockFlatWorkspaceMemberMaps,
-      });
-      toolRegistryService.getToolsByCategories.mockResolvedValue({});
 
       mcpToolExecutorService.handleToolCall.mockRejectedValue(
-        new HttpException(
-          "Tool 'nonExistentTool' not found",
-          HttpStatus.NOT_FOUND,
-        ),
+        new Error('Something went wrong'),
       );
 
       const mockRequest: JsonRpc = {
         jsonrpc: '2.0',
         method: 'tools/call',
-        params: { name: 'nonExistentTool', arguments: {} },
+        params: { name: 'execute_tool', arguments: {} },
         id: '123',
       };
 
@@ -477,9 +416,36 @@ describe('McpProtocolService', () => {
         id: '123',
         jsonrpc: '2.0',
         error: {
-          ...MCP_SERVER_METADATA,
-          code: HttpStatus.NOT_FOUND,
-          message: "Tool 'nonExistentTool' not found",
+          code: JSON_RPC_ERROR_CODE.INTERNAL_ERROR,
+          message: 'Something went wrong',
+        },
+      });
+    });
+
+    it('should wrap HttpException errors with SERVER_ERROR code', async () => {
+      userRoleService.getRoleIdForUserWorkspace.mockRejectedValue(
+        new HttpException('Role ID missing', HttpStatus.FORBIDDEN),
+      );
+
+      const mockRequest: JsonRpc = {
+        jsonrpc: '2.0',
+        method: 'tools/call',
+        params: { name: 'execute_tool', arguments: {} },
+        id: '123',
+      };
+
+      const result = await service.handleMCPCoreQuery(mockRequest, {
+        workspace: mockWorkspace,
+        userWorkspaceId: mockUserWorkspaceId,
+        apiKey: undefined,
+      });
+
+      expect(result).toEqual({
+        id: '123',
+        jsonrpc: '2.0',
+        error: {
+          code: JSON_RPC_ERROR_CODE.SERVER_ERROR,
+          message: 'Role ID missing',
         },
       });
     });

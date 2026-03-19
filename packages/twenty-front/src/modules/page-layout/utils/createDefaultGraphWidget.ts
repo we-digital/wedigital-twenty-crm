@@ -4,11 +4,12 @@ import {
   BarChartLayout,
   GraphOrderBy,
   type GridPosition,
+  PageLayoutTabLayoutMode,
   type PageLayoutWidget,
   type WidgetConfiguration,
   WidgetConfigurationType,
   WidgetType,
-} from '~/generated/graphql';
+} from '~/generated-metadata/graphql';
 
 import { type GraphWidgetFieldSelection } from '@/page-layout/types/GraphWidgetFieldSelection';
 import { type GraphColor } from '@/page-layout/widgets/graph/types/GraphColor';
@@ -25,8 +26,9 @@ const createDefaultGraphConfiguration = (
     displayDataLabel: true,
     displayLegend: true,
     color: 'auto' satisfies GraphColor,
-    primaryAxisGroupByFieldMetadataId: fieldSelection?.groupByFieldMetadataIdX,
-    aggregateFieldMetadataId: fieldSelection?.aggregateFieldMetadataId,
+    primaryAxisGroupByFieldMetadataId:
+      fieldSelection?.groupByFieldMetadataIdX ?? '',
+    aggregateFieldMetadataId: fieldSelection?.aggregateFieldMetadataId ?? '',
     aggregateOperation: AggregateOperations.SUM,
     primaryAxisOrderBy: GraphOrderBy.FIELD_POSITION_ASC,
     axisNameDisplay: AxisNameDisplay.NONE,
@@ -73,7 +75,16 @@ export const createDefaultGraphWidget = ({
     type: WidgetType.GRAPH,
     configuration,
     gridPosition,
+    position: {
+      __typename: 'PageLayoutWidgetGridPosition',
+      layoutMode: PageLayoutTabLayoutMode.GRID,
+      row: gridPosition.row,
+      column: gridPosition.column,
+      rowSpan: gridPosition.rowSpan,
+      columnSpan: gridPosition.columnSpan,
+    },
     objectMetadataId: resolvedObjectMetadataId,
+    isOverridden: false,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     deletedAt: null,

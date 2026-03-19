@@ -1,5 +1,5 @@
-import { createState } from 'twenty-ui/utilities';
-export const captchaTokenState = createState<string | undefined>({
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
+export const captchaTokenState = createAtomState<string | undefined>({
   key: 'captchaTokenState',
   defaultValue: undefined,
 });

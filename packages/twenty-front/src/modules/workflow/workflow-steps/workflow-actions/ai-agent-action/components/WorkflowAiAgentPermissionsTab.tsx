@@ -3,18 +3,20 @@ import { useActionRolePermissionFlagConfig } from '@/settings/roles/role-permiss
 import { TextInput } from '@/ui/input/components/TextInput';
 import { type WorkflowAiAgentAction } from '@/workflow/types/Workflow';
 import { useWorkflowAiAgentPermissionActions } from '@/workflow/workflow-steps/workflow-actions/ai-agent-action/hooks/useWorkflowAiAgentPermissionActions';
+import { useAtomState } from '@/ui/utilities/state/jotai/hooks/useAtomState';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { workflowAiAgentActionAgentState } from '@/workflow/workflow-steps/workflow-actions/ai-agent-action/states/workflowAiAgentActionAgentState';
 import { workflowAiAgentPermissionsIsAddingPermissionState } from '@/workflow/workflow-steps/workflow-actions/ai-agent-action/states/workflowAiAgentPermissionsIsAddingPermissionState';
 import { workflowAiAgentPermissionsSelectedObjectIdState } from '@/workflow/workflow-steps/workflow-actions/ai-agent-action/states/workflowAiAgentPermissionsSelectedObjectIdState';
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
 import { useState } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
 import { isDefined } from 'twenty-shared/utils';
 import { IconChevronLeft } from 'twenty-ui/display';
 import { IconButton } from 'twenty-ui/input';
-import { type Agent, useGetRolesQuery } from '~/generated-metadata/graphql';
-import { RightDrawerSkeletonLoader } from '~/loading/components/RightDrawerSkeletonLoader';
+import { useQuery } from '@apollo/client/react';
+import { type Agent, GetRolesDocument } from '~/generated-metadata/graphql';
+import { SidePanelSkeletonLoader } from '~/loading/components/SidePanelSkeletonLoader';
 import { filterBySearchQuery } from '~/utils/filterBySearchQuery';
 
 import { isNonTextWritingKey } from '@/ui/utilities/hotkey/utils/isNonTextWritingKey';
@@ -24,37 +26,38 @@ import { WorkflowAiAgentPermissionsCrudList } from './WorkflowAiAgentPermissions
 import { WorkflowAiAgentPermissionsFlagList } from './WorkflowAiAgentPermissionsFlagList';
 import { WorkflowAiAgentPermissionsObjectsList } from './WorkflowAiAgentPermissionsObjectsList';
 import { getFilteredPermissions } from './workflowAiAgentPermissions.utils';
-const StyledSearchInput = styled(TextInput)`
-  width: 100%;
+import { themeCssVariables } from 'twenty-ui/theme-constants';
+const StyledSearchInputContainer = styled.div`
+  border-block: 1px solid ${themeCssVariables.border.color.medium};
   height: 40px;
-  border-block: 1px solid ${({ theme }) => theme.border.color.medium};
-  input {
-    height: 40px;
-    line-height: 40px;
+  width: 100%;
+  & input {
     border: none;
     border-radius: 0;
+    height: 40px;
+    line-height: 40px;
     width: 100%;
   }
 `;
 
 const StyledBackButtonText = styled.span`
-  color: ${({ theme }) => theme.font.color.secondary};
+  color: ${themeCssVariables.font.color.secondary};
 `;
 
 const StyledBackButton = styled.button`
-  width: 100%;
   align-items: center;
   background: none;
   border: none;
-  color: ${({ theme }) => theme.font.color.secondary};
+  color: ${themeCssVariables.font.color.secondary};
   cursor: pointer;
   display: flex;
-  gap: ${({ theme }) => theme.spacing(1)};
-  padding: ${({ theme }) => theme.spacing(3)};
+  gap: ${themeCssVariables.spacing[1]};
+  padding: ${themeCssVariables.spacing[3]};
   text-align: left;
+  width: 100%;
 
   &:hover {
-    color: ${({ theme }) => theme.font.color.primary};
+    color: ${themeCssVariables.font.color.primary};
   }
 `;
 
@@ -74,18 +77,18 @@ export const WorkflowAiAgentPermissionsTab = ({
   isAgentLoading,
   refetchAgent,
 }: WorkflowAiAgentPermissionsTabProps) => {
-  const workflowAiAgentActionAgent = useRecoilValue(
+  const workflowAiAgentActionAgent = useAtomStateValue(
     workflowAiAgentActionAgentState,
   );
 
   const [
     workflowAiAgentPermissionsSelectedObjectId,
     setWorkflowAiAgentPermissionsSelectedObjectId,
-  ] = useRecoilState(workflowAiAgentPermissionsSelectedObjectIdState);
+  ] = useAtomState(workflowAiAgentPermissionsSelectedObjectIdState);
   const [
     workflowAiAgentPermissionsIsAddingPermission,
     setWorkflowAiAgentPermissionsIsAddingPermission,
-  ] = useRecoilState(workflowAiAgentPermissionsIsAddingPermissionState);
+  ] = useAtomState(workflowAiAgentPermissionsIsAddingPermissionState);
 
   const { alphaSortedActiveNonSystemObjectMetadataItems: objectMetadataItems } =
     useFilteredObjectMetadataItems();
@@ -94,7 +97,7 @@ export const WorkflowAiAgentPermissionsTab = ({
     data: rolesData,
     loading: rolesLoading,
     refetch: refetchRoles,
-  } = useGetRolesQuery();
+  } = useQuery(GetRolesDocument);
 
   const [searchQuery, setSearchQuery] = useState('');
   const role = rolesData?.getRoles.find(
@@ -147,7 +150,7 @@ export const WorkflowAiAgentPermissionsTab = ({
   });
 
   if (isAgentLoading || rolesLoading) {
-    return <RightDrawerSkeletonLoader />;
+    return <SidePanelSkeletonLoader />;
   }
 
   if (!isDefined(workflowAiAgentActionAgent)) {
@@ -196,16 +199,18 @@ export const WorkflowAiAgentPermissionsTab = ({
         </StyledBackButton>
       )}
 
-      <StyledSearchInput
-        value={searchQuery}
-        onChange={(value: string) => setSearchQuery(value)}
-        placeholder={t`Type anything...`}
-        onKeyDown={(event) => {
-          if (isNonTextWritingKey(event.key)) {
-            event.stopPropagation();
-          }
-        }}
-      />
+      <StyledSearchInputContainer>
+        <TextInput
+          value={searchQuery}
+          onChange={(value: string) => setSearchQuery(value)}
+          placeholder={t`Type anything...`}
+          onKeyDown={(event) => {
+            if (isNonTextWritingKey(event.key)) {
+              event.stopPropagation();
+            }
+          }}
+        />
+      </StyledSearchInputContainer>
 
       {shouldShowCrudList && (
         <WorkflowAiAgentPermissionsCrudList

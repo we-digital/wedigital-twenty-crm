@@ -1,16 +1,17 @@
-import { type ApplicationVariable } from '~/generated/graphql';
+import { type ApplicationVariable } from '~/generated-metadata/graphql';
 import { t } from '@lingui/core/macro';
 import { H2Title } from 'twenty-ui/display';
 import { Section } from 'twenty-ui/layout';
 import { TextInput } from '@/ui/input/components/TextInput';
 import { useDebouncedCallback } from 'use-debounce';
 import { useState } from 'react';
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 const StyledContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.spacing(4)};
+  gap: ${themeCssVariables.spacing[4]};
 `;
 
 export const SettingsApplicationDetailEnvironmentVariablesTable = ({

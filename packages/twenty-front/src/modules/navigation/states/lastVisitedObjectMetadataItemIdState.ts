@@ -1,8 +1,9 @@
-import { localStorageEffect } from '~/utils/recoil/localStorageEffect';
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const lastVisitedObjectMetadataItemIdState = createState<string | null>({
+export const lastVisitedObjectMetadataItemIdState = createAtomState<
+  string | null
+>({
   key: 'lastVisitedObjectMetadataItemIdState',
   defaultValue: null,
-  effects: [localStorageEffect()],
+  useLocalStorage: true,
 });

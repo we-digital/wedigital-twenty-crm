@@ -1,7 +1,8 @@
-import { useRecoilValue } from 'recoil';
+import { useMemo } from 'react';
 
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
-import { objectMetadataItemsState } from '@/object-metadata/states/objectMetadataItemsState';
+import { objectMetadataItemsSelector } from '@/object-metadata/states/objectMetadataItemsSelector';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { type RecordGqlOperationGqlRecordFields } from 'twenty-shared/types';
 import { useObjectPermissions } from '@/object-record/hooks/useObjectPermissions';
 import { generateGroupByRecordsQuery } from '@/object-record/utils/generateGroupByRecordsQuery';
@@ -19,17 +20,27 @@ export const useGroupByRecordsQuery = ({
     objectNameSingular,
   });
 
-  const objectMetadataItems = useRecoilValue(objectMetadataItemsState);
+  const objectMetadataItems = useAtomStateValue(objectMetadataItemsSelector);
 
   const { objectPermissionsByObjectMetadataId } = useObjectPermissions();
 
-  const groupByRecordsQuery = generateGroupByRecordsQuery({
-    objectMetadataItem,
-    objectMetadataItems,
-    recordGqlFields,
-    computeReferences,
-    objectPermissionsByObjectMetadataId,
-  });
+  const groupByRecordsQuery = useMemo(
+    () =>
+      generateGroupByRecordsQuery({
+        objectMetadataItem,
+        objectMetadataItems,
+        recordGqlFields,
+        computeReferences,
+        objectPermissionsByObjectMetadataId,
+      }),
+    [
+      objectMetadataItem,
+      objectMetadataItems,
+      recordGqlFields,
+      computeReferences,
+      objectPermissionsByObjectMetadataId,
+    ],
+  );
 
   return {
     groupByRecordsQuery,

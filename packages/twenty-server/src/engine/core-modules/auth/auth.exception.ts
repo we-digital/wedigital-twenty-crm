@@ -19,6 +19,8 @@ export const AuthExceptionCode = appendCommonExceptionCode({
   FORBIDDEN_EXCEPTION: 'FORBIDDEN_EXCEPTION',
   INSUFFICIENT_SCOPES: 'INSUFFICIENT_SCOPES',
   UNAUTHENTICATED: 'UNAUTHENTICATED',
+  APPLICATION_REFRESH_TOKEN_INVALID_OR_EXPIRED:
+    'APPLICATION_REFRESH_TOKEN_INVALID_OR_EXPIRED',
   INVALID_DATA: 'INVALID_DATA',
   OAUTH_ACCESS_DENIED: 'OAUTH_ACCESS_DENIED',
   SSO_AUTH_FAILED: 'SSO_AUTH_FAILED',
@@ -27,6 +29,7 @@ export const AuthExceptionCode = appendCommonExceptionCode({
   GOOGLE_API_AUTH_DISABLED: 'GOOGLE_API_AUTH_DISABLED',
   MICROSOFT_API_AUTH_DISABLED: 'MICROSOFT_API_AUTH_DISABLED',
   MISSING_ENVIRONMENT_VARIABLE: 'MISSING_ENVIRONMENT_VARIABLE',
+  ENTERPRISE_VALIDITY_TOKEN_NOT_VALID: 'ENTERPRISE_VALIDITY_TOKEN_NOT_VALID',
   INVALID_JWT_TOKEN_TYPE: 'INVALID_JWT_TOKEN_TYPE',
   TWO_FACTOR_AUTHENTICATION_PROVISION_REQUIRED:
     'TWO_FACTOR_AUTHENTICATION_PROVISION_REQUIRED',
@@ -56,6 +59,7 @@ const getAuthExceptionUserFriendlyMessage = (
     case AuthExceptionCode.INSUFFICIENT_SCOPES:
       return msg`Insufficient permissions.`;
     case AuthExceptionCode.UNAUTHENTICATED:
+    case AuthExceptionCode.APPLICATION_REFRESH_TOKEN_INVALID_OR_EXPIRED:
       return msg`You must be authenticated to perform this action.`;
     case AuthExceptionCode.OAUTH_ACCESS_DENIED:
       return msg`OAuth access was denied.`;
@@ -77,6 +81,8 @@ const getAuthExceptionUserFriendlyMessage = (
       return msg`Two-factor authentication verification is required.`;
     case AuthExceptionCode.USER_ALREADY_EXISTS:
       return msg`A user with this email already exists.`;
+    case AuthExceptionCode.ENTERPRISE_VALIDITY_TOKEN_NOT_VALID:
+      return msg`Enterprise validity token is not valid.`;
     case AuthExceptionCode.INTERNAL_SERVER_ERROR:
     case AuthExceptionCode.INVALID_DATA:
     case AuthExceptionCode.CLIENT_NOT_FOUND:

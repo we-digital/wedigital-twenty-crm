@@ -1,21 +1,22 @@
-import { type TypedAggregateChartConfiguration } from '@/command-menu/pages/page-layout/types/TypedAggregateChartConfiguration';
-import { type TypedBarChartConfiguration } from '@/command-menu/pages/page-layout/types/TypedBarChartConfiguration';
-import { type TypedGaugeChartConfiguration } from '@/command-menu/pages/page-layout/types/TypedGaugeChartConfiguration';
-import { type TypedLineChartConfiguration } from '@/command-menu/pages/page-layout/types/TypedLineChartConfiguration';
-import { type TypedPieChartConfiguration } from '@/command-menu/pages/page-layout/types/TypedPieChartConfiguration';
+import { type TypedAggregateChartConfiguration } from '@/side-panel/pages/page-layout/types/TypedAggregateChartConfiguration';
+import { type TypedBarChartConfiguration } from '@/side-panel/pages/page-layout/types/TypedBarChartConfiguration';
+import { type TypedGaugeChartConfiguration } from '@/side-panel/pages/page-layout/types/TypedGaugeChartConfiguration';
+import { type TypedLineChartConfiguration } from '@/side-panel/pages/page-layout/types/TypedLineChartConfiguration';
+import { type TypedPieChartConfiguration } from '@/side-panel/pages/page-layout/types/TypedPieChartConfiguration';
 import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
 import { ObjectRecordGroupByDateGranularity } from 'twenty-shared/types';
 import {
   AggregateOperations,
   AxisNameDisplay,
   BarChartLayout,
+  type FieldsConfiguration,
   GraphOrderBy,
   type IframeConfiguration,
   type StandaloneRichTextConfiguration,
   type WidgetConfiguration,
   WidgetConfigurationType,
   WidgetType,
-} from '~/generated/graphql';
+} from '~/generated-metadata/graphql';
 
 export const TEST_FIELD_METADATA_ID_1 = '20202020-1111-4111-a111-111111111111';
 export const TEST_FIELD_METADATA_ID_2 = '20202020-2222-4222-a222-222222222222';
@@ -32,6 +33,7 @@ export const TEST_BAR_CHART_CONFIGURATION: TypedBarChartConfiguration = {
   primaryAxisOrderBy: GraphOrderBy.FIELD_ASC,
   displayDataLabel: true,
   axisNameDisplay: AxisNameDisplay.NONE,
+  splitMultiValueFields: false,
 };
 
 export const TEST_BAR_CHART_CONFIGURATION_HORIZONTAL: TypedBarChartConfiguration =
@@ -50,6 +52,7 @@ export const TEST_LINE_CHART_CONFIGURATION: TypedLineChartConfiguration = {
   primaryAxisDateGranularity: ObjectRecordGroupByDateGranularity.DAY,
   displayDataLabel: true,
   axisNameDisplay: AxisNameDisplay.NONE,
+  splitMultiValueFields: false,
 };
 
 export const TEST_PIE_CHART_CONFIGURATION: TypedPieChartConfiguration = {
@@ -62,6 +65,7 @@ export const TEST_PIE_CHART_CONFIGURATION: TypedPieChartConfiguration = {
   dateGranularity: ObjectRecordGroupByDateGranularity.MONTH,
   orderBy: GraphOrderBy.VALUE_DESC,
   displayDataLabel: true,
+  splitMultiValueFields: false,
 };
 
 export const TEST_AGGREGATE_CHART_CONFIGURATION: TypedAggregateChartConfiguration =
@@ -94,10 +98,10 @@ export const TEST_STANDALONE_RICH_TEXT_CONFIGURATION: StandaloneRichTextConfigur
     body: { markdown: 'Hello world' },
   };
 
-export const TEST_FIELDS_CONFIGURATION = {
-  __typename: 'FieldsConfiguration' as const,
-  configurationType: 'FIELDS' as const,
-  sections: [],
+export const TEST_FIELDS_CONFIGURATION: FieldsConfiguration = {
+  __typename: 'FieldsConfiguration',
+  configurationType: WidgetConfigurationType.FIELDS,
+  viewId: null,
 };
 
 export const ALL_CHART_CONFIGURATIONS: WidgetConfiguration[] = [
@@ -125,6 +129,7 @@ export const createTestWidget = (
   gridPosition: { row: 0, column: 0, rowSpan: 2, columnSpan: 2 },
   objectMetadataId: TEST_OBJECT_METADATA_ID,
   configuration: TEST_BAR_CHART_CONFIGURATION,
+  isOverridden: false,
   createdAt: '2024-01-01',
   updatedAt: '2024-01-01',
   deletedAt: null,

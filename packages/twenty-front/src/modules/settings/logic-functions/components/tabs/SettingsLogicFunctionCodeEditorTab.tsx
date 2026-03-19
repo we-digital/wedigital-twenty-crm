@@ -5,15 +5,17 @@ import {
 import { SETTINGS_LOGIC_FUNCTION_TAB_LIST_COMPONENT_ID } from '@/settings/logic-functions/constants/SettingsLogicFunctionTabListComponentId';
 import { TabList } from '@/ui/layout/tab-list/components/TabList';
 import { activeTabIdComponentState } from '@/ui/layout/tab-list/states/activeTabIdComponentState';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
-import styled from '@emotion/styled';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
 import { H2Title, IconPlayerPlay } from 'twenty-ui/display';
 import { Button, CoreEditorHeader } from 'twenty-ui/input';
 import { Section } from 'twenty-ui/layout';
 
-const StyledTabList = styled(TabList)`
-  border-bottom: none;
+const StyledTabListContainer = styled.div`
+  > * {
+    border-bottom: none;
+  }
 `;
 
 export const SettingsLogicFunctionCodeEditorTab = ({
@@ -21,15 +23,13 @@ export const SettingsLogicFunctionCodeEditorTab = ({
   handleExecute,
   onChange,
   isTesting = false,
-  isManaged = false,
 }: {
   files: File[];
   handleExecute: () => void;
-  onChange: (filePath: string, value: string) => void;
+  onChange: (value: string) => void;
   isTesting?: boolean;
-  isManaged?: boolean;
 }) => {
-  const activeTabId = useRecoilComponentValue(
+  const activeTabId = useAtomComponentStateValue(
     activeTabIdComponentState,
     SETTINGS_LOGIC_FUNCTION_TAB_LIST_COMPONENT_ID,
   );
@@ -46,12 +46,14 @@ export const SettingsLogicFunctionCodeEditorTab = ({
   );
 
   const HeaderTabList = (
-    <StyledTabList
-      tabs={files.map((file) => {
-        return { id: file.path, title: file.path.split('/').at(-1) || '' };
-      })}
-      componentInstanceId={SETTINGS_LOGIC_FUNCTION_TAB_LIST_COMPONENT_ID}
-    />
+    <StyledTabListContainer>
+      <TabList
+        tabs={files.map((file) => {
+          return { id: file.path, title: file.path.split('/').at(-1) || '' };
+        })}
+        componentInstanceId={SETTINGS_LOGIC_FUNCTION_TAB_LIST_COMPONENT_ID}
+      />
+    </StyledTabListContainer>
   );
 
   return (
@@ -65,19 +67,7 @@ export const SettingsLogicFunctionCodeEditorTab = ({
         <SettingsLogicFunctionCodeEditor
           files={files}
           currentFilePath={activeTabId}
-          onChange={(newCodeValue: string) =>
-            onChange(activeTabId, newCodeValue)
-          }
-          options={
-            isManaged
-              ? {
-                  readOnly: true,
-                  readOnlyMessage: {
-                    value: t`Managed logic functions are not editable`,
-                  },
-                }
-              : undefined
-          }
+          onChange={(newCodeValue: string) => onChange(newCodeValue)}
         />
       )}
     </Section>

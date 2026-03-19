@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { type ToolSet } from 'ai';
-import { FieldMetadataType } from 'twenty-shared/types';
+import { FieldMetadataType, RelationType } from 'twenty-shared/types';
 import { z } from 'zod';
 
 import { formatValidationErrors } from 'src/engine/core-modules/tool-provider/utils/format-validation-errors.util';
@@ -102,6 +102,64 @@ const UpdateFieldMetadataInputSchema = z.object({
 
 const DeleteFieldMetadataInputSchema = z.object({
   id: z.string().uuid().describe('ID of the field to delete'),
+});
+
+const CreateManyFieldMetadataInputSchema = z.object({
+  fields: z
+    .array(CreateFieldMetadataInputSchema)
+    .min(1)
+    .max(20)
+    .describe('Array of field metadata to create (1-20 items).'),
+});
+
+const UpdateManyFieldMetadataInputSchema = z.object({
+  fields: z
+    .array(UpdateFieldMetadataInputSchema)
+    .min(1)
+    .max(20)
+    .describe('Array of field metadata updates to apply (1-20 items).'),
+});
+
+const CreateManyRelationFieldsInputSchema = z.object({
+  relations: z
+    .array(
+      z.object({
+        objectMetadataId: z
+          .string()
+          .uuid()
+          .describe('ID of the source object to add the relation field to'),
+        name: z
+          .string()
+          .describe('Internal name of the relation field (camelCase)'),
+        label: z.string().describe('Display label of the relation field'),
+        description: z
+          .string()
+          .optional()
+          .describe('Description of the relation field'),
+        icon: z
+          .string()
+          .optional()
+          .describe('Icon identifier for the relation field'),
+        type: z
+          .nativeEnum(RelationType)
+          .describe('Relation type: MANY_TO_ONE or ONE_TO_MANY'),
+        targetObjectMetadataId: z
+          .string()
+          .uuid()
+          .describe('ID of the target object this relation points to'),
+        targetFieldLabel: z
+          .string()
+          .describe(
+            'Display label for the inverse relation field on the target object',
+          ),
+        targetFieldIcon: z
+          .string()
+          .describe('Icon for the inverse relation field (e.g. IconSomething)'),
+      }),
+    )
+    .min(1)
+    .max(20)
+    .describe('Array of relation fields to create (1-20 items).'),
 });
 
 @Injectable()
@@ -221,6 +279,133 @@ export class FieldMetadataToolsFactory {
               });
 
             return fromFlatFieldMetadataToFieldMetadataDto(flatFieldMetadata);
+          } catch (error) {
+            if (error instanceof WorkspaceMigrationBuilderException) {
+              throw new Error(formatValidationErrors(error));
+            }
+            throw error;
+          }
+        },
+      },
+      create_many_field_metadata: {
+        description:
+          'Create multiple field metadata at once on one or more objects. More efficient than calling create_field_metadata multiple times. Each item follows the same schema as create_field_metadata.',
+        inputSchema: CreateManyFieldMetadataInputSchema,
+        execute: async (parameters: {
+          fields: Array<{
+            objectMetadataId: string;
+            type: FieldMetadataType;
+            name: string;
+            label: string;
+            description?: string;
+            icon?: string;
+            isNullable?: boolean;
+            isUnique?: boolean;
+            defaultValue?: unknown;
+            options?: unknown;
+            settings?: unknown;
+            isLabelSyncedWithName?: boolean;
+            isRemoteCreation?: boolean;
+            relationCreationPayload?: unknown;
+          }>;
+        }) => {
+          try {
+            await this.fieldMetadataService.createManyFields({
+              createFieldInputs: parameters.fields as Parameters<
+                typeof this.fieldMetadataService.createManyFields
+              >[0]['createFieldInputs'],
+              workspaceId,
+            });
+
+            return true;
+          } catch (error) {
+            if (error instanceof WorkspaceMigrationBuilderException) {
+              throw new Error(formatValidationErrors(error));
+            }
+            throw error;
+          }
+        },
+      },
+      update_many_field_metadata: {
+        description:
+          'Update multiple field metadata at once. More efficient than calling update_field_metadata multiple times. Each item must include the field ID and the properties to update.',
+        inputSchema: UpdateManyFieldMetadataInputSchema,
+        execute: async (parameters: {
+          fields: Array<{
+            id: string;
+            name?: string;
+            label?: string;
+            description?: string;
+            icon?: string;
+            isActive?: boolean;
+            isNullable?: boolean;
+            isUnique?: boolean;
+            defaultValue?: unknown;
+            options?: unknown;
+            settings?: unknown;
+            isLabelSyncedWithName?: boolean;
+          }>;
+        }) => {
+          try {
+            await Promise.all(
+              parameters.fields.map(async ({ id, ...update }) => {
+                await this.fieldMetadataService.updateOneField({
+                  updateFieldInput: { id, ...update } as Parameters<
+                    typeof this.fieldMetadataService.updateOneField
+                  >[0]['updateFieldInput'],
+                  workspaceId,
+                });
+              }),
+            );
+
+            return true;
+          } catch (error) {
+            if (error instanceof WorkspaceMigrationBuilderException) {
+              throw new Error(formatValidationErrors(error));
+            }
+            throw error;
+          }
+        },
+      },
+      create_many_relation_fields: {
+        description:
+          'Create multiple relation fields between objects at once. This is the recommended way to add relations after creating objects and non-relation fields. Each item specifies the source object, target object, relation type, and labels for both sides of the relation.',
+        inputSchema: CreateManyRelationFieldsInputSchema,
+        execute: async (parameters: {
+          relations: Array<{
+            objectMetadataId: string;
+            name: string;
+            label: string;
+            description?: string;
+            icon?: string;
+            type: RelationType;
+            targetObjectMetadataId: string;
+            targetFieldLabel: string;
+            targetFieldIcon: string;
+          }>;
+        }) => {
+          try {
+            await this.fieldMetadataService.createManyFields({
+              createFieldInputs: parameters.relations.map((relation) => ({
+                objectMetadataId: relation.objectMetadataId,
+                type: FieldMetadataType.RELATION,
+                name: relation.name,
+                label: relation.label,
+                description: relation.description,
+                icon: relation.icon,
+                relationCreationPayload: {
+                  type: relation.type,
+                  targetObjectMetadataId: relation.targetObjectMetadataId,
+                  targetFieldLabel: relation.targetFieldLabel,
+                  targetFieldIcon: relation.targetFieldIcon,
+                },
+              })) as Parameters<
+                typeof this.fieldMetadataService.createManyFields
+              >[0]['createFieldInputs'],
+              workspaceId,
+            });
+
+            return true;
           } catch (error) {
             if (error instanceof WorkspaceMigrationBuilderException) {
               throw new Error(formatValidationErrors(error));

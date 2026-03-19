@@ -1,5 +1,5 @@
-import { createState } from 'twenty-ui/utilities';
-export const isCaptchaScriptLoadedState = createState<boolean>({
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
+export const isCaptchaScriptLoadedState = createAtomState<boolean>({
   key: 'isCaptchaScriptLoadedState',
   defaultValue: false,
 });

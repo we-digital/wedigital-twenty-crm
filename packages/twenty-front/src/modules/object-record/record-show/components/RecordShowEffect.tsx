@@ -4,8 +4,8 @@ import { useFindOneRecord } from '@/object-record/hooks/useFindOneRecord';
 import { buildFindOneRecordForShowPageOperationSignature } from '@/object-record/record-show/graphql/operations/factories/findOneRecordForShowPageOperationSignatureFactory';
 import { recordStoreFamilyState } from '@/object-record/record-store/states/recordStoreFamilyState';
 import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
-import { useEffect } from 'react';
-import { useRecoilCallback } from 'recoil';
+import { useStore } from 'jotai';
+import { useCallback, useEffect } from 'react';
 import { isDefined } from 'twenty-shared/utils';
 
 type RecordShowEffectProps = {
@@ -26,6 +26,8 @@ export const RecordShowEffect = ({
       objectMetadataItems,
     });
 
+  const store = useStore();
+
   const { record, loading } = useFindOneRecord({
     objectRecordId: recordId,
     objectNameSingular,
@@ -33,18 +35,17 @@ export const RecordShowEffect = ({
     withSoftDeleted: true,
   });
 
-  const setRecordStore = useRecoilCallback(
-    ({ snapshot, set }) =>
-      async (newRecord: ObjectRecord | null | undefined) => {
-        const previousRecordValue = snapshot
-          .getLoadable(recordStoreFamilyState(recordId))
-          .getValue();
+  const setRecordStore = useCallback(
+    async (newRecord: ObjectRecord | null | undefined) => {
+      const previousRecordValue = store.get(
+        recordStoreFamilyState.atomFamily(recordId),
+      );
 
-        if (JSON.stringify(previousRecordValue) !== JSON.stringify(newRecord)) {
-          set(recordStoreFamilyState(recordId), newRecord);
-        }
-      },
-    [recordId],
+      if (JSON.stringify(previousRecordValue) !== JSON.stringify(newRecord)) {
+        store.set(recordStoreFamilyState.atomFamily(recordId), newRecord);
+      }
+    },
+    [recordId, store],
   );
 
   useEffect(() => {

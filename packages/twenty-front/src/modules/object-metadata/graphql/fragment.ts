@@ -3,10 +3,12 @@ import { gql } from '@apollo/client';
 export const OBJECT_METADATA_FRAGMENT = gql`
   fragment ObjectMetadataFields on Object {
     id
+    universalIdentifier
     nameSingular
     namePlural
     labelSingular
     labelPlural
+    color
     description
     icon
     isCustom
@@ -42,6 +44,7 @@ export const OBJECT_METADATA_FRAGMENT = gql`
     }
     fieldsList {
       id
+      universalIdentifier
       type
       name
       label

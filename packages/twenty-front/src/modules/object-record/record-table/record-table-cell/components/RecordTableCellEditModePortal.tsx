@@ -1,7 +1,6 @@
 import { RecordTableCellPortalWrapper } from '@/object-record/record-table/record-table-cell/components/RecordTableCellPortalWrapper';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 
-import { hasRecordGroupsComponentSelector } from '@/object-record/record-group/states/selectors/hasRecordGroupsComponentSelector';
 import { TABLE_Z_INDEX } from '@/object-record/record-table/constants/TableZIndex';
 import { RecordTableCellEditMode } from '@/object-record/record-table/record-table-cell/components/RecordTableCellEditMode';
 import { RecordTableCellFieldInput } from '@/object-record/record-table/record-table-cell/components/RecordTableCellFieldInput';
@@ -13,33 +12,25 @@ import { recordTableFocusPositionComponentState } from '@/object-record/record-t
 import { isDefined } from 'twenty-shared/utils';
 
 export const RecordTableCellEditModePortal = () => {
-  const focusedCellPosition = useRecoilComponentValue(
+  const recordTableFocusPosition = useAtomComponentStateValue(
     recordTableFocusPositionComponentState,
   );
 
-  const currentTableCellInEditModePosition = useRecoilComponentValue(
+  const recordTableCellEditModePosition = useAtomComponentStateValue(
     recordTableCellEditModePositionComponentState,
-  );
-
-  const hasRecordGroups = useRecoilComponentValue(
-    hasRecordGroupsComponentSelector,
   );
 
   const cellFocusId = useCurrentlyFocusedRecordTableCellFocusId();
 
-  if (!isDefined(focusedCellPosition) || !isDefined(cellFocusId)) {
+  if (!isDefined(recordTableFocusPosition) || !isDefined(cellFocusId)) {
     return null;
   }
 
   return (
-    <RecordTableCellPortalWrapper position={focusedCellPosition}>
-      {currentTableCellInEditModePosition && (
+    <RecordTableCellPortalWrapper position={recordTableFocusPosition}>
+      {recordTableCellEditModePosition && (
         <RecordTableCellPortalRootContainer
-          zIndex={
-            hasRecordGroups
-              ? TABLE_Z_INDEX.cell.withGroups.editMode
-              : TABLE_Z_INDEX.cell.withoutGroups.editMode
-          }
+          zIndex={TABLE_Z_INDEX.cell.editMode}
         >
           <RecordTableCellEditMode>
             <RecordTableCellFieldInput />

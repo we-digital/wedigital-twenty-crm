@@ -1,7 +1,7 @@
 import { type Meta, type StoryObj } from '@storybook/react-vite';
 
-import { objectMetadataItemsState } from '@/object-metadata/states/objectMetadataItemsState';
 import { RecordComponentInstanceContextsWrapper } from '@/object-record/components/RecordComponentInstanceContextsWrapper';
+import { setTestObjectMetadataItemsInMetadataStore } from '~/testing/utils/setTestObjectMetadataItemsInMetadataStore';
 import { ObjectOptionsDropdownContent } from '@/object-record/object-options-dropdown/components/ObjectOptionsDropdownContent';
 import { OBJECT_OPTIONS_DROPDOWN_ID } from '@/object-record/object-options-dropdown/constants/ObjectOptionsDropdownId';
 import { ObjectOptionsDropdownContext } from '@/object-record/object-options-dropdown/states/contexts/ObjectOptionsDropdownContext';
@@ -15,13 +15,13 @@ import { ViewComponentInstanceContext } from '@/views/states/contexts/ViewCompon
 import { ViewType } from '@/views/types/ViewType';
 import { useEffect } from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { useSetRecoilState } from 'recoil';
 import { ComponentDecorator } from 'twenty-ui/testing';
 import { ContextStoreDecorator } from '~/testing/decorators/ContextStoreDecorator';
 import { IconsProviderDecorator } from '~/testing/decorators/IconsProviderDecorator';
 import { ObjectMetadataItemsDecorator } from '~/testing/decorators/ObjectMetadataItemsDecorator';
 import { SnackBarDecorator } from '~/testing/decorators/SnackBarDecorator';
 import { generatedMockObjectMetadataItems } from '~/testing/utils/generatedMockObjectMetadataItems';
+import { jotaiStore } from '@/ui/utilities/state/jotai/jotaiStore';
 
 const instanceId = 'entity-options-instance';
 
@@ -31,13 +31,12 @@ const meta: Meta<typeof ObjectOptionsDropdownContent> = {
   component: ObjectOptionsDropdownContent,
   decorators: [
     (Story) => {
-      const setObjectMetadataItems = useSetRecoilState(
-        objectMetadataItemsState,
-      );
-
       useEffect(() => {
-        setObjectMetadataItems(generatedMockObjectMetadataItems);
-      }, [setObjectMetadataItems]);
+        setTestObjectMetadataItemsInMetadataStore(
+          jotaiStore,
+          generatedMockObjectMetadataItems,
+        );
+      }, []);
 
       return (
         <RecordComponentInstanceContextsWrapper
@@ -109,7 +108,7 @@ const createStory = (contentId: ObjectOptionsContentId | null): Story => ({
           >
             <ObjectOptionsDropdownContext.Provider
               value={{
-                viewType: ViewType.Table,
+                viewType: ViewType.TABLE,
                 objectMetadataItem: companyObjectMetadataItem,
                 recordIndexId: instanceId,
                 currentContentId: contentId,

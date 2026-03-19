@@ -11,7 +11,7 @@ export type { AvatarProps } from './avatar/components/Avatar';
 export { Avatar } from './avatar/components/Avatar';
 export type { AvatarGroupProps } from './avatar/components/AvatarGroup';
 export { AvatarGroup } from './avatar/components/AvatarGroup';
-export { invalidAvatarUrlsState } from './avatar/components/states/isInvalidAvatarUrlState';
+export { invalidAvatarUrlsAtomV2 } from './avatar/components/states/invalidAvatarUrlsAtomV2';
 export { AVATAR_PROPERTIES_BY_SIZE } from './avatar/constants/AvatarPropertiesBySize';
 export type { AvatarSize } from './avatar/types/AvatarSize';
 export type { AvatarType } from './avatar/types/AvatarType';
@@ -34,6 +34,10 @@ export { CommandBlock } from './command-block/components/CommandBlock';
 export type { IconProps } from './icon/components/Icon';
 export { Icon } from './icon/components/Icon';
 export { IconAddressBook } from './icon/components/IconAddressBook';
+export { IconBrandAnthropic } from './icon/components/IconBrandAnthropic';
+export { IconBrandGroq } from './icon/components/IconBrandGroq';
+export { IconBrandMistral } from './icon/components/IconBrandMistral';
+export { IconBrandXai } from './icon/components/IconBrandXai';
 export { IconChartBarHorizontal } from './icon/components/IconChartBarHorizontal';
 export { IconGmail } from './icon/components/IconGmail';
 export { IconGoogle } from './icon/components/IconGoogle';
@@ -90,6 +94,7 @@ export {
   IconArrowRight,
   IconArrowsDiagonal,
   IconArrowsSort,
+  IconArrowsSplit2,
   IconArrowsVertical,
   IconArrowUp,
   IconArrowUpRight,
@@ -116,6 +121,7 @@ export {
   IconBrandGoogle,
   IconBrandGraphql,
   IconBrandLinkedin,
+  IconBrandOpenai,
   IconBrandX,
   IconBriefcase,
   IconBroadcast,
@@ -153,6 +159,7 @@ export {
   IconCirclePlus,
   IconCircleX,
   IconClick,
+  IconClock,
   IconClockHour8,
   IconClockPlay,
   IconClockShare,
@@ -160,6 +167,7 @@ export {
   IconCodeCircle,
   IconCoins,
   IconColorSwatch,
+  IconColumnInsertRight,
   IconColumns,
   IconCommand,
   IconComment,
@@ -257,6 +265,7 @@ export {
   IconFolderOpen,
   IconFolderPlus,
   IconFolderRoot,
+  IconFolderSymlink,
   IconForbid,
   IconFrame,
   IconFunction,
@@ -268,6 +277,9 @@ export {
   IconH1,
   IconH2,
   IconH3,
+  IconH4,
+  IconH5,
+  IconH6,
   IconHandClick,
   IconHandMove,
   IconHeadphones,
@@ -289,6 +301,7 @@ export {
   IconInbox,
   IconInfoCircle,
   IconItalic,
+  IconJetpack,
   IconJson,
   IconKey,
   IconLanguage,
@@ -333,6 +346,7 @@ export {
   IconMoodSmile,
   IconMoon,
   IconMouse2,
+  IconNewSection,
   IconNorthStar,
   IconNoteOff,
   IconNotes,
@@ -340,6 +354,7 @@ export {
   IconNumber123,
   IconNumber9,
   IconNumbers,
+  IconPaint,
   IconPaperclip,
   IconPassword,
   IconPencil,
@@ -384,6 +399,8 @@ export {
   IconRocket,
   IconRotate,
   IconRotate2,
+  IconRowInsertBottom,
+  IconRowInsertTop,
   IconSearch,
   IconSend,
   IconServer,
@@ -391,6 +408,7 @@ export {
   IconSettings,
   IconSettings2,
   IconSettingsAutomation,
+  IconSettingsBolt,
   IconShare,
   IconShield,
   IconSitemap,
@@ -467,6 +485,7 @@ export {
   IconWorld,
   IconX,
 } from './icon/components/TablerIcons';
+export { ThinkingOrbitLoaderIcon } from './icon/components/ThinkingOrbitLoaderIcon';
 export { useIcons } from './icon/hooks/useIcons';
 export { IconsProvider } from './icon/providers/IconsProvider';
 export { iconsState } from './icon/states/iconsState';

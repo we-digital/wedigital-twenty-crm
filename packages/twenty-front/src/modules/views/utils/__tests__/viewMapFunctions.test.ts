@@ -12,6 +12,7 @@ import { FieldMetadataType } from '~/generated-metadata/graphql';
 
 const baseFieldMetadataItem = {
   id: '05731f68-6e7a-4903-8374-c0b6a9063482',
+  universalIdentifier: '05731f68-6e7a-4903-8374-c0b6a9063482',
   createdAt: '2021-01-01',
   updatedAt: '2021-01-01',
   name: 'name',
@@ -23,7 +24,6 @@ describe('mapViewFiltersToFilters', () => {
   it('should map each ViewFilter object to a corresponding Filter object', () => {
     const viewFilters: ViewFilter[] = [
       {
-        __typename: 'ViewFilter',
         id: 'id',
         fieldMetadataId: '05731f68-6e7a-4903-8374-c0b6a9063482',
         value: 'testValue',
@@ -55,12 +55,12 @@ describe('mapViewFieldsToColumnDefinitions', () => {
   it('should map visible ViewFields to ColumnDefinitions and filter out missing fieldMetadata', () => {
     const viewFields: ViewField[] = [
       {
-        __typename: 'ViewField',
         id: '1',
         fieldMetadataId: '1',
         position: 1,
         size: 1,
         isVisible: false,
+        isOverridden: false,
         definition: {
           fieldMetadataId: '1',
           label: 'label 1',
@@ -74,12 +74,12 @@ describe('mapViewFieldsToColumnDefinitions', () => {
         },
       },
       {
-        __typename: 'ViewField',
         id: '2',
         fieldMetadataId: '2',
         position: 2,
         size: 2,
         isVisible: false,
+        isOverridden: false,
         definition: {
           fieldMetadataId: '2',
           label: 'label 2',
@@ -93,12 +93,12 @@ describe('mapViewFieldsToColumnDefinitions', () => {
         },
       },
       {
-        __typename: 'ViewField',
         id: '3',
         fieldMetadataId: '3',
         position: 3,
         size: 3,
         isVisible: true,
+        isOverridden: false,
         definition: {
           fieldMetadataId: '3',
           label: 'label 3',
@@ -187,21 +187,21 @@ describe('mapColumnDefinitionsToViewFields', () => {
 
     const expectedViewFields = [
       {
-        __typename: 'ViewField',
         id: 'custom-id-1',
         fieldMetadataId: 1,
         position: 1,
         isVisible: true,
+        isOverridden: false,
         definition: columnDefinitions[0],
         size: undefined,
       },
       {
-        __typename: 'ViewField',
         id: '',
         fieldMetadataId: 2,
         position: 2,
         size: 200,
         isVisible: false,
+        isOverridden: false,
         definition: columnDefinitions[1],
       },
     ];

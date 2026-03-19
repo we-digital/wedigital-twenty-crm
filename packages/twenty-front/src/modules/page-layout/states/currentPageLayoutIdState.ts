@@ -1,6 +1,6 @@
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const currentPageLayoutIdState = createState<string | null>({
+export const currentPageLayoutIdState = createAtomState<string | null>({
   key: 'currentPageLayoutIdState',
   defaultValue: null,
 });

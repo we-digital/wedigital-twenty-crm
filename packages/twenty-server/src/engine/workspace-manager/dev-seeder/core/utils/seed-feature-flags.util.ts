@@ -1,6 +1,5 @@
+import { FeatureFlagKey } from 'twenty-shared/types';
 import { type QueryRunner } from 'typeorm';
-
-import { FeatureFlagKey } from 'src/engine/core-modules/feature-flag/enums/feature-flag-key.enum';
 
 const tableName = 'featureFlag';
 
@@ -77,12 +76,12 @@ export const seedFeatureFlags = async ({
         value: true,
       },
       {
-        key: FeatureFlagKey.IS_SSE_DB_EVENTS_ENABLED,
+        key: FeatureFlagKey.IS_NAVIGATION_MENU_ITEM_ENABLED,
         workspaceId: workspaceId,
         value: true,
       },
       {
-        key: FeatureFlagKey.IS_NAVIGATION_MENU_ITEM_ENABLED,
+        key: FeatureFlagKey.IS_NAVIGATION_MENU_ITEM_EDITING_ENABLED,
         workspaceId: workspaceId,
         value: true,
       },
@@ -93,6 +92,21 @@ export const seedFeatureFlags = async ({
       },
       {
         key: FeatureFlagKey.IS_COMMAND_MENU_ITEM_ENABLED,
+        workspaceId: workspaceId,
+        value: false,
+      },
+      {
+        key: FeatureFlagKey.IS_DATE_TIME_WHOLE_DAY_FILTER_ENABLED,
+        workspaceId: workspaceId,
+        value: true,
+      },
+      {
+        key: FeatureFlagKey.IS_RECORD_PAGE_LAYOUT_EDITING_ENABLED,
+        workspaceId: workspaceId,
+        value: true,
+      },
+      {
+        key: FeatureFlagKey.IS_RECORD_PAGE_LAYOUT_GLOBAL_EDITION_ENABLED,
         workspaceId: workspaceId,
         value: true,
       },

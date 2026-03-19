@@ -14,8 +14,9 @@ import { usePushFocusItemToFocusStack } from '@/ui/utilities/focus/hooks/usePush
 import { useRemoveLastFocusItemFromFocusStackByComponentType } from '@/ui/utilities/focus/hooks/useRemoveFocusItemFromFocusStackByComponentType';
 import { FocusComponentType } from '@/ui/utilities/focus/types/FocusComponentType';
 import { useAvailableComponentInstanceId } from '@/ui/utilities/state/component-state/hooks/useAvailableComponentInstanceId';
+import { useStore } from 'jotai';
 import { useLingui } from '@lingui/react/macro';
-import { useRecoilCallback } from 'recoil';
+import { useCallback } from 'react';
 import { MULTI_ITEM_FIELD_DEFAULT_MAX_VALUES } from 'twenty-shared/constants';
 import { isDefined } from 'twenty-shared/utils';
 
@@ -32,142 +33,87 @@ export const useOpenFilesFieldInput = () => {
   );
   const { enqueueErrorSnackBar } = useSnackBar();
   const { t } = useLingui();
+  const store = useStore();
 
-  const openFilesFieldInput = useRecoilCallback(
-    ({ snapshot, set }) =>
-      async ({
-        fieldName,
-        fieldMetadataId,
-        recordId,
-        prefix,
-        updateRecord,
-        onClose,
-        fieldDefinition,
-      }: {
-        fieldName: string;
-        fieldMetadataId: string;
-        recordId: string;
-        prefix?: string;
-        updateRecord: (updateInput: Record<string, unknown>) => void;
-        onClose?: () => void;
-        fieldDefinition?: {
-          metadata: {
-            settings?: {
-              maxNumberOfValues?: number;
-            };
+  const openFilesFieldInput = useCallback(
+    async ({
+      fieldName,
+      fieldMetadataId,
+      recordId,
+      prefix,
+      updateRecord,
+      onClose,
+      fieldDefinition,
+    }: {
+      fieldName: string;
+      fieldMetadataId: string;
+      recordId: string;
+      prefix?: string;
+      updateRecord: (updateInput: Record<string, unknown>) => void;
+      onClose?: () => void;
+      fieldDefinition?: {
+        metadata: {
+          settings?: {
+            maxNumberOfValues?: number;
           };
         };
-      }) => {
-        const fieldValue = snapshot
-          .getLoadable<FieldFilesValue[]>(
-            recordStoreFamilySelector({
-              recordId,
-              fieldName,
-            }),
-          )
-          .getValue();
-
-        const instanceId = getRecordFieldInputInstanceId({
+      };
+    }) => {
+      const fieldValue = store.get(
+        recordStoreFamilySelector.selectorFamily({
           recordId,
           fieldName,
-          prefix,
+        }),
+      ) as FieldFilesValue[];
+
+      const instanceId = getRecordFieldInputInstanceId({
+        recordId,
+        fieldName,
+        prefix,
+      });
+
+      if (isDefined(fieldValue) && fieldValue.length > 0) {
+        pushFocusItemToFocusStack({
+          focusId: instanceId,
+          component: {
+            type: FocusComponentType.OPENED_FIELD_INPUT,
+            instanceId,
+          },
+          globalHotkeysConfig: {
+            enableGlobalHotkeysConflictingWithKeyboard: false,
+          },
         });
+        return;
+      }
 
-        if (isDefined(fieldValue) && fieldValue.length > 0) {
-          pushFocusItemToFocusStack({
-            focusId: instanceId,
-            component: {
-              type: FocusComponentType.OPENED_FIELD_INPUT,
-              instanceId,
-            },
-            globalHotkeysConfig: {
-              enableGlobalHotkeysConflictingWithKeyboard: false,
-            },
-          });
-          return;
-        }
+      const isTableContext = prefix === RECORD_TABLE_CELL_INPUT_ID_PREFIX;
 
-        const isTableContext = prefix === RECORD_TABLE_CELL_INPUT_ID_PREFIX;
+      const maxNumberOfValues =
+        fieldDefinition?.metadata?.settings?.maxNumberOfValues ??
+        MULTI_ITEM_FIELD_DEFAULT_MAX_VALUES;
 
-        const maxNumberOfValues =
-          fieldDefinition?.metadata?.settings?.maxNumberOfValues ??
-          MULTI_ITEM_FIELD_DEFAULT_MAX_VALUES;
+      const currentFileCount = isDefined(fieldValue) ? fieldValue.length : 0;
 
-        const currentFileCount = isDefined(fieldValue) ? fieldValue.length : 0;
+      store.set(
+        filesFieldUploadState.atomFamily({ recordId, fieldName }),
+        'UPLOAD_WINDOW_OPEN',
+      );
 
-        set(
-          filesFieldUploadState({ recordId, fieldName }),
-          'UPLOAD_WINDOW_OPEN',
-        );
+      openFileUpload({
+        multiple: true,
+        onUpload: async (selectedFiles: File[]) => {
+          if (selectedFiles.length + currentFileCount > maxNumberOfValues) {
+            enqueueErrorSnackBar({
+              message: t`Cannot upload more than ${maxNumberOfValues} files`,
+            });
 
-        openFileUpload({
-          multiple: true,
-          onUpload: async (selectedFiles: File[]) => {
-            if (selectedFiles.length + currentFileCount > maxNumberOfValues) {
-              enqueueErrorSnackBar({
-                message: t`Cannot upload more than ${maxNumberOfValues} files`,
-              });
-
-              set(filesFieldUploadState({ recordId, fieldName }), null);
-
-              if (isTableContext && isDefined(recordTableId)) {
-                set(
-                  recordTableCellEditModePositionComponentState.atomFamily({
-                    instanceId: recordTableId,
-                  }),
-                  null,
-                );
-                goBackToPreviousDropdownFocusId();
-                removeLastFocusItemFromFocusStackByComponentType({
-                  componentType: FocusComponentType.OPENED_FIELD_INPUT,
-                });
-              } else {
-                onClose?.();
-              }
-              return;
-            }
-
-            set(
-              filesFieldUploadState({ recordId, fieldName }),
-              'UPLOADING_FILE',
+            store.set(
+              filesFieldUploadState.atomFamily({ recordId, fieldName }),
+              null,
             );
 
-            try {
-              const uploadedFiles = await uploadMultipleFiles(
-                selectedFiles,
-                fieldMetadataId,
-                uploadFile,
-              );
-
-              if (uploadedFiles.length > 0) {
-                updateRecord({
-                  [fieldName]: uploadedFiles,
-                });
-              }
-            } finally {
-              set(filesFieldUploadState({ recordId, fieldName }), null);
-
-              if (isTableContext && isDefined(recordTableId)) {
-                set(
-                  recordTableCellEditModePositionComponentState.atomFamily({
-                    instanceId: recordTableId,
-                  }),
-                  null,
-                );
-                goBackToPreviousDropdownFocusId();
-                removeLastFocusItemFromFocusStackByComponentType({
-                  componentType: FocusComponentType.OPENED_FIELD_INPUT,
-                });
-              } else {
-                onClose?.();
-              }
-            }
-          },
-          onCancel: () => {
-            set(filesFieldUploadState({ recordId, fieldName }), null);
-
             if (isTableContext && isDefined(recordTableId)) {
-              set(
+              store.set(
                 recordTableCellEditModePositionComponentState.atomFamily({
                   instanceId: recordTableId,
                 }),
@@ -180,9 +126,71 @@ export const useOpenFilesFieldInput = () => {
             } else {
               onClose?.();
             }
-          },
-        });
-      },
+            return;
+          }
+
+          store.set(
+            filesFieldUploadState.atomFamily({ recordId, fieldName }),
+            'UPLOADING_FILE',
+          );
+
+          try {
+            const uploadedFiles = await uploadMultipleFiles(
+              selectedFiles,
+              fieldMetadataId,
+              uploadFile,
+            );
+
+            if (uploadedFiles.length > 0) {
+              updateRecord({
+                [fieldName]: uploadedFiles,
+              });
+            }
+          } finally {
+            store.set(
+              filesFieldUploadState.atomFamily({ recordId, fieldName }),
+              null,
+            );
+
+            if (isTableContext && isDefined(recordTableId)) {
+              store.set(
+                recordTableCellEditModePositionComponentState.atomFamily({
+                  instanceId: recordTableId,
+                }),
+                null,
+              );
+              goBackToPreviousDropdownFocusId();
+              removeLastFocusItemFromFocusStackByComponentType({
+                componentType: FocusComponentType.OPENED_FIELD_INPUT,
+              });
+            } else {
+              onClose?.();
+            }
+          }
+        },
+        onCancel: () => {
+          store.set(
+            filesFieldUploadState.atomFamily({ recordId, fieldName }),
+            null,
+          );
+
+          if (isTableContext && isDefined(recordTableId)) {
+            store.set(
+              recordTableCellEditModePositionComponentState.atomFamily({
+                instanceId: recordTableId,
+              }),
+              null,
+            );
+            goBackToPreviousDropdownFocusId();
+            removeLastFocusItemFromFocusStackByComponentType({
+              componentType: FocusComponentType.OPENED_FIELD_INPUT,
+            });
+          } else {
+            onClose?.();
+          }
+        },
+      });
+    },
     [
       openFileUpload,
       uploadFile,
@@ -192,6 +200,7 @@ export const useOpenFilesFieldInput = () => {
       removeLastFocusItemFromFocusStackByComponentType,
       enqueueErrorSnackBar,
       t,
+      store,
     ],
   );
 

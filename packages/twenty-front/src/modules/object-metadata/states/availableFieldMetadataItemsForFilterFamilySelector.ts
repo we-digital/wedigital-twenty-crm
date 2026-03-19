@@ -1,19 +1,23 @@
 import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
-import { objectMetadataItemsState } from '@/object-metadata/states/objectMetadataItemsState';
+import { objectMetadataItemsWithFieldsSelector } from '@/object-metadata/states/objectMetadataItemsWithFieldsSelector';
+import { type FieldMetadataItem } from '@/object-metadata/types/FieldMetadataItem';
 import { getFilterFilterableFieldMetadataItems } from '@/object-metadata/utils/getFilterFilterableFieldMetadataItems';
+import { createAtomFamilySelector } from '@/ui/utilities/state/jotai/utils/createAtomFamilySelector';
 import { checkIfFeatureFlagIsEnabledOnWorkspace } from '@/workspace/utils/checkIfFeatureFlagIsEnabledOnWorkspace';
-import { selectorFamily } from 'recoil';
 import { isDefined } from 'twenty-shared/utils';
 import { FeatureFlagKey } from '~/generated-metadata/graphql';
 
 export const availableFieldMetadataItemsForFilterFamilySelector =
-  selectorFamily({
+  createAtomFamilySelector<
+    FieldMetadataItem[],
+    { objectMetadataItemId: string }
+  >({
     key: 'availableFieldMetadataItemsForFilterFamilySelector',
     get:
       ({ objectMetadataItemId }: { objectMetadataItemId: string }) =>
       ({ get }) => {
         const currentWorkspace = get(currentWorkspaceState);
-        const objectMetadataItems = get(objectMetadataItemsState);
+        const objectMetadataItems = get(objectMetadataItemsWithFieldsSelector);
 
         const objectMetadataItem = objectMetadataItems.find(
           (item) => item.id === objectMetadataItemId,
@@ -32,10 +36,8 @@ export const availableFieldMetadataItemsForFilterFamilySelector =
             isJsonFilterEnabled: isJsonFeatureFlagEnabled,
           });
 
-        const availableFieldMetadataItemsForFilter =
-          objectMetadataItem.readableFields.filter(
-            filterFilterableFieldMetadataItems,
-          );
-        return availableFieldMetadataItemsForFilter;
+        return objectMetadataItem.readableFields.filter(
+          filterFilterableFieldMetadataItems,
+        );
       },
   });

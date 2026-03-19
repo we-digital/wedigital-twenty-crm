@@ -1,20 +1,21 @@
 import { contextStoreCurrentObjectMetadataItemIdComponentState } from '@/context-store/states/contextStoreCurrentObjectMetadataItemIdComponentState';
 import { useObjectMetadataItemById } from '@/object-metadata/hooks/useObjectMetadataItemById';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { isDefined } from 'twenty-shared/utils';
 
 export const useContextStoreObjectMetadataItemOrThrow = (
   contextStoreInstanceId?: string,
 ) => {
-  const objectMetadataItemId = useRecoilComponentValue(
+  const contextStoreCurrentObjectMetadataItemId = useAtomComponentStateValue(
     contextStoreCurrentObjectMetadataItemIdComponentState,
     contextStoreInstanceId,
   );
 
   const { objectMetadataItem } = useObjectMetadataItemById({
-    objectId: objectMetadataItemId ?? '',
+    objectId: contextStoreCurrentObjectMetadataItemId ?? '',
   });
 
-  if (!objectMetadataItem) {
+  if (!isDefined(objectMetadataItem)) {
     throw new Error('Object metadata item is not set in context store');
   }
 

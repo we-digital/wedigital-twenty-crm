@@ -1,22 +1,26 @@
-import { renderHook, waitFor } from '@testing-library/react';
-import { useEffect } from 'react';
-import { RecoilRoot, useSetRecoilState } from 'recoil';
-
 import { currentUserState } from '@/auth/states/currentUserState';
 import { currentUserWorkspaceState } from '@/auth/states/currentUserWorkspaceState';
 import { useDefaultHomePagePath } from '@/navigation/hooks/useDefaultHomePagePath';
-import { objectMetadataItemsState } from '@/object-metadata/states/objectMetadataItemsState';
 import { AggregateOperations } from '@/object-record/record-table/constants/AggregateOperations';
-import { coreViewsState } from '@/views/states/coreViewState';
+import { useSetAtomState } from '@/ui/utilities/state/jotai/hooks/useSetAtomState';
+import { jotaiStore } from '@/ui/utilities/state/jotai/jotaiStore';
+import { renderHook, waitFor } from '@testing-library/react';
+import { Provider as JotaiProvider } from 'jotai';
+import { createElement, useEffect, type ReactNode } from 'react';
 import { AppPath } from 'twenty-shared/types';
 import {
   ViewOpenRecordIn,
   ViewType,
   ViewVisibility,
-} from '~/generated/graphql';
-import { getMockCompanyObjectMetadataItem } from '~/testing/mock-data/companies';
+} from '~/generated-metadata/graphql';
 import { mockedUserData } from '~/testing/mock-data/users';
 import { generatedMockObjectMetadataItems } from '~/testing/utils/generatedMockObjectMetadataItems';
+import { getMockObjectMetadataItemOrThrow } from '~/testing/utils/getMockObjectMetadataItemOrThrow';
+import { setTestViewsInMetadataStore } from '~/testing/utils/setTestViewsInMetadataStore';
+import { setTestObjectMetadataItemsInMetadataStore } from '~/testing/utils/setTestObjectMetadataItemsInMetadataStore';
+
+const Wrapper = ({ children }: { children: ReactNode }) =>
+  createElement(JotaiProvider, { store: jotaiStore }, children);
 
 const renderHooks = ({
   withCurrentUser,
@@ -25,62 +29,58 @@ const renderHooks = ({
   withCurrentUser: boolean;
   withExistingView: boolean;
 }) => {
+  setTestObjectMetadataItemsInMetadataStore(
+    jotaiStore,
+    generatedMockObjectMetadataItems,
+  );
+
   const { result } = renderHook(
     () => {
-      const setCurrentUser = useSetRecoilState(currentUserState);
-      const setCurrentUserWorkspace = useSetRecoilState(
+      const setCurrentUser = useSetAtomState(currentUserState);
+      const setCurrentUserWorkspace = useSetAtomState(
         currentUserWorkspaceState,
       );
-      const setObjectMetadataItems = useSetRecoilState(
-        objectMetadataItemsState,
-      );
-      const setCoreViews = useSetRecoilState(coreViewsState);
 
       useEffect(() => {
-        setObjectMetadataItems(generatedMockObjectMetadataItems);
-
         if (withExistingView) {
-          setCoreViews([
+          setTestViewsInMetadataStore(jotaiStore, [
             {
               id: 'viewId',
               name: 'Test View',
-              objectMetadataId: getMockCompanyObjectMetadataItem().id,
+              objectMetadataId: getMockObjectMetadataItemOrThrow('company').id,
               type: ViewType.TABLE,
               key: null,
               isCompact: false,
               openRecordIn: ViewOpenRecordIn.SIDE_PANEL,
               viewFields: [],
+              viewFieldGroups: [],
               viewGroups: [],
               viewSorts: [],
+              viewFilters: [],
+              viewFilterGroups: [],
               kanbanAggregateOperation: AggregateOperations.COUNT,
               icon: '',
               kanbanAggregateOperationFieldMetadataId: '',
               position: 0,
-              viewFilters: [],
               visibility: ViewVisibility.WORKSPACE,
               createdByUserWorkspaceId: null,
               shouldHideEmptyGroups: false,
             },
           ]);
         } else {
-          setCoreViews([]);
+          setTestViewsInMetadataStore(jotaiStore, []);
         }
 
         if (withCurrentUser) {
           setCurrentUser(mockedUserData);
           setCurrentUserWorkspace(mockedUserData.currentUserWorkspace);
         }
-      }, [
-        setCurrentUser,
-        setCurrentUserWorkspace,
-        setObjectMetadataItems,
-        setCoreViews,
-      ]);
+      }, [setCurrentUser, setCurrentUserWorkspace]);
 
       return useDefaultHomePagePath();
     },
     {
-      wrapper: RecoilRoot,
+      wrapper: Wrapper,
     },
   );
   return { result };

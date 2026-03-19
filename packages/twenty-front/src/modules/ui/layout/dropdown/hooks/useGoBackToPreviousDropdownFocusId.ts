@@ -1,22 +1,24 @@
-import { useRecoilCallback } from 'recoil';
+import { useCallback } from 'react';
 
 import { activeDropdownFocusIdState } from '@/ui/layout/dropdown/states/activeDropdownFocusIdState';
-import { previousDropdownFocusIdState } from '@/ui/layout/dropdown/states/previousDropdownFocusIdState';
+import { previousDropdownFocusIdStackState } from '@/ui/layout/dropdown/states/previousDropdownFocusIdStackState';
+import { useStore } from 'jotai';
 
-// TODO: this won't work for more than 1 nested dropdown
 export const useGoBackToPreviousDropdownFocusId = () => {
-  const goBackToPreviousDropdownFocusId = useRecoilCallback(
-    ({ snapshot, set }) =>
-      () => {
-        const previouslyFocusedDropdownId = snapshot
-          .getLoadable(previousDropdownFocusIdState)
-          .getValue();
+  const store = useStore();
 
-        set(activeDropdownFocusIdState, previouslyFocusedDropdownId);
-        set(previousDropdownFocusIdState, null);
-      },
-    [],
-  );
+  const goBackToPreviousDropdownFocusId = useCallback(() => {
+    const previousStack = store.get(previousDropdownFocusIdStackState.atom);
+
+    const previouslyFocusedDropdownId =
+      previousStack[previousStack.length - 1] ?? null;
+
+    store.set(activeDropdownFocusIdState.atom, previouslyFocusedDropdownId);
+    store.set(
+      previousDropdownFocusIdStackState.atom,
+      previousStack.slice(0, -1),
+    );
+  }, [store]);
 
   return {
     goBackToPreviousDropdownFocusId,

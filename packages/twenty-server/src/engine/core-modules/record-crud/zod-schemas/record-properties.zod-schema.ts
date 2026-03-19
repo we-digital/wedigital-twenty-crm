@@ -37,7 +37,6 @@ const getFieldZodType = (field: FlatFieldMetadata): z.ZodTypeAny => {
       return z.string().uuidv4();
 
     case FieldMetadataType.TEXT:
-    case FieldMetadataType.RICH_TEXT:
       return z.string();
 
     case FieldMetadataType.DATE_TIME:
@@ -239,7 +238,7 @@ export const generateRecordPropertiesZodSchema = (
         });
         break;
 
-      case FieldMetadataType.RICH_TEXT_V2:
+      case FieldMetadataType.RICH_TEXT:
         fieldSchema = z.object({
           markdown: z.string().optional(),
           blocknote: z.string().optional(),
@@ -256,8 +255,14 @@ export const generateRecordPropertiesZodSchema = (
     }
 
     if (field.name === 'position') {
+      fieldSchema = z.union([
+        z.number(),
+        z.literal('first'),
+        z.literal('last'),
+      ]);
+
       fieldSchema = fieldSchema.describe(
-        'Leave empty to place at the top of the list (recommended).',
+        'Use "first" to insert at the top, "last" for the bottom, or a number for explicit ordering. Leave empty to place at the top (recommended).',
       );
     } else if (field.description) {
       fieldSchema = fieldSchema.describe(field.description);

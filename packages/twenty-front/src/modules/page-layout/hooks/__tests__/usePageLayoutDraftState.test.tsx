@@ -1,12 +1,13 @@
 import { usePageLayoutDraftState } from '@/page-layout/hooks/usePageLayoutDraftState';
 import { act, renderHook } from '@testing-library/react';
-import { GraphOrderBy, WidgetType } from '~/generated-metadata/graphql';
 import {
   AggregateOperations,
   BarChartLayout,
+  GraphOrderBy,
   PageLayoutType,
   WidgetConfigurationType,
-} from '~/generated/graphql';
+  WidgetType,
+} from '~/generated-metadata/graphql';
 import {
   PAGE_LAYOUT_TEST_INSTANCE_ID,
   PageLayoutTestWrapper,
@@ -87,9 +88,11 @@ describe('usePageLayoutDraftState', () => {
         tabs: [
           {
             id: 'tab-1',
+            applicationId: '',
             title: 'Tab 1',
             position: 0,
             pageLayoutId: '',
+            isOverridden: false,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             deletedAt: null,
@@ -110,6 +113,7 @@ describe('usePageLayoutDraftState', () => {
                   displayDataLabel: false,
                 },
                 objectMetadataId: null,
+                isOverridden: false,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 deletedAt: null,

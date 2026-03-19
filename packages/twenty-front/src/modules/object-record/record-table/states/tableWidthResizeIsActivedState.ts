@@ -1,6 +1,6 @@
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const tableWidthResizeIsActiveState = createState({
+export const tableWidthResizeIsActiveState = createAtomState<boolean>({
   key: 'tableWidthResizeIsActiveState',
   defaultValue: true,
 });

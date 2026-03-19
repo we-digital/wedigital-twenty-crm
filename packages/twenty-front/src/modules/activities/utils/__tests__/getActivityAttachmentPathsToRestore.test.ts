@@ -36,7 +36,7 @@ describe('getActivityAttachmentPathsToRestore', () => {
     const oldActivityAttachments = [
       {
         id: '1',
-        fullPath: 'https://example.com/files/images/test.txt',
+        file: [{ url: 'https://example.com/files/images/test.txt' }],
       },
     ] as Attachment[];
 

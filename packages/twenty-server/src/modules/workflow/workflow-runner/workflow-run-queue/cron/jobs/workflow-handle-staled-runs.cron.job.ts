@@ -5,6 +5,7 @@ import { WorkspaceActivationStatus } from 'twenty-shared/workspace';
 import { Repository } from 'typeorm';
 
 import { SentryCronMonitor } from 'src/engine/core-modules/cron/sentry-cron-monitor.decorator';
+import { ExceptionHandlerService } from 'src/engine/core-modules/exception-handler/exception-handler.service';
 import { InjectMessageQueue } from 'src/engine/core-modules/message-queue/decorators/message-queue.decorator';
 import { Process } from 'src/engine/core-modules/message-queue/decorators/process.decorator';
 import { Processor } from 'src/engine/core-modules/message-queue/decorators/processor.decorator';
@@ -22,6 +23,8 @@ import { getStaledRunsFindOptions } from 'src/modules/workflow/workflow-runner/w
 
 export const WORKFLOW_HANDLE_STALED_RUNS_CRON_PATTERN = '0 * * * *';
 
+const WORKSPACE_BATCH_SIZE = 50;
+
 @Processor(MessageQueue.cronQueue)
 export class WorkflowHandleStaledRunsCronJob {
   private readonly logger = new Logger(WorkflowHandleStaledRunsCronJob.name);
@@ -32,6 +35,7 @@ export class WorkflowHandleStaledRunsCronJob {
     @InjectMessageQueue(MessageQueue.workflowQueue)
     private readonly messageQueueService: MessageQueueService,
     private readonly globalWorkspaceOrmManager: GlobalWorkspaceOrmManager,
+    private readonly exceptionHandlerService: ExceptionHandlerService,
   ) {}
 
   @Process(WorkflowHandleStaledRunsCronJob.name)
@@ -51,23 +55,51 @@ export class WorkflowHandleStaledRunsCronJob {
 
     let enqueuedCount = 0;
 
-    for (const workspace of activeWorkspaces) {
-      const hasStaledRuns = await this.hasStaledRuns(workspace.id);
+    for (
+      let workspaceIndex = 0;
+      workspaceIndex < activeWorkspaces.length;
+      workspaceIndex += WORKSPACE_BATCH_SIZE
+    ) {
+      const batch = activeWorkspaces.slice(
+        workspaceIndex,
+        workspaceIndex + WORKSPACE_BATCH_SIZE,
+      );
 
-      if (hasStaledRuns) {
-        await this.messageQueueService.add<WorkflowHandleStaledRunsJobData>(
-          WorkflowHandleStaledRunsJob.name,
-          {
-            workspaceId: workspace.id,
-          },
-        );
-        enqueuedCount++;
+      const results = await Promise.allSettled(
+        batch.map((workspace) => this.checkAndEnqueue(workspace.id)),
+      );
+
+      for (const [index, result] of results.entries()) {
+        if (result.status === 'fulfilled' && result.value) {
+          enqueuedCount++;
+        }
+
+        if (result.status === 'rejected') {
+          this.exceptionHandlerService.captureExceptions([result.reason], {
+            workspace: { id: batch[index].id },
+          });
+        }
       }
     }
 
     this.logger.log(
       `Completed WorkflowHandleStaledRunsCronJob cron, enqueued ${enqueuedCount} jobs`,
     );
+  }
+
+  private async checkAndEnqueue(workspaceId: string): Promise<boolean> {
+    const hasStaledRuns = await this.hasStaledRuns(workspaceId);
+
+    if (hasStaledRuns) {
+      await this.messageQueueService.add<WorkflowHandleStaledRunsJobData>(
+        WorkflowHandleStaledRunsJob.name,
+        { workspaceId },
+      );
+
+      return true;
+    }
+
+    return false;
   }
 
   private async hasStaledRuns(workspaceId: string): Promise<boolean> {
@@ -87,6 +119,7 @@ export class WorkflowHandleStaledRunsCronJob {
         });
       },
       authContext,
+      { lite: true },
     );
   }
 }

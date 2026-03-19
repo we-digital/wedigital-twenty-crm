@@ -4,11 +4,12 @@ import { activeQueryListenersState } from '@/sse-db-event/states/activeQueryList
 import { requiredQueryListenersState } from '@/sse-db-event/states/requiredQueryListenersState';
 import { shouldDestroyEventStreamState } from '@/sse-db-event/states/shouldDestroyEventStreamState';
 import { sseEventStreamIdState } from '@/sse-db-event/states/sseEventStreamIdState';
-import { getSnapshotValue } from '@/ui/utilities/state/utils/getSnapshotValue';
-import { ApolloError, useMutation } from '@apollo/client';
+import { sseEventStreamReadyState } from '@/sse-db-event/states/sseEventStreamReadyState';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { useMutation } from '@apollo/client/react';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { isNonEmptyString } from '@sniptt/guards';
-import { useEffect } from 'react';
-import { useRecoilCallback, useRecoilValue } from 'recoil';
+import { useCallback, useEffect } from 'react';
 import {
   compareArraysOfObjectsByProperty,
   isDefined,
@@ -18,9 +19,12 @@ import {
   type AddQuerySubscriptionInput,
   type RemoveQueryFromEventStreamInput,
 } from '~/generated-metadata/graphql';
+import { useStore } from 'jotai';
 
 export const SSEQuerySubscribeEffect = () => {
-  const sseEventStreamId = useRecoilValue(sseEventStreamIdState);
+  const store = useStore();
+  const sseEventStreamId = useAtomStateValue(sseEventStreamIdState);
+  const sseEventStreamReady = useAtomStateValue(sseEventStreamReadyState);
 
   const [addQueryToEventStream] = useMutation<
     boolean,
@@ -32,88 +36,82 @@ export const SSEQuerySubscribeEffect = () => {
     { input: RemoveQueryFromEventStreamInput }
   >(REMOVE_QUERY_FROM_EVENT_STREAM_MUTATION);
 
-  const requiredQueryListeners = useRecoilValue(requiredQueryListenersState);
-  const activeQueryListeners = useRecoilValue(activeQueryListenersState);
+  const requiredQueryListeners = useAtomStateValue(requiredQueryListenersState);
+  const activeQueryListeners = useAtomStateValue(activeQueryListenersState);
 
-  const updateQueryListeners = useRecoilCallback(
-    ({ set, snapshot }) =>
-      async () => {
-        if (!isDefined(sseEventStreamId)) {
-          return;
-        }
+  const updateQueryListeners = useCallback(async () => {
+    if (!isDefined(sseEventStreamId)) {
+      return;
+    }
 
-        const requiredQueryListeners = getSnapshotValue(
-          snapshot,
-          requiredQueryListenersState,
-        );
+    const requiredQueryListeners = store.get(requiredQueryListenersState.atom);
 
-        const activeQueryListeners = getSnapshotValue(
-          snapshot,
-          activeQueryListenersState,
-        );
+    const activeQueryListeners = store.get(activeQueryListenersState.atom);
 
-        const queryListenersToAdd = requiredQueryListeners.filter(
-          (listener) =>
-            !activeQueryListeners.some(
-              (activeListener) => activeListener.queryId === listener.queryId,
-            ),
-        );
+    const queryListenersToAdd = requiredQueryListeners.filter(
+      (listener) =>
+        !activeQueryListeners.some(
+          (activeListener) => activeListener.queryId === listener.queryId,
+        ),
+    );
 
-        const queryListenersToRemove = activeQueryListeners.filter(
-          (listener) =>
-            !requiredQueryListeners.some(
-              (requiredListener) =>
-                requiredListener.queryId === listener.queryId,
-            ),
-        );
+    const queryListenersToRemove = activeQueryListeners.filter(
+      (listener) =>
+        !requiredQueryListeners.some(
+          (requiredListener) => requiredListener.queryId === listener.queryId,
+        ),
+    );
 
-        try {
-          for (const queryListenerToAdd of queryListenersToAdd) {
-            await addQueryToEventStream({
-              variables: {
-                input: {
-                  eventStreamId: sseEventStreamId,
-                  queryId: queryListenerToAdd.queryId,
-                  operationSignature: queryListenerToAdd.operationSignature,
-                },
-              },
-            });
+    try {
+      for (const queryListenerToAdd of queryListenersToAdd) {
+        await addQueryToEventStream({
+          variables: {
+            input: {
+              eventStreamId: sseEventStreamId,
+              queryId: queryListenerToAdd.queryId,
+              operationSignature: queryListenerToAdd.operationSignature,
+            },
+          },
+        });
+      }
+
+      for (const queryListenerToRemove of queryListenersToRemove) {
+        await removeQueryFromEventStream({
+          variables: {
+            input: {
+              eventStreamId: sseEventStreamId,
+              queryId: queryListenerToRemove.queryId,
+            },
+          },
+        });
+      }
+    } catch (error) {
+      if (CombinedGraphQLErrors.is(error)) {
+        const subCode = error.errors[0]?.extensions?.subCode;
+
+        switch (subCode) {
+          case 'EVENT_STREAM_DOES_NOT_EXIST':
+          case 'EVENT_STREAM_ALREADY_EXISTS': {
+            store.set(activeQueryListenersState.atom, []);
+            store.set(shouldDestroyEventStreamState.atom, true);
+            return;
           }
-
-          for (const queryListenerToRemove of queryListenersToRemove) {
-            await removeQueryFromEventStream({
-              variables: {
-                input: {
-                  eventStreamId: sseEventStreamId,
-                  queryId: queryListenerToRemove.queryId,
-                },
-              },
-            });
-          }
-        } catch (error) {
-          if (error instanceof ApolloError) {
-            const subCode = error.graphQLErrors[0]?.extensions?.subCode;
-
-            switch (subCode) {
-              case 'EVENT_STREAM_DOES_NOT_EXIST':
-              case 'EVENT_STREAM_ALREADY_EXISTS': {
-                set(activeQueryListenersState, []);
-                set(shouldDestroyEventStreamState, true);
-                return;
-              }
-              default: {
-                throw new Error(
-                  `Unhandled error for event stream: ${error.message}`,
-                );
-              }
-            }
+          default: {
+            throw new Error(
+              `Unhandled error for event stream: ${error.message}`,
+            );
           }
         }
+      }
+    }
 
-        set(activeQueryListenersState, requiredQueryListeners);
-      },
-    [addQueryToEventStream, removeQueryFromEventStream, sseEventStreamId],
-  );
+    store.set(activeQueryListenersState.atom, requiredQueryListeners);
+  }, [
+    addQueryToEventStream,
+    removeQueryFromEventStream,
+    sseEventStreamId,
+    store,
+  ]);
 
   const debouncedUpdateQueryListeners = useDebouncedCallback(
     updateQueryListeners,
@@ -122,7 +120,7 @@ export const SSEQuerySubscribeEffect = () => {
   );
 
   useEffect(() => {
-    if (!isNonEmptyString(sseEventStreamId)) {
+    if (!isNonEmptyString(sseEventStreamId) || !sseEventStreamReady) {
       return;
     }
 
@@ -138,6 +136,7 @@ export const SSEQuerySubscribeEffect = () => {
     }
   }, [
     sseEventStreamId,
+    sseEventStreamReady,
     requiredQueryListeners,
     activeQueryListeners,
     debouncedUpdateQueryListeners,

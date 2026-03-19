@@ -1,4 +1,3 @@
-import { FIND_ONE_PAGE_LAYOUT } from '@/dashboards/graphql/queries/findOnePageLayout';
 import { DEFAULT_COMPANY_RECORD_PAGE_LAYOUT } from '@/page-layout/constants/DefaultCompanyRecordPageLayout';
 import { DEFAULT_COMPANY_RECORD_PAGE_LAYOUT_ID } from '@/page-layout/constants/DefaultCompanyRecordPageLayoutId';
 import { DEFAULT_NOTE_RECORD_PAGE_LAYOUT } from '@/page-layout/constants/DefaultNoteRecordPageLayout';
@@ -20,9 +19,10 @@ import { DEFAULT_WORKFLOW_VERSION_PAGE_LAYOUT_ID } from '@/page-layout/constants
 import { recordPageLayoutFromIdFamilySelector } from '@/page-layout/states/selectors/recordPageLayoutFromIdFamilySelector';
 import { type PageLayout } from '@/page-layout/types/PageLayout';
 import { transformPageLayout } from '@/page-layout/utils/transformPageLayout';
-import { useQuery } from '@apollo/client';
-import { useRecoilValue } from 'recoil';
+import { useAtomFamilySelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilySelectorValue';
+import { useQuery } from '@apollo/client/react';
 import { isDefined } from 'twenty-shared/utils';
+import { FindOnePageLayoutDocument } from '~/generated-metadata/graphql';
 
 const getDefaultLayoutById = (layoutId: string): PageLayout => {
   switch (layoutId) {
@@ -64,13 +64,14 @@ export const useBasePageLayout = (
 ): PageLayout | undefined => {
   const isDefaultLayout = isDefaultLayoutId(pageLayoutId);
 
-  const cachedRecordPageLayout = useRecoilValue(
-    recordPageLayoutFromIdFamilySelector({ pageLayoutId }),
+  const cachedRecordPageLayout = useAtomFamilySelectorValue(
+    recordPageLayoutFromIdFamilySelector,
+    { pageLayoutId },
   );
 
   const shouldSkipQuery = isDefaultLayout || isDefined(cachedRecordPageLayout);
 
-  const { data } = useQuery(FIND_ONE_PAGE_LAYOUT, {
+  const { data } = useQuery(FindOnePageLayoutDocument, {
     variables: {
       id: pageLayoutId,
     },

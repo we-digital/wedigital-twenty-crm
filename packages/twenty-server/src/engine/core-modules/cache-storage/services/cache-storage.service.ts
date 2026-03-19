@@ -306,7 +306,7 @@ export class CacheStorageService {
   }
 
   private isRedisCache() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
     return (this.cache.store as any)?.name === 'redis';
   }
 
@@ -314,7 +314,7 @@ export class CacheStorageService {
     const formattedKey = `${this.namespace}:${key}`;
 
     if (process.env.NODE_ENV === 'test') {
-      return `integration-tests:${formattedKey}`;
+      return `${CacheStorageNamespace.IntegrationTests}:${formattedKey}`;
     }
 
     return formattedKey;

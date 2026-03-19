@@ -1,4 +1,4 @@
-import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
+import { CoreObjectNameSingular } from 'twenty-shared/types';
 import { type FieldMetadataItem } from '@/object-metadata/types/FieldMetadataItem';
 import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
 
@@ -17,6 +17,10 @@ export const isImageIdentifierField = ({
     fieldMetadataItem.name === 'domainName'
   ) {
     return true;
+  }
+
+  if (objectMetadataItem.nameSingular === CoreObjectNameSingular.Person) {
+    return fieldMetadataItem.name === 'avatarFile';
   }
 
   return (

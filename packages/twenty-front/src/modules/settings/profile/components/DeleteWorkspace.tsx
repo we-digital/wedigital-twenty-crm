@@ -1,28 +1,32 @@
 import { Trans, useLingui } from '@lingui/react/macro';
-import { useRecoilValue } from 'recoil';
 
 import { useAuth } from '@/auth/hooks/useAuth';
 import { currentUserState } from '@/auth/states/currentUserState';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { useRedirectToDefaultDomain } from '@/domain-manager/hooks/useRedirectToDefaultDomain';
 import { ConfirmationModal } from '@/ui/layout/modal/components/ConfirmationModal';
 import { useModal } from '@/ui/layout/modal/hooks/useModal';
 import { H2Title, IconTrash } from 'twenty-ui/display';
 import { Button } from 'twenty-ui/input';
-import { useDeleteCurrentWorkspaceMutation } from '~/generated-metadata/graphql';
+import { useMutation } from '@apollo/client/react';
+import { DeleteCurrentWorkspaceDocument } from '~/generated-metadata/graphql';
 
 const DELETE_WORKSPACE_MODAL_ID = 'delete-workspace-modal';
 
 export const DeleteWorkspace = () => {
-  const [deleteCurrentWorkspace] = useDeleteCurrentWorkspaceMutation();
-  const currentUser = useRecoilValue(currentUserState);
+  const [deleteCurrentWorkspace] = useMutation(DeleteCurrentWorkspaceDocument);
+  const currentUser = useAtomStateValue(currentUserState);
   const userEmail = currentUser?.email;
   const { t } = useLingui();
   const { openModal } = useModal();
 
   const { signOut } = useAuth();
+  const { redirectToDefaultDomain } = useRedirectToDefaultDomain();
 
   const deleteWorkspace = async () => {
     await deleteCurrentWorkspace();
     await signOut();
+    redirectToDefaultDomain();
   };
 
   return (
@@ -40,7 +44,7 @@ export const DeleteWorkspace = () => {
       />
 
       <ConfirmationModal
-        modalId={DELETE_WORKSPACE_MODAL_ID}
+        modalInstanceId={DELETE_WORKSPACE_MODAL_ID}
         confirmationPlaceholder={userEmail}
         confirmationValue={userEmail}
         title={t`Workspace Deletion`}

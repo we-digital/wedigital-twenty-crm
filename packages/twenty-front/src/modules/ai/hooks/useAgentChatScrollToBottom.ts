@@ -1,7 +1,8 @@
 import { AI_CHAT_SCROLL_WRAPPER_ID } from '@/ai/constants/AiChatScrollWrapperId';
 import { useScrollWrapperHTMLElement } from '@/ui/utilities/scroll/hooks/useScrollWrapperHTMLElement';
 import { scrollWrapperScrollBottomComponentState } from '@/ui/utilities/scroll/states/scrollWrapperScrollBottomComponentState';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { useCallback, useMemo } from 'react';
 import { isDefined } from 'twenty-shared/utils';
 
 const SCROLL_BOTTOM_THRESHOLD_PX = 10;
@@ -11,14 +12,17 @@ export const useAgentChatScrollToBottom = () => {
     AI_CHAT_SCROLL_WRAPPER_ID,
   );
 
-  const scrollBottom = useRecoilComponentValue(
+  const scrollWrapperScrollBottom = useAtomComponentStateValue(
     scrollWrapperScrollBottomComponentState,
     AI_CHAT_SCROLL_WRAPPER_ID,
   );
 
-  const isNearBottom = scrollBottom <= SCROLL_BOTTOM_THRESHOLD_PX;
+  const isNearBottom = useMemo(
+    () => scrollWrapperScrollBottom <= SCROLL_BOTTOM_THRESHOLD_PX,
+    [scrollWrapperScrollBottom],
+  );
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     const { scrollWrapperElement } = getScrollWrapperElement();
     if (!isDefined(scrollWrapperElement)) {
       return;
@@ -27,7 +31,7 @@ export const useAgentChatScrollToBottom = () => {
     scrollWrapperElement.scrollTo({
       top: scrollWrapperElement.scrollHeight,
     });
-  };
+  }, [getScrollWrapperElement]);
 
   return { scrollToBottom, isNearBottom };
 };

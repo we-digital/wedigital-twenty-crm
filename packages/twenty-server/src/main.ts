@@ -22,6 +22,7 @@ import './instrument';
 import { settings } from './engine/constants/settings';
 import { generateFrontConfig } from './utils/generate-front-config';
 
+// Trigger
 const bootstrap = async () => {
   setPgDateTypeParser();
 
@@ -62,7 +63,7 @@ const bootstrap = async () => {
   app.use(
     '/graphql',
     graphqlUploadExpress({
-      maxFieldSize: bytes(settings.storage.maxFileSize),
+      maxFieldSize: bytes(settings.storage.maxFileSize)!,
       maxFiles: 10,
     }),
   );
@@ -70,7 +71,7 @@ const bootstrap = async () => {
   app.use(
     '/metadata',
     graphqlUploadExpress({
-      maxFieldSize: bytes(settings.storage.maxFileSize),
+      maxFieldSize: bytes(settings.storage.maxFileSize)!,
       maxFiles: 10,
     }),
   );

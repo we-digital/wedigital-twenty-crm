@@ -3,10 +3,10 @@ import { authProvidersState } from '@/client-config/states/authProvidersState';
 import { SettingsOptionCardContentToggle } from '@/settings/components/SettingsOptions/SettingsOptionCardContentToggle';
 import { SSOIdentitiesProvidersState } from '@/settings/security/states/SSOIdentitiesProvidersState';
 import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
-import { ApolloError } from '@apollo/client';
-import styled from '@emotion/styled';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
+import { styled } from '@linaria/react';
 import { useLingui } from '@lingui/react/macro';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useAtomState } from '@/ui/utilities/state/jotai/hooks/useAtomState';
 import { ConnectedAccountProvider } from 'twenty-shared/types';
 import { capitalize } from 'twenty-shared/utils';
 import {
@@ -16,31 +16,34 @@ import {
   IconPassword,
 } from 'twenty-ui/display';
 import { Card } from 'twenty-ui/layout';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
+import { useMutation } from '@apollo/client/react';
 import {
   type AuthProviders,
-  useUpdateWorkspaceMutation,
+  UpdateWorkspaceDocument,
 } from '~/generated-metadata/graphql';
 
 import { Toggle2FA } from './Toggle2FA';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 
 const StyledSettingsSecurityOptionsList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.spacing(4)};
+  gap: ${themeCssVariables.spacing[4]};
 `;
 
 export const SettingsSecurityAuthProvidersOptionsList = () => {
   const { t } = useLingui();
 
   const { enqueueErrorSnackBar } = useSnackBar();
-  const SSOIdentitiesProviders = useRecoilValue(SSOIdentitiesProvidersState);
-  const authProviders = useRecoilValue(authProvidersState);
+  const SSOIdentitiesProviders = useAtomStateValue(SSOIdentitiesProvidersState);
+  const authProviders = useAtomStateValue(authProvidersState);
 
-  const [currentWorkspace, setCurrentWorkspace] = useRecoilState(
+  const [currentWorkspace, setCurrentWorkspace] = useAtomState(
     currentWorkspaceState,
   );
 
-  const [updateWorkspace] = useUpdateWorkspaceMutation();
+  const [updateWorkspace] = useMutation(UpdateWorkspaceDocument);
 
   const isValidAuthProvider = (
     key: string,
@@ -97,7 +100,7 @@ export const SettingsSecurityAuthProvidersOptionsList = () => {
         [key]: !currentWorkspace[key],
       });
       enqueueErrorSnackBar({
-        apolloError: err instanceof ApolloError ? err : undefined,
+        apolloError: CombinedGraphQLErrors.is(err) ? err : undefined,
       });
     });
   };
@@ -120,7 +123,7 @@ export const SettingsSecurityAuthProvidersOptionsList = () => {
       });
     } catch (err: any) {
       enqueueErrorSnackBar({
-        apolloError: err instanceof ApolloError ? err : undefined,
+        apolloError: CombinedGraphQLErrors.is(err) ? err : undefined,
       });
     }
   };
@@ -174,12 +177,11 @@ export const SettingsSecurityAuthProvidersOptionsList = () => {
               description={t`Allow the invitation of new users by sharing an invite link.`}
               checked={currentWorkspace.isPublicInviteLinkEnabled}
               advancedMode
+              divider
               onChange={() =>
                 handleChange(!currentWorkspace.isPublicInviteLinkEnabled)
               }
             />
-          </Card>
-          <Card rounded>
             <Toggle2FA />
           </Card>
         </>

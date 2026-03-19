@@ -1,13 +1,17 @@
-import { useTheme } from '@emotion/react';
 import { isNonEmptyString, isString } from '@sniptt/guards';
-import { type ReactNode } from 'react';
+import { type ReactNode, useContext } from 'react';
 
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
 import {
   type IconComponent,
   IconGripVertical,
   OverflowingTextWithTooltip,
 } from '@ui/display';
+import { ThemeContext, themeCssVariables } from '@ui/theme-constants';
+import { type MenuItemDraggableGripMode } from '../../types/MenuItemDraggableGripMode';
+import { MenuItemIcon } from './MenuItemIcon';
+import { MenuItemIconBoxContainer } from './MenuItemIconBoxContainer';
+import { MenuItemIconWithGripSwap } from './MenuItemIconWithGripSwap';
 import {
   StyledDraggableItem,
   StyledMenuItemContextualText,
@@ -24,16 +28,13 @@ const StyledMainText = styled.div`
   max-width: 100%;
 `;
 
-const StyledIconContainer = styled.div`
-  align-items: flex-start;
-  background: ${({ theme }) => theme.background.transparent.light};
-  border-radius: ${({ theme }) => theme.border.radius.sm};
+const StyledMenuItemLabelRight = styled.div`
   display: flex;
-  flex-direction: column;
-  padding: ${({ theme }) => theme.spacing(1)};
-`;
-
-const StyledMenuItemLabelRight = styled(StyledMenuItemLabel)`
+  flex-direction: row;
+  font-size: ${themeCssVariables.font.size.md};
+  font-weight: ${themeCssVariables.font.weight.regular};
+  overflow: hidden;
+  white-space: nowrap;
   margin-left: auto;
 `;
 
@@ -42,7 +43,8 @@ type MenuItemLeftContentProps = {
   LeftComponent?: ReactNode;
   LeftIcon: IconComponent | null | undefined;
   withIconContainer?: boolean;
-  showGrip?: boolean;
+  withIconContainerBackground?: boolean;
+  gripMode?: MenuItemDraggableGripMode;
   disabled?: boolean;
   text: ReactNode;
   contextualText?: ReactNode;
@@ -54,39 +56,56 @@ export const MenuItemLeftContent = ({
   LeftComponent,
   LeftIcon,
   withIconContainer = false,
+  withIconContainerBackground = true,
   text,
   contextualText,
   contextualTextPosition = 'left',
-  showGrip = false,
+  gripMode = 'never',
   disabled = false,
 }: MenuItemLeftContentProps) => {
-  const theme = useTheme();
+  const { theme } = useContext(ThemeContext);
+
+  const gripIconColor = withIconContainer
+    ? themeCssVariables.font.color.tertiary
+    : disabled
+      ? themeCssVariables.font.color.extraLight
+      : themeCssVariables.font.color.light;
 
   return (
     <StyledMenuItemLeftContent className={className}>
-      {showGrip && (
-        <StyledDraggableItem>
-          <IconGripVertical
-            size={theme.icon.size.md}
-            stroke={theme.icon.stroke.sm}
-            color={
-              withIconContainer
-                ? theme.font.color.tertiary
-                : disabled
-                  ? theme.font.color.extraLight
-                  : theme.font.color.light
-            }
-          />
-        </StyledDraggableItem>
-      )}
-      {LeftIcon &&
+      {gripMode === 'always' &&
         (withIconContainer ? (
-          <StyledIconContainer>
-            <LeftIcon size={theme.icon.size.md} stroke={theme.icon.stroke.sm} />
-          </StyledIconContainer>
+          <MenuItemIconBoxContainer hasBackground={withIconContainerBackground}>
+            <StyledDraggableItem>
+              <IconGripVertical
+                size={theme.icon.size.md}
+                stroke={theme.icon.stroke.sm}
+                color={gripIconColor}
+              />
+            </StyledDraggableItem>
+          </MenuItemIconBoxContainer>
         ) : (
-          <LeftIcon size={theme.icon.size.md} stroke={theme.icon.stroke.sm} />
+          <StyledDraggableItem>
+            <IconGripVertical
+              size={theme.icon.size.md}
+              stroke={theme.icon.stroke.sm}
+              color={gripIconColor}
+            />
+          </StyledDraggableItem>
         ))}
+      {gripMode === 'onHover' ? (
+        <MenuItemIconWithGripSwap
+          LeftIcon={LeftIcon}
+          withIconContainer={withIconContainer}
+          gripIconColor={gripIconColor}
+        />
+      ) : (
+        <MenuItemIcon
+          Icon={LeftIcon}
+          withContainer={withIconContainer}
+          withContainerBackground={withIconContainerBackground}
+        />
+      )}
       {LeftComponent}
       <StyledMenuItemLabel>
         {isString(text) ? (
@@ -101,7 +120,10 @@ export const MenuItemLeftContent = ({
             {isString(contextualText)
               ? isNonEmptyString(contextualText) && (
                   <StyledMenuItemContextualText>
-                    <OverflowingTextWithTooltip text={`· ${contextualText}`} />
+                    <OverflowingTextWithTooltip
+                      text={`· ${contextualText}`}
+                      tooltipContent={contextualText}
+                    />
                   </StyledMenuItemContextualText>
                 )
               : contextualText}

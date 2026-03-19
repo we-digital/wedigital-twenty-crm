@@ -64,7 +64,7 @@ export const fromCreateObjectInputToFlatObjectMetadataAndFlatFieldMetadatasToCre
     const nameField = defaultFlatFieldForCustomObjectMaps.fields.nameField;
     const labelIdentifierFieldMetadataUniversalIdentifier =
       nameField?.universalIdentifier ??
-      defaultFlatFieldForCustomObjectMaps.fields.idField.universalIdentifier;
+      defaultFlatFieldForCustomObjectMaps.fields.id.universalIdentifier;
 
     const universalFlatObjectMetadataToCreate: UniversalFlatObjectMetadata & {
       id: string;
@@ -74,6 +74,7 @@ export const fromCreateObjectInputToFlatObjectMetadataAndFlatFieldMetadatasToCre
       createdAt,
       updatedAt: createdAt,
       duplicateCriteria: null,
+      color: createObjectInput.color ?? null,
       description: createObjectInput.description ?? null,
       icon: createObjectInput.icon ?? null,
       isActive: true,
@@ -93,6 +94,7 @@ export const fromCreateObjectInputToFlatObjectMetadataAndFlatFieldMetadatasToCre
       targetTableName: 'DEPRECATED',
       applicationUniversalIdentifier: flatApplication.universalIdentifier,
       fieldUniversalIdentifiers: [],
+      objectPermissionUniversalIdentifiers: [],
       viewUniversalIdentifiers: [],
       indexMetadataUniversalIdentifiers: [],
       labelIdentifierFieldMetadataUniversalIdentifier,

@@ -1,16 +1,17 @@
+import { type PageLayoutTab } from '@/page-layout/types/PageLayoutTab';
+import { removeWidgetFromTab } from '@/page-layout/utils/removeWidgetFromTab';
 import {
   AggregateOperations,
   GraphOrderBy,
   WidgetConfigurationType,
   WidgetType,
 } from '~/generated-metadata/graphql';
-import { type PageLayoutTab } from '@/page-layout/types/PageLayoutTab';
-import { removeWidgetFromTab } from '@/page-layout/utils/removeWidgetFromTab';
 
 describe('removeWidgetFromTab', () => {
   const mockTabs: PageLayoutTab[] = [
     {
       id: 'tab-1',
+      applicationId: '',
       title: 'Tab 1',
       position: 0,
       pageLayoutId: 'layout-1',
@@ -29,6 +30,7 @@ describe('removeWidgetFromTab', () => {
           },
           gridPosition: { row: 0, column: 0, rowSpan: 2, columnSpan: 2 },
           objectMetadataId: null,
+          isOverridden: false,
           createdAt: '2024-01-01T00:00:00Z',
           updatedAt: '2024-01-01T00:00:00Z',
           deletedAt: null,
@@ -49,17 +51,20 @@ describe('removeWidgetFromTab', () => {
           },
           gridPosition: { row: 2, column: 0, rowSpan: 2, columnSpan: 2 },
           objectMetadataId: null,
+          isOverridden: false,
           createdAt: '2024-01-01T00:00:00Z',
           updatedAt: '2024-01-01T00:00:00Z',
           deletedAt: null,
         },
       ],
+      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
     },
     {
       id: 'tab-2',
+      applicationId: '',
       title: 'Tab 2',
       position: 1,
       pageLayoutId: 'layout-1',
@@ -76,11 +81,13 @@ describe('removeWidgetFromTab', () => {
           },
           gridPosition: { row: 0, column: 0, rowSpan: 2, columnSpan: 2 },
           objectMetadataId: null,
+          isOverridden: false,
           createdAt: '2024-01-01T00:00:00Z',
           updatedAt: '2024-01-01T00:00:00Z',
           deletedAt: null,
         },
       ],
+      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useCheckPublicDomainValidRecords } from '@/settings/domains/hooks/useCheckPublicDomainValidRecords';
-import { type PublicDomain } from '~/generated/graphql';
+import { type PublicDomain } from '~/generated-metadata/graphql';
 
 export const CheckPublicDomainValidRecordsEffect = ({
   publicDomain,
@@ -12,7 +12,7 @@ export const CheckPublicDomainValidRecordsEffect = ({
   useEffect(() => {
     checkPublicDomainRecords(publicDomain.domain);
     // Check public domain only needs to run once at mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return <></>;

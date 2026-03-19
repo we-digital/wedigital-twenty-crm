@@ -5,28 +5,31 @@ import { SettingsListCard } from '@/settings/components/SettingsListCard';
 
 import { SettingsEmailingDomainRowDropdownMenu } from '@/settings/emailing-domains/components/SettingsEmailingDomainRowDropdownMenu';
 
-import styled from '@emotion/styled';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { styled } from '@linaria/react';
 import { useLingui } from '@lingui/react/macro';
-import { useRecoilValue } from 'recoil';
 import { SettingsPath } from 'twenty-shared/types';
 import { getSettingsPath } from 'twenty-shared/utils';
 import { IconMail, Status } from 'twenty-ui/display';
-import { useGetEmailingDomainsQuery } from '~/generated-metadata/graphql';
+import { useQuery } from '@apollo/client/react';
+import { GetEmailingDomainsDocument } from '~/generated-metadata/graphql';
 import { dateLocaleState } from '~/localization/states/dateLocaleState';
 import { getColorByEmailingDomainStatus } from '~/pages/settings/emailing-domains/utils/getEmailingDomainStatusColor';
 import { getTextByEmailingDomainStatus } from '~/pages/settings/emailing-domains/utils/getEmailingDomainStatusText';
 import { beautifyPastDateRelativeToNow } from '~/utils/date-utils';
 
-const StyledLink = styled(Link)`
-  text-decoration: none;
+const StyledLinkContainer = styled.div`
+  > a {
+    text-decoration: none;
+  }
 `;
 
 export const SettingsEmailingDomains = () => {
   const { t } = useLingui();
-  const { localeCatalog } = useRecoilValue(dateLocaleState);
+  const { localeCatalog } = useAtomStateValue(dateLocaleState);
   const navigate = useNavigate();
 
-  const { data, loading: isLoading } = useGetEmailingDomainsQuery();
+  const { data, loading: isLoading } = useQuery(GetEmailingDomainsDocument);
   const emailingDomains = data?.getEmailingDomains ?? [];
 
   const getItemDescription = (createdAt: string) => {
@@ -38,9 +41,11 @@ export const SettingsEmailingDomains = () => {
   };
 
   return isLoading || !emailingDomains.length ? (
-    <StyledLink to={getSettingsPath(SettingsPath.NewEmailingDomain)}>
-      <SettingsCard title={t`Add Emailing Domain`} Icon={<IconMail />} />
-    </StyledLink>
+    <StyledLinkContainer>
+      <Link to={getSettingsPath(SettingsPath.NewEmailingDomain)}>
+        <SettingsCard title={t`Add Emailing Domain`} Icon={<IconMail />} />
+      </Link>
+    </StyledLinkContainer>
   ) : (
     <>
       <SettingsListCard

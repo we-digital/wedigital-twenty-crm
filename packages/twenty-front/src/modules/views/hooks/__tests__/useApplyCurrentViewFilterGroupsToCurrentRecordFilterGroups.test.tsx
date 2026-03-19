@@ -3,23 +3,21 @@ import { renderHook } from '@testing-library/react';
 import { contextStoreCurrentViewIdComponentState } from '@/context-store/states/contextStoreCurrentViewIdComponentState';
 import { currentRecordFilterGroupsComponentState } from '@/object-record/record-filter-group/states/currentRecordFilterGroupsComponentState';
 import { type RecordFilterGroup } from '@/object-record/record-filter-group/types/RecordFilterGroup';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { resetJotaiStore } from '@/ui/utilities/state/jotai/jotaiStore';
 import { useApplyCurrentViewFilterGroupsToCurrentRecordFilterGroups } from '@/views/hooks/useApplyCurrentViewFilterGroupsToCurrentRecordFilterGroups';
-import { coreViewsState } from '@/views/states/coreViewState';
-import { type CoreViewWithRelations } from '@/views/types/CoreViewWithRelations';
+import { type ViewWithRelations } from '@/views/types/ViewWithRelations';
 import { type View } from '@/views/types/View';
 import { type ViewFilterGroup } from '@/views/types/ViewFilterGroup';
 import { ViewFilterGroupLogicalOperator } from '@/views/types/ViewFilterGroupLogicalOperator';
 import { mapViewFilterGroupLogicalOperatorToRecordFilterGroupLogicalOperator } from '@/views/utils/mapViewFilterGroupLogicalOperatorToRecordFilterGroupLogicalOperator';
 import { act } from 'react';
 import { isDefined } from 'twenty-shared/utils';
-import { type CoreViewFilterGroup } from '~/generated/graphql';
-import { getJestMetadataAndApolloMocksAndActionMenuWrapper } from '~/testing/jest/getJestMetadataAndApolloMocksAndActionMenuWrapper';
-import {
-  mockedCoreViewsData,
-  mockedViewsData,
-} from '~/testing/mock-data/views';
+import { type ViewFilterGroup as GqlViewFilterGroup } from '~/generated-metadata/graphql';
+import { getJestMetadataAndApolloMocksAndCommandMenuWrapper } from '~/testing/jest/getJestMetadataAndApolloMocksAndCommandMenuWrapper';
+import { mockedViews } from '~/testing/mock-data/generated/metadata/views/mock-views-data';
 import { generatedMockObjectMetadataItems } from '~/testing/utils/generatedMockObjectMetadataItems';
+import { setTestViewsInMetadataStore } from '~/testing/utils/setTestViewsInMetadataStore';
 
 const mockObjectMetadataItemNameSingular = 'company';
 
@@ -34,8 +32,11 @@ describe('useApplyCurrentViewFilterGroupsToCurrentRecordFilterGroups', () => {
     );
   }
 
+  beforeEach(() => {
+    resetJotaiStore();
+  });
+
   const mockViewFilterGroup: ViewFilterGroup = {
-    __typename: 'ViewFilterGroup',
     id: 'filter-group-1',
     logicalOperator: ViewFilterGroupLogicalOperator.AND,
     viewId: 'view-1',
@@ -43,13 +44,15 @@ describe('useApplyCurrentViewFilterGroupsToCurrentRecordFilterGroups', () => {
     positionInViewFilterGroup: 0,
   };
 
-  const allCompaniesView = mockedViewsData[0];
-  const allCompaniesCoreView = mockedCoreViewsData[0];
+  const allCompaniesViewData = mockedViews.find(
+    (v) => v.name === 'All Companies',
+  )!;
+  const allCompaniesView = allCompaniesViewData as unknown as View;
 
-  const mockCoreViewFilterGroup: Omit<CoreViewFilterGroup, 'workspaceId'> = {
-    __typename: 'CoreViewFilterGroup',
+  const mockGqlViewFilterGroup: Omit<GqlViewFilterGroup, 'workspaceId'> = {
+    __typename: 'ViewFilterGroup',
     id: 'filter-group-1',
-    viewId: allCompaniesCoreView.id,
+    viewId: allCompaniesViewData.id,
     logicalOperator: ViewFilterGroupLogicalOperator.AND,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -61,10 +64,10 @@ describe('useApplyCurrentViewFilterGroupsToCurrentRecordFilterGroups', () => {
     viewFilterGroups: [mockViewFilterGroup],
   } satisfies View;
 
-  const mockCoreView = {
-    ...allCompaniesCoreView,
-    viewFilterGroups: [mockCoreViewFilterGroup],
-  } satisfies CoreViewWithRelations;
+  const mockViewWithRelations = {
+    ...allCompaniesViewData,
+    viewFilterGroups: [mockGqlViewFilterGroup],
+  } satisfies ViewWithRelations;
 
   it('should apply view filter groups from current view', () => {
     const { result } = renderHook(
@@ -72,8 +75,9 @@ describe('useApplyCurrentViewFilterGroupsToCurrentRecordFilterGroups', () => {
         const { applyCurrentViewFilterGroupsToCurrentRecordFilterGroups } =
           useApplyCurrentViewFilterGroupsToCurrentRecordFilterGroups();
 
-        const currentRecordFilterGroups = useRecoilComponentValue(
+        const currentRecordFilterGroups = useAtomComponentStateValue(
           currentRecordFilterGroupsComponentState,
+          'recordIndexId',
         );
 
         return {
@@ -82,14 +86,14 @@ describe('useApplyCurrentViewFilterGroupsToCurrentRecordFilterGroups', () => {
         };
       },
       {
-        wrapper: getJestMetadataAndApolloMocksAndActionMenuWrapper({
+        wrapper: getJestMetadataAndApolloMocksAndCommandMenuWrapper({
           apolloMocks: [],
           componentInstanceId: 'instanceId',
           contextStoreCurrentViewId: mockView.id,
           contextStoreCurrentObjectMetadataNameSingular:
             mockObjectMetadataItemNameSingular,
-          onInitializeRecoilSnapshot: (snapshot) => {
-            snapshot.set(coreViewsState, [mockCoreView]);
+          onInitializeJotaiStore: (store) => {
+            setTestViewsInMetadataStore(store, [mockViewWithRelations]);
           },
         }),
       },
@@ -106,7 +110,8 @@ describe('useApplyCurrentViewFilterGroupsToCurrentRecordFilterGroups', () => {
           mapViewFilterGroupLogicalOperatorToRecordFilterGroupLogicalOperator({
             viewFilterGroupLogicalOperator: mockViewFilterGroup.logicalOperator,
           }),
-        parentRecordFilterGroupId: mockViewFilterGroup.parentViewFilterGroupId,
+        parentRecordFilterGroupId:
+          mockViewFilterGroup.parentViewFilterGroupId ?? undefined,
         positionInRecordFilterGroup:
           mockViewFilterGroup.positionInViewFilterGroup,
       },
@@ -123,8 +128,9 @@ describe('useApplyCurrentViewFilterGroupsToCurrentRecordFilterGroups', () => {
         const { applyCurrentViewFilterGroupsToCurrentRecordFilterGroups } =
           useApplyCurrentViewFilterGroupsToCurrentRecordFilterGroups();
 
-        const currentRecordFilterGroups = useRecoilComponentValue(
+        const currentRecordFilterGroups = useAtomComponentStateValue(
           currentRecordFilterGroupsComponentState,
+          'recordIndexId',
         );
 
         return {
@@ -133,20 +139,18 @@ describe('useApplyCurrentViewFilterGroupsToCurrentRecordFilterGroups', () => {
         };
       },
       {
-        wrapper: getJestMetadataAndApolloMocksAndActionMenuWrapper({
+        wrapper: getJestMetadataAndApolloMocksAndCommandMenuWrapper({
           apolloMocks: [],
           componentInstanceId: 'instanceId',
           contextStoreCurrentObjectMetadataNameSingular:
             mockObjectMetadataItemNameSingular,
-          onInitializeRecoilSnapshot: (snapshot) => {
-            snapshot.set(
+          onInitializeJotaiStore: (store) => {
+            store.set(
               contextStoreCurrentViewIdComponentState.atomFamily({
                 instanceId: 'instanceId',
               }),
               mockView.id,
             );
-
-            snapshot.set(coreViewsState, []);
           },
         }),
       },
@@ -165,8 +169,9 @@ describe('useApplyCurrentViewFilterGroupsToCurrentRecordFilterGroups', () => {
         const { applyCurrentViewFilterGroupsToCurrentRecordFilterGroups } =
           useApplyCurrentViewFilterGroupsToCurrentRecordFilterGroups();
 
-        const currentRecordFilterGroups = useRecoilComponentValue(
+        const currentRecordFilterGroups = useAtomComponentStateValue(
           currentRecordFilterGroupsComponentState,
+          'recordIndexId',
         );
 
         return {
@@ -175,22 +180,21 @@ describe('useApplyCurrentViewFilterGroupsToCurrentRecordFilterGroups', () => {
         };
       },
       {
-        wrapper: getJestMetadataAndApolloMocksAndActionMenuWrapper({
+        wrapper: getJestMetadataAndApolloMocksAndCommandMenuWrapper({
           apolloMocks: [],
           componentInstanceId: 'instanceId',
           contextStoreCurrentObjectMetadataNameSingular:
             mockObjectMetadataItemNameSingular,
-          onInitializeRecoilSnapshot: (snapshot) => {
-            snapshot.set(
+          onInitializeJotaiStore: (store) => {
+            setTestViewsInMetadataStore(store, [
+              { ...mockViewWithRelations, viewFilterGroups: [] },
+            ]);
+            store.set(
               contextStoreCurrentViewIdComponentState.atomFamily({
                 instanceId: 'instanceId',
               }),
               mockView.id,
             );
-
-            snapshot.set(coreViewsState, [
-              { ...mockCoreView, viewFilterGroups: [] },
-            ]);
           },
         }),
       },

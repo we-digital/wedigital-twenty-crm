@@ -1,19 +1,20 @@
-import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
-import { dispatchObjectRecordOperationBrowserEvent } from '@/object-record/utils/dispatchObjectRecordOperationBrowserEvent';
+import { dispatchObjectRecordOperationBrowserEvent } from '@/browser-event/utils/dispatchObjectRecordOperationBrowserEvent';
+import { objectMetadataItemsSelector } from '@/object-metadata/states/objectMetadataItemsSelector';
 import { groupObjectRecordSseEventsByObjectMetadataItemNameSingular } from '@/sse-db-event/utils/groupObjectRecordSseEventsByObjectMetadataItemNameSingular';
 import { turnSseObjectRecordEventsToObjectRecordOperationBrowserEvents } from '@/sse-db-event/utils/turnSseObjectRecordEventToObjectRecordOperationBrowserEvent';
+import { useStore } from 'jotai';
 import { useCallback } from 'react';
 import { isDefined } from 'twenty-shared/utils';
-import { type EventWithQueryIds } from '~/generated/graphql';
+import { type ObjectRecordEventWithQueryIds } from '~/generated-metadata/graphql';
 
 export const useDispatchObjectRecordEventsFromSseToBrowserEvents = () => {
-  const { objectMetadataItems } = useObjectMetadataItems();
+  const store = useStore();
 
   const dispatchObjectRecordEventsFromSseToBrowserEvents = useCallback(
-    (eventsWithQueryIds: EventWithQueryIds[]) => {
-      const objectRecordEvents = eventsWithQueryIds.map((eventWithQueryIds) => {
-        return eventWithQueryIds.event;
-      });
+    (objectRecordEventsWithQueryIds: ObjectRecordEventWithQueryIds[]) => {
+      const objectRecordEvents = objectRecordEventsWithQueryIds.map(
+        (item) => item.objectRecordEvent,
+      );
 
       const objectRecordEventsByObjectMetadataItemNameSingular =
         groupObjectRecordSseEventsByObjectMetadataItemNameSingular({
@@ -23,6 +24,8 @@ export const useDispatchObjectRecordEventsFromSseToBrowserEvents = () => {
       const objectMetadataItemNamesSingular = Array.from(
         objectRecordEventsByObjectMetadataItemNameSingular.keys(),
       );
+
+      const objectMetadataItems = store.get(objectMetadataItemsSelector.atom);
 
       for (const objectMetadataItemNameSingular of objectMetadataItemNamesSingular) {
         const objectRecordEventsForThisObjectMetadataItem =
@@ -49,7 +52,7 @@ export const useDispatchObjectRecordEventsFromSseToBrowserEvents = () => {
         }
       }
     },
-    [objectMetadataItems],
+    [store],
   );
 
   return { dispatchObjectRecordEventsFromSseToBrowserEvents };

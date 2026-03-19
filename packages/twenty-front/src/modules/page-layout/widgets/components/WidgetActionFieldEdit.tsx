@@ -29,7 +29,7 @@ import { assertIsDefinedOrThrow } from 'twenty-shared/utils';
 export const WidgetActionFieldEdit = () => {
   const widget = useCurrentWidget();
   const targetRecord = useTargetRecord();
-  const { isInRightDrawer } = useLayoutRenderingContext();
+  const { isInSidePanel } = useLayoutRenderingContext();
 
   const { objectMetadataItem } = useObjectMetadataItem({
     objectNameSingular: targetRecord.targetObjectNameSingular,
@@ -51,7 +51,6 @@ export const WidgetActionFieldEdit = () => {
 
   const { useUpdateOneObjectRecordMutation } = useRecordShowContainerActions({
     objectNameSingular: objectMetadataItem.nameSingular,
-    objectRecordId: targetRecord.id,
   });
 
   const isRecordReadOnly = useIsRecordReadOnly({
@@ -76,7 +75,7 @@ export const WidgetActionFieldEdit = () => {
     widgetId: widget.id,
     recordId: targetRecord.id,
     fieldName: fieldMetadataItem.name,
-    isInRightDrawer,
+    isInSidePanel,
   });
 
   if (isRelationField) {
@@ -109,6 +108,7 @@ export const WidgetActionFieldEdit = () => {
     isDisplayModeFixHeight: false,
     isRecordFieldReadOnly: isRecordFieldReadOnly({
       isRecordReadOnly,
+      isSystemObject: objectMetadataItem.isSystem,
       objectPermissions: getObjectPermissionsFromMapByObjectMetadataId({
         objectPermissionsByObjectMetadataId,
         objectMetadataId: objectMetadataItem.id,
@@ -116,6 +116,7 @@ export const WidgetActionFieldEdit = () => {
       fieldMetadataItem: {
         id: fieldMetadataItem.id,
         isUIReadOnly: fieldMetadataItem.isUIReadOnly ?? false,
+        isCustom: fieldMetadataItem.isCustom ?? false,
       },
     }),
     anchorId: recordFieldInputInstanceId,

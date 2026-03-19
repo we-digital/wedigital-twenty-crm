@@ -1,9 +1,10 @@
 import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
-import { useRecoilValue } from 'recoil';
-import { type AvailableWorkspace } from '~/generated/graphql';
+import { isDefined } from 'twenty-shared/utils';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { type AvailableWorkspace } from '~/generated-metadata/graphql';
 
 export const useFilteredAvailableWorkspaces = () => {
-  const currentWorkspace = useRecoilValue(currentWorkspaceState);
+  const currentWorkspace = useAtomStateValue(currentWorkspaceState);
 
   const searchAvailableWorkspaces = (
     searchValue: string,
@@ -11,11 +12,11 @@ export const useFilteredAvailableWorkspaces = () => {
   ) => {
     return availableWorkspaces.filter(
       (availableWorkspace) =>
-        currentWorkspace?.id &&
+        isDefined(currentWorkspace?.id) &&
         availableWorkspace.id !== currentWorkspace.id &&
         availableWorkspace.displayName
           ?.toLowerCase()
-          .includes(searchValue.toLowerCase()),
+          .includes(searchValue.toLowerCase()) === true,
     );
   };
 

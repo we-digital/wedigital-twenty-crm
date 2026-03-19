@@ -25,7 +25,7 @@ export const triggerUpdateRecordOptimisticEffect = ({
   objectPermissionsByObjectMetadataId,
   upsertRecordsInStore,
 }: {
-  cache: ApolloCache<unknown>;
+  cache: ApolloCache;
   objectMetadataItem: ObjectMetadataItem;
   currentRecord: RecordGqlNode;
   updatedRecord: RecordGqlNode;
@@ -139,7 +139,8 @@ export const triggerUpdateRecordOptimisticEffect = ({
 
         if (
           rootQueryNextEdgesShouldBeSorted &&
-          Object.getOwnPropertyNames(rootQueryOrderBy).length > 0
+          Array.isArray(rootQueryOrderBy) &&
+          rootQueryOrderBy.length > 0
         ) {
           rootQueryNextEdges = sortCachedObjectEdges({
             edges: rootQueryNextEdges,

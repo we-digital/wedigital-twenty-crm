@@ -1,19 +1,19 @@
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
 
-import { ActionMenuComponentInstanceContext } from '@/action-menu/states/contexts/ActionMenuComponentInstanceContext';
+import { CommandMenuComponentInstanceContext } from '@/command-menu/states/contexts/CommandMenuComponentInstanceContext';
 import { MAIN_CONTEXT_STORE_INSTANCE_ID } from '@/context-store/constants/MainContextStoreInstanceId';
 import { contextStoreCurrentObjectMetadataItemIdComponentState } from '@/context-store/states/contextStoreCurrentObjectMetadataItemIdComponentState';
 import { ContextStoreComponentInstanceContext } from '@/context-store/states/contexts/ContextStoreComponentInstanceContext';
-import { objectMetadataItemsState } from '@/object-metadata/states/objectMetadataItemsState';
+import { objectMetadataItemsSelector } from '@/object-metadata/states/objectMetadataItemsSelector';
 import { RecordComponentInstanceContextsWrapper } from '@/object-record/components/RecordComponentInstanceContextsWrapper';
 import { RecordIndexContextProvider } from '@/object-record/record-index/contexts/RecordIndexContext';
 import { useRecordIndexFieldMetadataDerivedStates } from '@/object-record/record-index/hooks/useRecordIndexFieldMetadataDerivedStates';
 import { RecordTableWithWrappers } from '@/object-record/record-table/components/RecordTableWithWrappers';
 import { SignInBackgroundMockContainerEffect } from '@/sign-in-background-mock/components/SignInBackgroundMockContainerEffect';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { ViewBar } from '@/views/components/ViewBar';
 import { ViewComponentInstanceContext } from '@/views/states/contexts/ViewComponentInstanceContext';
-import { useRecoilValue } from 'recoil';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { isDefined } from 'twenty-shared/utils';
 
 const StyledContainer = styled.div`
@@ -29,15 +29,16 @@ export const SignInBackgroundMockContainer = () => {
   const recordIndexId = 'sign-up-mock-record-table-id';
   const viewBarId = 'companies-mock';
 
-  const objectMetadataItems = useRecoilValue(objectMetadataItemsState);
+  const objectMetadataItems = useAtomStateValue(objectMetadataItemsSelector);
 
-  const objectMetadataItemId = useRecoilComponentValue(
+  const contextStoreCurrentObjectMetadataItemId = useAtomComponentStateValue(
     contextStoreCurrentObjectMetadataItemIdComponentState,
     MAIN_CONTEXT_STORE_INSTANCE_ID,
   );
 
   const objectMetadataItem = objectMetadataItems.find(
-    (objectMetadataItem) => objectMetadataItem.id === objectMetadataItemId,
+    (objectMetadataItem) =>
+      objectMetadataItem.id === contextStoreCurrentObjectMetadataItemId,
   );
 
   const {
@@ -84,7 +85,7 @@ export const SignInBackgroundMockContainer = () => {
                 recordTableId={recordIndexId}
                 viewId={viewBarId}
               />
-              <ActionMenuComponentInstanceContext.Provider
+              <CommandMenuComponentInstanceContext.Provider
                 value={{ instanceId: recordIndexId }}
               >
                 {isDefined(objectMetadataItem) && (
@@ -92,6 +93,7 @@ export const SignInBackgroundMockContainer = () => {
                     <ViewBar
                       viewBarId={viewBarId}
                       optionsDropdownButton={<></>}
+                      isReadOnly
                     />
 
                     <RecordTableWithWrappers
@@ -102,7 +104,7 @@ export const SignInBackgroundMockContainer = () => {
                     />
                   </>
                 )}
-              </ActionMenuComponentInstanceContext.Provider>
+              </CommandMenuComponentInstanceContext.Provider>
             </ContextStoreComponentInstanceContext.Provider>
           </RecordComponentInstanceContextsWrapper>
         </ViewComponentInstanceContext.Provider>

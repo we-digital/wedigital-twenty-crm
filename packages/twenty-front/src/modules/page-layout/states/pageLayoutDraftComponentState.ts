@@ -1,11 +1,11 @@
-import { createComponentState } from '@/ui/utilities/state/component-state/utils/createComponentState';
-import { PageLayoutType } from '~/generated/graphql';
+import { createAtomComponentState } from '@/ui/utilities/state/jotai/utils/createAtomComponentState';
+import { PageLayoutType } from '~/generated-metadata/graphql';
 
 import { type DraftPageLayout } from '@/page-layout/types/DraftPageLayout';
 import { PageLayoutComponentInstanceContext } from './contexts/PageLayoutComponentInstanceContext';
 
 export const pageLayoutDraftComponentState =
-  createComponentState<DraftPageLayout>({
+  createAtomComponentState<DraftPageLayout>({
     key: 'pageLayoutDraftComponentState',
     defaultValue: {
       id: '',
@@ -13,6 +13,7 @@ export const pageLayoutDraftComponentState =
       type: PageLayoutType.DASHBOARD,
       objectMetadataId: null,
       tabs: [],
+      defaultTabToFocusOnMobileAndSidePanelId: null,
     },
     componentInstanceContext: PageLayoutComponentInstanceContext,
   });

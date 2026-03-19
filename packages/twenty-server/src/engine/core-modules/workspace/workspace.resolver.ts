@@ -9,16 +9,14 @@ import { Args, Mutation, Parent, Query, ResolveField } from '@nestjs/graphql';
 
 import assert from 'assert';
 
-import GraphQLUpload from 'graphql-upload/GraphQLUpload.mjs';
 import { PermissionFlagType } from 'twenty-shared/constants';
-import { FileFolder } from 'twenty-shared/types';
+import { FeatureFlagKey, FileFolder } from 'twenty-shared/types';
 import { assertIsDefinedOrThrow, isDefined } from 'twenty-shared/utils';
 
-import type { FileUpload } from 'graphql-upload/processRequest.mjs';
-
+import { MetadataResolver } from 'src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator';
 import { ApiKeyEntity } from 'src/engine/core-modules/api-key/api-key.entity';
-import { ApplicationService } from 'src/engine/core-modules/application/services/application.service';
 import { ApplicationDTO } from 'src/engine/core-modules/application/dtos/application.dto';
+import { ApplicationService } from 'src/engine/core-modules/application/application.service';
 import { fromFlatApplicationToApplicationDto } from 'src/engine/core-modules/application/utils/from-flat-application-to-application-dto.util';
 import { BillingEntitlementDTO } from 'src/engine/core-modules/billing/dtos/billing-entitlement.dto';
 import { BillingSubscriptionEntity } from 'src/engine/core-modules/billing/entities/billing-subscription.entity';
@@ -27,22 +25,21 @@ import { DomainValidRecords } from 'src/engine/core-modules/dns-manager/dtos/dom
 import { DnsManagerService } from 'src/engine/core-modules/dns-manager/services/dns-manager.service';
 import { CustomDomainManagerService } from 'src/engine/core-modules/domain/custom-domain-manager/services/custom-domain-manager.service';
 import { WorkspaceDomainsService } from 'src/engine/core-modules/domain/workspace-domains/services/workspace-domains.service';
-import { FeatureFlagDTO } from 'src/engine/core-modules/feature-flag/dtos/feature-flag-dto';
-import { FeatureFlagKey } from 'src/engine/core-modules/feature-flag/enums/feature-flag-key.enum';
+import { EnterprisePlanService } from 'src/engine/core-modules/enterprise/services/enterprise-plan.service';
+import { FeatureFlagDTO } from 'src/engine/core-modules/feature-flag/dtos/feature-flag.dto';
 import { FeatureFlagService } from 'src/engine/core-modules/feature-flag/services/feature-flag.service';
-import { SignedFileDTO } from 'src/engine/core-modules/file/file-upload/dtos/signed-file.dto';
-import { FileUploadService } from 'src/engine/core-modules/file/file-upload/services/file-upload.service';
+import { FileUrlService } from 'src/engine/core-modules/file/file-url/file-url.service';
 import { FileService } from 'src/engine/core-modules/file/services/file.service';
 import { PreventNestToAutoLogGraphqlErrorsFilter } from 'src/engine/core-modules/graphql/filters/prevent-nest-to-auto-log-graphql-errors.filter';
 import { ResolverValidationPipe } from 'src/engine/core-modules/graphql/pipes/resolver-validation.pipe';
 import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
 import { UserWorkspaceService } from 'src/engine/core-modules/user-workspace/user-workspace.service';
-import { UserEntity } from 'src/engine/core-modules/user/user.entity';
+import { type AuthContextUser } from 'src/engine/core-modules/auth/types/auth-context.type';
 import { ActivateWorkspaceInput } from 'src/engine/core-modules/workspace/dtos/activate-workspace-input';
 import {
   type AuthProvidersDTO,
-  PublicWorkspaceDataOutput,
-} from 'src/engine/core-modules/workspace/dtos/public-workspace-data-output';
+  PublicWorkspaceDataDTO,
+} from 'src/engine/core-modules/workspace/dtos/public-workspace-data.dto';
 import { UpdateWorkspaceInput } from 'src/engine/core-modules/workspace/dtos/update-workspace-input';
 import { WorkspaceUrlsDTO } from 'src/engine/core-modules/workspace/dtos/workspace-urls.dto';
 import { WorkspaceService } from 'src/engine/core-modules/workspace/services/workspace.service';
@@ -71,9 +68,7 @@ import { RoleService } from 'src/engine/metadata-modules/role/role.service';
 import { fromRoleEntityToRoleDto } from 'src/engine/metadata-modules/role/utils/fromRoleEntityToRoleDto.util';
 import { ViewDTO } from 'src/engine/metadata-modules/view/dtos/view.dto';
 import { ViewService } from 'src/engine/metadata-modules/view/services/view.service';
-import { MetadataResolver } from 'src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator';
 import { getRequest } from 'src/utils/extract-request';
-import { streamToBuffer } from 'src/utils/stream-to-buffer';
 const OriginHeader = createParamDecorator(
   (_: unknown, ctx: ExecutionContext) => {
     const request = getRequest(ctx);
@@ -94,8 +89,8 @@ export class WorkspaceResolver {
     private readonly workspaceDomainsService: WorkspaceDomainsService,
     private readonly userWorkspaceService: UserWorkspaceService,
     private readonly twentyConfigService: TwentyConfigService,
-    private readonly fileUploadService: FileUploadService,
     private readonly fileService: FileService,
+    private readonly fileUrlService: FileUrlService,
     private readonly billingSubscriptionService: BillingSubscriptionService,
     private readonly featureFlagService: FeatureFlagService,
     private readonly roleService: RoleService,
@@ -103,6 +98,7 @@ export class WorkspaceResolver {
     private readonly dnsManagerService: DnsManagerService,
     private readonly customDomainManagerService: CustomDomainManagerService,
     private readonly applicationService: ApplicationService,
+    private readonly enterprisePlanService: EnterprisePlanService,
   ) {}
 
   @Query(() => WorkspaceEntity)
@@ -119,7 +115,7 @@ export class WorkspaceResolver {
   @UseGuards(UserAuthGuard, WorkspaceAuthGuard, NoPermissionGuard)
   async activateWorkspace(
     @Args('data') data: ActivateWorkspaceInput,
-    @AuthUser() user: UserEntity,
+    @AuthUser() user: AuthContextUser,
     @AuthWorkspace() workspace: WorkspaceEntity,
   ) {
     return await this.workspaceService.activateWorkspace(user, workspace, data);
@@ -154,39 +150,6 @@ export class WorkspaceResolver {
     return 'auto';
   }
 
-  @Mutation(() => SignedFileDTO)
-  @UseGuards(
-    WorkspaceAuthGuard,
-    SettingsPermissionGuard(PermissionFlagType.WORKSPACE),
-  )
-  async uploadWorkspaceLogo(
-    @AuthWorkspace() { id }: WorkspaceEntity,
-    @Args({ name: 'file', type: () => GraphQLUpload })
-    { createReadStream, filename, mimetype }: FileUpload,
-  ): Promise<SignedFileDTO> {
-    const stream = createReadStream();
-    const buffer = await streamToBuffer(stream);
-    const fileFolder = FileFolder.WorkspaceLogo;
-
-    const { files } = await this.fileUploadService.uploadImage({
-      file: buffer,
-      filename,
-      mimeType: mimetype,
-      fileFolder,
-      workspaceId: id,
-    });
-
-    if (!files.length) {
-      throw new Error('Failed to upload workspace logo');
-    }
-
-    await this.workspaceService.updateOne(id, {
-      logo: files[0].path,
-    });
-
-    return files[0];
-  }
-
   @ResolveField(() => [FeatureFlagDTO], { nullable: true })
   async featureFlags(
     @Parent() workspace: WorkspaceEntity,
@@ -213,7 +176,7 @@ export class WorkspaceResolver {
   async billingSubscriptions(
     @Parent() workspace: WorkspaceEntity,
   ): Promise<BillingSubscriptionEntity[] | undefined> {
-    if (!this.twentyConfigService.get('IS_BILLING_ENABLED')) {
+    if (!this.twentyConfigService.isBillingEnabled()) {
       return [];
     }
 
@@ -258,6 +221,34 @@ export class WorkspaceResolver {
     return workspace.smartModel;
   }
 
+  @ResolveField(() => Boolean, { nullable: false })
+  async autoEnableNewAiModels(
+    @Parent() workspace: WorkspaceEntity,
+  ): Promise<boolean> {
+    return workspace.autoEnableNewAiModels;
+  }
+
+  @ResolveField(() => [String], { nullable: true })
+  async disabledAiModelIds(
+    @Parent() workspace: WorkspaceEntity,
+  ): Promise<string[]> {
+    return workspace.disabledAiModelIds;
+  }
+
+  @ResolveField(() => [String], { nullable: true })
+  async enabledAiModelIds(
+    @Parent() workspace: WorkspaceEntity,
+  ): Promise<string[]> {
+    return workspace.enabledAiModelIds;
+  }
+
+  @ResolveField(() => Boolean, { nullable: false })
+  async useRecommendedModels(
+    @Parent() workspace: WorkspaceEntity,
+  ): Promise<boolean> {
+    return workspace.useRecommendedModels;
+  }
+
   @ResolveField(() => ApplicationDTO, { nullable: true })
   async workspaceCustomApplication(
     @Parent() workspace: WorkspaceEntity,
@@ -283,7 +274,7 @@ export class WorkspaceResolver {
   async currentBillingSubscription(
     @Parent() workspace: WorkspaceEntity,
   ): Promise<BillingSubscriptionEntity | undefined> {
-    if (!this.twentyConfigService.get('IS_BILLING_ENABLED')) {
+    if (!this.twentyConfigService.isBillingEnabled()) {
       return;
     }
 
@@ -301,18 +292,15 @@ export class WorkspaceResolver {
 
   @ResolveField(() => String)
   async logo(@Parent() workspace: WorkspaceEntity): Promise<string> {
-    if (workspace.logo) {
-      try {
-        return this.fileService.signFileUrl({
-          url: workspace.logo,
-          workspaceId: workspace.id,
-        });
-      } catch {
-        return workspace.logo;
-      }
+    if (!isDefined(workspace.logoFileId)) {
+      return '';
     }
 
-    return workspace.logo ?? '';
+    return this.fileUrlService.signFileByIdUrl({
+      fileId: workspace.logoFileId,
+      workspaceId: workspace.id,
+      fileFolder: FileFolder.CorePicture,
+    });
   }
 
   @ResolveField(() => [BillingEntitlementDTO])
@@ -324,7 +312,17 @@ export class WorkspaceResolver {
 
   @ResolveField(() => Boolean)
   hasValidEnterpriseKey(): boolean {
-    return isDefined(this.twentyConfigService.get('ENTERPRISE_KEY'));
+    return this.enterprisePlanService.hasValidEnterpriseKey();
+  }
+
+  @ResolveField(() => Boolean)
+  hasValidSignedEnterpriseKey(): boolean {
+    return this.enterprisePlanService.hasValidSignedEnterpriseKey();
+  }
+
+  @ResolveField(() => Boolean)
+  hasValidEnterpriseValidityToken(): boolean {
+    return this.enterprisePlanService.hasValidEnterpriseValidityToken();
   }
 
   @ResolveField(() => WorkspaceUrlsDTO)
@@ -369,12 +367,12 @@ export class WorkspaceResolver {
     return this.viewService.findByWorkspaceId(workspace.id, userWorkspaceId);
   }
 
-  @Query(() => PublicWorkspaceDataOutput)
+  @Query(() => PublicWorkspaceDataDTO)
   @UseGuards(PublicEndpointGuard, NoPermissionGuard)
   async getPublicWorkspaceDataByDomain(
     @OriginHeader() originHeader: string,
     @Args('origin', { nullable: true }) origin?: string,
-  ): Promise<PublicWorkspaceDataOutput | undefined> {
+  ): Promise<PublicWorkspaceDataDTO | undefined> {
     try {
       const systemEnabledProviders: AuthProvidersDTO = {
         google: this.twentyConfigService.get('AUTH_GOOGLE_ENABLED'),

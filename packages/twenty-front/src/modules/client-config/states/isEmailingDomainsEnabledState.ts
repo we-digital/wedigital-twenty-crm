@@ -1,6 +1,6 @@
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const isEmailingDomainsEnabledState = createState<boolean>({
+export const isEmailingDomainsEnabledState = createAtomState<boolean>({
   key: 'isEmailingDomainsEnabled',
   defaultValue: false,
 });

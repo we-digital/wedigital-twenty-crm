@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import { useRegisterInputEvents } from '@/object-record/record-field/ui/meta-types/input/hooks/useRegisterInputEvents';
 import {
+  DATE_TIME_PICKER_MONTH_YEAR_PANEL_DROPDOWN_ID,
   DateTimePicker,
   MONTH_AND_YEAR_DROPDOWN_MONTH_SELECT_ID,
   MONTH_AND_YEAR_DROPDOWN_YEAR_SELECT_ID,
@@ -9,7 +10,7 @@ import {
 import { useUserTimezone } from '@/ui/input/components/internal/date/hooks/useUserTimezone';
 import { useCloseDropdown } from '@/ui/layout/dropdown/hooks/useCloseDropdown';
 import { currentFocusIdSelector } from '@/ui/utilities/focus/states/currentFocusIdSelector';
-import { useRecoilCallback } from 'recoil';
+import { useStore } from 'jotai';
 import { type Temporal } from 'temporal-polyfill';
 import { type Nullable } from 'twenty-ui/utilities';
 
@@ -41,6 +42,8 @@ export const DateTimeInput = ({
   onSubmit,
   hideHeaderInput,
 }: DateTimeInputProps) => {
+  const store = useStore();
+
   const [internalValue, setInternalValue] = useState(value);
   const { userTimezone } = useUserTimezone();
 
@@ -63,10 +66,12 @@ export const DateTimeInput = ({
 
   const { closeDropdown: closeDropdownMonthSelect } = useCloseDropdown();
   const { closeDropdown: closeDropdownYearSelect } = useCloseDropdown();
+  const { closeDropdown: closeMonthYearPanel } = useCloseDropdown();
 
   const handleEnter = () => {
     closeDropdownYearSelect(MONTH_AND_YEAR_DROPDOWN_YEAR_SELECT_ID);
     closeDropdownMonthSelect(MONTH_AND_YEAR_DROPDOWN_MONTH_SELECT_ID);
+    closeMonthYearPanel(DATE_TIME_PICKER_MONTH_YEAR_PANEL_DROPDOWN_ID);
 
     onEnter(internalValue);
   };
@@ -74,29 +79,30 @@ export const DateTimeInput = ({
   const handleEscape = () => {
     closeDropdownYearSelect(MONTH_AND_YEAR_DROPDOWN_YEAR_SELECT_ID);
     closeDropdownMonthSelect(MONTH_AND_YEAR_DROPDOWN_MONTH_SELECT_ID);
+    closeMonthYearPanel(DATE_TIME_PICKER_MONTH_YEAR_PANEL_DROPDOWN_ID);
 
     onEscape(internalValue);
   };
 
-  const handleClickOutside = useRecoilCallback(
-    ({ snapshot }) =>
-      (event: MouseEvent | TouchEvent) => {
-        const currentFocusId = snapshot
-          .getLoadable(currentFocusIdSelector)
-          .getValue();
+  const handleClickOutside = useCallback(
+    (event: MouseEvent | TouchEvent) => {
+      const currentFocusId = store.get(currentFocusIdSelector.atom);
 
-        if (currentFocusId === instanceId) {
-          closeDropdownYearSelect(MONTH_AND_YEAR_DROPDOWN_YEAR_SELECT_ID);
-          closeDropdownMonthSelect(MONTH_AND_YEAR_DROPDOWN_MONTH_SELECT_ID);
-          onClickOutside(event, internalValue);
-        }
-      },
+      if (currentFocusId === instanceId) {
+        closeDropdownYearSelect(MONTH_AND_YEAR_DROPDOWN_YEAR_SELECT_ID);
+        closeDropdownMonthSelect(MONTH_AND_YEAR_DROPDOWN_MONTH_SELECT_ID);
+        closeMonthYearPanel(DATE_TIME_PICKER_MONTH_YEAR_PANEL_DROPDOWN_ID);
+        onClickOutside(event, internalValue);
+      }
+    },
     [
       instanceId,
       closeDropdownYearSelect,
       closeDropdownMonthSelect,
+      closeMonthYearPanel,
       onClickOutside,
       internalValue,
+      store,
     ],
   );
 

@@ -11,7 +11,7 @@ export const getRelativeDateDisplayValue = (
   relativeDate: RelativeDateFilter,
   shouldDisplayTimeZoneAbbreviation?: boolean,
 ) => {
-  if (!relativeDate) return '';
+  if (!isDefined(relativeDate)) return '';
   const { direction, amount, unit } = relativeDate;
 
   const directionFormatted = capitalize(direction.toLowerCase());
@@ -29,7 +29,7 @@ export const getRelativeDateDisplayValue = (
     const timeZoneAbbreviation =
       getRelativeDateFilterTimeZoneAbbreviation(relativeDate);
 
-    unitFormatted = `${unitFormatted ?? ''} ${shouldDisplayTimeZoneAbbreviation ? `(${timeZoneAbbreviation})` : ''}`;
+    unitFormatted = `${unitFormatted ?? ''}${shouldDisplayTimeZoneAbbreviation ? ` (${timeZoneAbbreviation})` : ''}`;
   }
 
   return [directionFormatted, amountFormatted, unitFormatted]

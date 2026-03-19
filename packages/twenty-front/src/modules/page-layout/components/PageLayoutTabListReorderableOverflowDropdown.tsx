@@ -1,5 +1,3 @@
-import { useTheme } from '@emotion/react';
-import styled from '@emotion/styled';
 import {
   Draggable,
   type DraggableProvided,
@@ -7,18 +5,18 @@ import {
   type DraggableStateSnapshot,
   Droppable,
 } from '@hello-pangea/dnd';
+import { styled } from '@linaria/react';
 
-import { useNavigatePageLayoutCommandMenu } from '@/command-menu/pages/page-layout/hooks/useNavigatePageLayoutCommandMenu';
-import { CommandMenuPages } from '@/command-menu/types/CommandMenuPages';
 import { PAGE_LAYOUT_TAB_LIST_DROPPABLE_IDS } from '@/page-layout/components/PageLayoutTabListDroppableIds';
 import { PageLayoutTabListDroppableMoreButton } from '@/page-layout/components/PageLayoutTabListDroppableMoreButton';
 import { PageLayoutTabMenuItemSelectAvatar } from '@/page-layout/components/PageLayoutTabMenuItemSelectAvatar';
 import { PageLayoutTabRenderClone } from '@/page-layout/components/PageLayoutTabRenderClone';
+import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
 import { PageLayoutComponentInstanceContext } from '@/page-layout/states/contexts/PageLayoutComponentInstanceContext';
-import { isPageLayoutInEditModeComponentState } from '@/page-layout/states/isPageLayoutInEditModeComponentState';
 import { isPageLayoutTabDraggingComponentState } from '@/page-layout/states/isPageLayoutTabDraggingComponentState';
 import { pageLayoutTabSettingsOpenTabIdComponentState } from '@/page-layout/states/pageLayoutTabSettingsOpenTabIdComponentState';
 import { shouldEnableTabEditingFeatures } from '@/page-layout/utils/shouldEnableTabEditingFeatures';
+import { useNavigatePageLayoutSidePanel } from '@/side-panel/pages/page-layout/hooks/useNavigatePageLayoutSidePanel';
 import { Dropdown } from '@/ui/layout/dropdown/components/Dropdown';
 import { DropdownContent } from '@/ui/layout/dropdown/components/DropdownContent';
 import { DropdownMenuItemsContainer } from '@/ui/layout/dropdown/components/DropdownMenuItemsContainer';
@@ -26,14 +24,20 @@ import { GenericDropdownContentWidth } from '@/ui/layout/dropdown/constants/Gene
 import { TabListComponentInstanceContext } from '@/ui/layout/tab-list/states/contexts/TabListComponentInstanceContext';
 import { type SingleTabProps } from '@/ui/layout/tab-list/types/SingleTabProps';
 import { useAvailableComponentInstanceIdOrThrow } from '@/ui/utilities/state/component-state/hooks/useAvailableComponentInstanceIdOrThrow';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
-import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
+import { useIsFeatureEnabled } from '@/workspace/hooks/useIsFeatureEnabled';
 import { useContext } from 'react';
-import { type PageLayoutType } from '~/generated/graphql';
+import { SidePanelPages } from 'twenty-shared/types';
+import { ThemeContext } from 'twenty-ui/theme-constants';
+import {
+  FeatureFlagKey,
+  type PageLayoutType,
+} from '~/generated-metadata/graphql';
 
 const StyledOverflowDropdownListDraggableWrapper = styled.div`
-  display: flex;
   cursor: grab;
+  display: flex;
 
   &:active {
     cursor: grabbing;
@@ -65,7 +69,7 @@ export const PageLayoutTabListReorderableOverflowDropdown = ({
   onClose,
   pageLayoutType,
 }: PageLayoutTabListReorderableOverflowDropdownProps) => {
-  const theme = useTheme();
+  const { theme } = useContext(ThemeContext);
   const context = useContext(TabListComponentInstanceContext);
   const instanceId = context?.instanceId;
 
@@ -73,47 +77,52 @@ export const PageLayoutTabListReorderableOverflowDropdown = ({
     PageLayoutComponentInstanceContext,
   );
 
-  const isPageLayoutInEditMode = useRecoilComponentValue(
-    isPageLayoutInEditModeComponentState,
-    pageLayoutId,
+  const isPageLayoutInEditMode = useIsPageLayoutInEditMode();
+
+  const isRecordPageGlobalEditionEnabled = useIsFeatureEnabled(
+    FeatureFlagKey.IS_RECORD_PAGE_LAYOUT_GLOBAL_EDITION_ENABLED,
   );
 
   const shouldShowEditButton =
-    isPageLayoutInEditMode && shouldEnableTabEditingFeatures(pageLayoutType);
+    isPageLayoutInEditMode &&
+    shouldEnableTabEditingFeatures(
+      pageLayoutType,
+      isRecordPageGlobalEditionEnabled,
+    );
 
-  const isTabDragging = useRecoilComponentValue(
+  const isPageLayoutTabDragging = useAtomComponentStateValue(
     isPageLayoutTabDraggingComponentState,
     instanceId,
   );
 
-  const setIsTabDragging = useSetRecoilComponentState(
+  const setIsPageLayoutTabDragging = useSetAtomComponentState(
     isPageLayoutTabDraggingComponentState,
     instanceId,
   );
 
-  const setTabSettingsOpenTabId = useSetRecoilComponentState(
+  const setPageLayoutTabSettingsOpenTabId = useSetAtomComponentState(
     pageLayoutTabSettingsOpenTabIdComponentState,
     pageLayoutId,
   );
 
-  const { navigatePageLayoutCommandMenu } = useNavigatePageLayoutCommandMenu();
+  const { navigatePageLayoutSidePanel } = useNavigatePageLayoutSidePanel();
 
   const handleClose = () => {
-    if (!isTabDragging) {
+    if (!isPageLayoutTabDragging) {
       onClose();
     }
   };
 
   const handleTabSelect = (tabId: string) => {
-    setIsTabDragging(false);
+    setIsPageLayoutTabDragging(false);
     onSelect(tabId);
     handleClose();
   };
 
   const handleEditClick = (tabId: string) => {
-    setTabSettingsOpenTabId(tabId);
-    navigatePageLayoutCommandMenu({
-      commandMenuPage: CommandMenuPages.PageLayoutTabSettings,
+    setPageLayoutTabSettingsOpenTabId(tabId);
+    navigatePageLayoutSidePanel({
+      sidePanelPage: SidePanelPages.PageLayoutTabSettings,
     });
     onClose();
   };
@@ -156,7 +165,7 @@ export const PageLayoutTabListReorderableOverflowDropdown = ({
               <DropdownMenuItemsContainer>
                 <div
                   ref={provided.innerRef}
-                  // eslint-disable-next-line react/jsx-props-no-spreading
+                  // oxlint-disable-next-line react/jsx-props-no-spreading
                   {...provided.droppableProps}
                 >
                   {hiddenTabs.map((tab, index) => {
@@ -173,9 +182,9 @@ export const PageLayoutTabListReorderableOverflowDropdown = ({
                         {(draggableProvided, draggableSnapshot) => (
                           <StyledOverflowDropdownListDraggableWrapper
                             ref={draggableProvided.innerRef}
-                            // eslint-disable-next-line react/jsx-props-no-spreading
+                            // oxlint-disable-next-line react/jsx-props-no-spreading
                             {...draggableProvided.draggableProps}
-                            // eslint-disable-next-line react/jsx-props-no-spreading
+                            // oxlint-disable-next-line react/jsx-props-no-spreading
                             {...draggableProvided.dragHandleProps}
                             style={{
                               ...draggableProvided.draggableProps.style,

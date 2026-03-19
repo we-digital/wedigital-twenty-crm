@@ -1,7 +1,7 @@
-import { type DomainValidRecords } from '~/generated/graphql';
-import { createState } from 'twenty-ui/utilities';
+import { type DomainValidRecords } from '~/generated-metadata/graphql';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const publicDomainRecordsState = createState<{
+export const publicDomainRecordsState = createAtomState<{
   publicDomainRecords: DomainValidRecords | null;
   isLoading: boolean;
 }>({

@@ -1,4 +1,7 @@
-import { PageLayoutTabLayoutMode, PageLayoutType } from '~/generated/graphql';
+import {
+  PageLayoutTabLayoutMode,
+  PageLayoutType,
+} from '~/generated-metadata/graphql';
 import { type WidgetCardVariant } from '~/modules/page-layout/widgets/types/WidgetCardVariant';
 
 type GetWidgetCardVariantParams = {
@@ -6,7 +9,7 @@ type GetWidgetCardVariantParams = {
   isInPinnedTab: boolean;
   pageLayoutType: PageLayoutType | null;
   isMobile: boolean;
-  isInRightDrawer: boolean;
+  isInSidePanel: boolean;
 };
 
 export const getWidgetCardVariant = ({
@@ -14,7 +17,7 @@ export const getWidgetCardVariant = ({
   isInPinnedTab,
   pageLayoutType,
   isMobile,
-  isInRightDrawer,
+  isInSidePanel,
 }: GetWidgetCardVariantParams): WidgetCardVariant => {
   if (pageLayoutType === PageLayoutType.DASHBOARD) {
     return 'dashboard';
@@ -24,7 +27,7 @@ export const getWidgetCardVariant = ({
     return 'canvas';
   }
 
-  if (isInPinnedTab || isMobile || isInRightDrawer) {
+  if (isInPinnedTab || isMobile || isInSidePanel) {
     return 'side-column';
   }
 

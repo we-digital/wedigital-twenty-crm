@@ -1,3 +1,7 @@
+import { isNonEmptyString } from '@sniptt/guards';
+
+import { NavigationMenuItemStyleIcon } from '@/navigation-menu-item/display/components/NavigationMenuItemStyleIcon';
+import { getStandardObjectIconColor } from '@/navigation-menu-item/common/utils/getStandardObjectIconColor';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { type FieldMetadataItem } from '@/object-metadata/types/FieldMetadataItem';
 import { useFindOneRecord } from '@/object-record/hooks/useFindOneRecord';
@@ -8,9 +12,10 @@ import { useRecordShowPage } from '@/object-record/record-show/hooks/useRecordSh
 import { useRecordShowPagePagination } from '@/object-record/record-show/hooks/useRecordShowPagePagination';
 import { RecordTitleCell } from '@/object-record/record-title-cell/components/RecordTitleCell';
 import { RecordTitleCellContainerType } from '@/object-record/record-title-cell/types/RecordTitleCellContainerType';
-import { useTheme } from '@emotion/react';
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
 import { FieldMetadataType } from 'twenty-shared/types';
+import { isDefined } from 'twenty-shared/utils';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 const StyledEditableTitleContainer = styled.div`
   align-items: center;
@@ -22,11 +27,11 @@ const StyledEditableTitleContainer = styled.div`
 
 const StyledEditableTitlePrefix = styled.div`
   align-items: center;
-  color: ${({ theme }) => theme.font.color.tertiary};
+  color: ${themeCssVariables.font.color.tertiary};
   cursor: pointer;
   display: flex;
   flex-direction: row;
-  gap: ${({ theme }) => theme.spacing(1)};
+  gap: ${themeCssVariables.spacing[1]};
 `;
 
 const StyledTitle = styled.div`
@@ -36,7 +41,7 @@ const StyledTitle = styled.div`
 `;
 
 const StyledPaginationInformation = styled.span`
-  color: ${({ theme }) => theme.font.color.tertiary};
+  color: ${themeCssVariables.font.color.tertiary};
 `;
 
 export const ObjectRecordShowPageBreadcrumb = ({
@@ -64,7 +69,6 @@ export const ObjectRecordShowPageBreadcrumb = ({
 
   const { useUpdateOneObjectRecordMutation } = useRecordShowContainerActions({
     objectNameSingular,
-    objectRecordId,
   });
 
   const isLabelIdentifierReadOnly = useIsRecordFieldReadOnly({
@@ -81,7 +85,9 @@ export const ObjectRecordShowPageBreadcrumb = ({
     objectRecordId,
   );
 
-  const theme = useTheme();
+  const iconColor = isNonEmptyString(objectMetadataItem?.color)
+    ? objectMetadataItem.color
+    : getStandardObjectIconColor(objectNameSingular);
 
   if (loading) {
     return null;
@@ -94,7 +100,12 @@ export const ObjectRecordShowPageBreadcrumb = ({
           navigateToIndexView();
         }}
       >
-        {HeaderIcon && <HeaderIcon size={theme.icon.size.md} />}
+        {isDefined(HeaderIcon) && (
+          <NavigationMenuItemStyleIcon
+            Icon={HeaderIcon}
+            color={iconColor ?? undefined}
+          />
+        )}
         {objectLabel}
         <span>{' / '}</span>
       </StyledEditableTitlePrefix>

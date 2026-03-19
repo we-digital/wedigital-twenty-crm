@@ -1,18 +1,17 @@
-import { useRecoilState } from 'recoil';
-
 import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
+import { useAtomState } from '@/ui/utilities/state/jotai/hooks/useAtomState';
 import { ImageInput } from '@/ui/input/components/ImageInput';
+import { useMutation } from '@apollo/client/react';
 import {
-  useUpdateWorkspaceMutation,
-  useUploadWorkspaceLogoMutation,
+  UpdateWorkspaceDocument,
+  UploadWorkspaceLogoDocument,
 } from '~/generated-metadata/graphql';
 import { isUndefinedOrNull } from '~/utils/isUndefinedOrNull';
-import { buildSignedPath } from 'twenty-shared/utils';
 
 export const WorkspaceLogoUploader = () => {
-  const [uploadLogo] = useUploadWorkspaceLogoMutation();
-  const [updateWorkspace] = useUpdateWorkspaceMutation();
-  const [currentWorkspace, setCurrentWorkspace] = useRecoilState(
+  const [uploadLogo] = useMutation(UploadWorkspaceLogoDocument);
+  const [updateWorkspace] = useMutation(UpdateWorkspaceDocument);
+  const [currentWorkspace, setCurrentWorkspace] = useAtomState(
     currentWorkspaceState,
   );
 
@@ -23,6 +22,7 @@ export const WorkspaceLogoUploader = () => {
     if (!currentWorkspace?.id) {
       throw new Error('Workspace id not found');
     }
+
     await uploadLogo({
       variables: {
         file,
@@ -30,7 +30,7 @@ export const WorkspaceLogoUploader = () => {
       onCompleted: (data) => {
         setCurrentWorkspace({
           ...currentWorkspace,
-          logo: buildSignedPath(data.uploadWorkspaceLogo),
+          logo: data.uploadWorkspaceLogo.url,
         });
       },
     });

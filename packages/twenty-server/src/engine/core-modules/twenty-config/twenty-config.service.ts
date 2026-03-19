@@ -201,6 +201,10 @@ export class TwentyConfigService {
     return this.get('TYPEORM_LOGGING');
   }
 
+  isBillingEnabled(): boolean {
+    return this.get('IS_BILLING_ENABLED') === true;
+  }
+
   private validateNotEnvOnly<T extends keyof ConfigVariables>(
     key: T,
     operation: string,
@@ -242,9 +246,9 @@ export class TwentyConfigService {
 
   private maskSensitiveValue<T extends keyof ConfigVariables>(
     key: T,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
     value: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
   ): any {
     if (!isString(value) || !(key in CONFIG_VARIABLES_MASKING_CONFIG)) {
       return value;

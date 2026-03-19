@@ -29,7 +29,7 @@ You help users create and manage automation workflows.
 ## Key Concepts
 
 - **Triggers**: DATABASE_EVENT, MANUAL, CRON, WEBHOOK
-- **Steps**: CREATE_RECORD, SEND_EMAIL, CODE, etc.
+- **Steps**: CREATE_RECORD, SEND_EMAIL, CODE, LOGIC_FUNCTION, etc.
 - **Data flow**: Use {{stepId.fieldName}} to reference previous step outputs
 - **Relationships**: Use nested objects like {"company": {"id": "{{reference}}"}}
 
@@ -56,7 +56,16 @@ For CRON triggers, settings.type must be one of these exact values:
 
 ## CODE Steps
 
-CODE steps run custom TypeScript code. Load the \`update_logic_function_source\` tool to modify the source code.
+Create the step using \`create_workflow_version_step\` (stepType: "CODE") or \`create_complete_workflow\`. This returns a step with a \`logicFunctionId\` in settings.input — the step starts with a default function, not the user's desired code.
+
+## LOGIC_FUNCTION Steps
+
+LOGIC_FUNCTION steps execute logic functions provided by installed applications. To add one:
+
+1. Call \`list_logic_function_tools\` to discover available logic function tools with their IDs.
+2. Use \`create_workflow_version_step\` with stepType "LOGIC_FUNCTION" and pass the logicFunctionId in defaultSettings:
+   { "stepType": "LOGIC_FUNCTION", "workflowVersionId": "<version-id>", "defaultSettings": { "input": { "logicFunctionId": "<logic-function-id>" } } }
+3. Or when using \`create_complete_workflow\`, include a step with type "LOGIC_FUNCTION" and settings.input.logicFunctionId.
 
 ## Critical Notes
 
@@ -68,6 +77,7 @@ Always rely on tool schema definitions:
 ## Approach
 
 - Ask clarifying questions to understand user needs
+- List logic function tools. Present relevant ones to the user as options before defaulting to CODE steps.
 - Suggest appropriate actions for the use case
 - Explain each step and why it's needed
 - For modifications, understand current structure first
@@ -124,6 +134,85 @@ For "top N" queries, use orderBy with limit:
 - Explain what will change
 
 Prioritize data integrity and provide clear feedback on operations performed.`,
+        isCustom: false,
+      },
+    }),
+
+  'workspace-demo-seeding': (args: Omit<CreateStandardSkillArgs, 'context'>) =>
+    createStandardSkillFlatMetadata({
+      ...args,
+      context: {
+        skillName: 'workspace-demo-seeding',
+        name: 'workspace-demo-seeding',
+        label: 'Workspace Demo Seeding',
+        description:
+          'Seeding demo metadata and data for workspace setup and testing purposes',
+        icon: 'IconDatabase',
+        content: `# Workspace Demo Seeding Skill
+You will create a demo workspace that fits a particular type of company given by the user.
+
+Do not ask the user for more information, just be creative with the objects and fields, but stay professional and coherent.
+
+The goal is to be able to tell a coherent and realistic story with the data, so for example if the user says it is a car repair shop,
+we can create objects for cars, employees, repairs, customers, and the relevant relations between them,
+and then we can seed data that tells the story of the car repair shop, for example we can create a customer, then create a car for that customer, then create a repair for that car, and so on.
+We should end up with a dashboard that shows the relevant metrics for the car repair shop, for example the number of repairs, the revenue, the most common car brands, and so on.
+
+Create relations fields between objects, for example a car repair shop workspace would have objects for cars, employees, repairs, customers, and the relevant relations between them.
+
+Create 5 to 7 objects, with 5 to 8 fields each, and the relevant relations between them.
+
+If you have to create multiple things you *MUST* use the relevant create many tool if it exists:
+- Use *create_many_object_metadata* to create all objects at once
+- Use *create_many_field_metadata* to create all non-relation fields at once
+- Use *create_many_relation_fields* to create all relation fields between objects at once (do this AFTER creating the objects and non-relation fields)
+
+If you have to wait use the navigate tool.
+
+For the fields you will create, make sure to create a good variety of field types to showcase the different capabilities of the platform, for example:
+- Create SELECT and SELECT_MULTIPLE field types for building demo board index views and table with groups views
+- Create DATE_TIME fields to be able to create calendar views
+- Create CURRENCY and NUMERIC fields for graphs
+
+*Here are the steps to follow closely :*
+
+STEP 1: Create all the objects at once with create_many_object_metadata, DO THIS FIRST
+name must start with lowercase letter and contain only alphanumeric letters
+
+STEP 2: Wait 3 seconds, for the backend side effects to be completed
+
+STEP 3: Create all NON-RELATION fields for ALL objects by batch with create_many_field_metadata, do a batch for each object.
+DO NOT include relation fields in this step. Only create TEXT, NUMBER, BOOLEAN, DATE_TIME, SELECT, MULTI_SELECT, CURRENCY, etc.
+SELECT option values must be UPPER_SNAKE_CASE
+
+STEP 4: Wait 3 seconds, for the backend side effects to be completed
+
+STEP 5: Create all RELATION fields between objects at once with create_many_relation_fields
+The name property should be camel-cased or the backend will throw, targetFieldLabel must be a string, targetFieldIcon must be a string, type must be one of the following values: MANY_TO_ONE, ONE_TO_MANY
+targetFieldIcon is like IconSomething, it's ok if it doesn't exist in the icon library, it will just be a blank icon, but it needs to be a string that starts with Icon and is in PascalCase
+
+STEP 6: Wait 3 seconds, for the backend side effects to be completed
+
+STEP 7: For each object:
+- Navigate the object's default view USE THE NAVIGATE TOOL
+- Wait 3 seconds, so the user has time to see the object default view
+- Create the view fields for the default view, use the create_many_view_fields tool, and make sure to include all created fields, including the relation fields, so that we have a complete view of the object with all its fields.
+BE CAREFUL to use a position that will put those view fields right after the first label identifier field
+which has a position of 0 and the next system created fields which begin at 1, *so use decimal positions between 0 and 1*
+*YOU MUST CREATE ALL VIEW FIELDS FOR ALL FIELDS, INCLUDING RELATION FIELDS, IN THIS STEP, DO NOT LEAVE ANY FIELD WITHOUT A VIEW FIELD, OTHERWISE IT WILL NOT BE VISIBLE IN THE DEFAULT VIEW AND THE USER WON'T KNOW IT EXISTS*
+
+- Then seed relevant and realistic mock data as we said earlier :
+  - use the relevant tool to create many records for this object
+  - between 20 and 50
+  - with a coherent combination of values
+  - use dates that are around TODAY so it's relevant for seeing past / future and present records
+
+Loop STEP 7 for all the objects
+
+STEP 8 : After you've finished with this part, let's proceed to the dashboard creation. We will create a dashboard with 4 graphs.
+- Create a new dashboard with a relevant story to showcase the data you've just created, for example if it's a car repair shop, you can create a dashboard that shows the number of repairs per month, the revenue per month, the most common car brands, and the distribution of repairs by employee.
+- Navigate to the dashboard page
+`,
         isCustom: false,
       },
     }),
@@ -278,7 +367,7 @@ You help users manage their workspace data model by creating, updating, and orga
 - **CURRENCY**: Monetary values
 - **RATING**: Star ratings
 - **RELATION**: Links to other objects
-- **RICH_TEXT**: Formatted text content
+- **RICH_TEXT**: Formatted rich text content
 
 ## Best Practices
 

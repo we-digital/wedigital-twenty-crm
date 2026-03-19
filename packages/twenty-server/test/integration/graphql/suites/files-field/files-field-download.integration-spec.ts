@@ -57,7 +57,7 @@ const deleteFile = async (fileId: string): Promise<void> => {
   });
 };
 
-describe('files-field.controller - GET /files-field/:id', () => {
+describe('file-by-id.controller - GET /file/:fileFolder/:id', () => {
   let createdObjectMetadataId = '';
   let createdFieldMetadataId = '';
   let uploadedFiles: UploadedFile[] = [];
@@ -210,14 +210,14 @@ describe('files-field.controller - GET /files-field/:id', () => {
   });
 
   it('should download image file successfully with valid url', async () => {
-    const imageContent = 'fake-png-image-binary-content';
-    const imageFile = await uploadFile(
-      'test-image.png',
-      imageContent,
-      'image/png',
+    const testFileContent = 'This is test file content for download';
+    const textFile = await uploadFile(
+      'test-file.txt',
+      testFileContent,
+      'text/plain',
     );
 
-    uploadedFiles.push(imageFile);
+    uploadedFiles.push(textFile);
 
     const createResponse = await makeGraphqlAPIRequest({
       query: createRecordsQuery,
@@ -227,8 +227,8 @@ describe('files-field.controller - GET /files-field/:id', () => {
             name: 'Record with image',
             filesField: [
               {
-                fileId: imageFile.id,
-                label: 'test-image.png',
+                fileId: textFile.id,
+                label: 'test-file.txt',
               },
             ],
           },
@@ -244,7 +244,7 @@ describe('files-field.controller - GET /files-field/:id', () => {
     const fileUrl = createdRecord.filesField[0].url;
 
     expect(fileUrl).toBeDefined();
-    expect(createdRecord.filesField[0].extension).toBe('.png');
+    expect(createdRecord.filesField[0].extension).toBe('.txt');
 
     // Extract path from full URL (remove domain)
     const urlPath = new URL(fileUrl).pathname + new URL(fileUrl).search;
@@ -254,7 +254,7 @@ describe('files-field.controller - GET /files-field/:id', () => {
     );
 
     expect(downloadResponse.status).toBe(200);
-    expect(downloadResponse.text).toBe(imageContent);
+    expect(downloadResponse.text).toBe(testFileContent);
 
     await makeGraphqlAPIRequest({
       query: deleteRecordsQuery,
@@ -296,7 +296,7 @@ describe('files-field.controller - GET /files-field/:id', () => {
     const fileId = createdRecord.filesField[0].fileId;
 
     const downloadResponse = await request(global.app.getHttpServer()).get(
-      `/files-field/${fileId}`,
+      `/file/files-field/${fileId}`,
     );
 
     expect(downloadResponse.status).toBe(403);
@@ -341,7 +341,7 @@ describe('files-field.controller - GET /files-field/:id', () => {
     const fileId = createdRecord.filesField[0].fileId;
 
     const downloadResponse = await request(global.app.getHttpServer())
-      .get(`/files-field/${fileId}`)
+      .get(`/file/files-field/${fileId}`)
       .query({ token: 'invalid-token-12345' });
 
     expect(downloadResponse.status).toBe(403);

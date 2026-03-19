@@ -3,11 +3,11 @@ import {
   type ObjectRecordGroupByDateGranularity,
   type ObjectRecordOrderByForCompositeField,
   type ObjectRecordOrderByForScalarField,
+  type FirstDayOfTheWeek,
 } from 'twenty-shared/types';
-import { type FirstDayOfTheWeek } from 'twenty-shared/utils';
 
 export type ObjectRecordFilter = Partial<{
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line @typescripttypescript/no-explicit-any
   [Property in keyof ObjectRecord]: any;
 }>;
 

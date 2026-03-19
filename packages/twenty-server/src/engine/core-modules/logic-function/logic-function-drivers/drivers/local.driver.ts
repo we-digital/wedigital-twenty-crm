@@ -1,19 +1,25 @@
 import { promises as fs } from 'fs';
 import { spawn } from 'node:child_process';
-import { join } from 'path';
+import { dirname, join } from 'path';
+
+import { build } from 'esbuild';
+import { NODE_ESM_CJS_BANNER } from 'twenty-shared/application';
 
 import {
   type LogicFunctionExecuteParams,
   type LogicFunctionExecuteResult,
   type LogicFunctionDriver,
+  type LogicFunctionTranspileParams,
+  type LogicFunctionTranspileResult,
 } from 'src/engine/core-modules/logic-function/logic-function-drivers/interfaces/logic-function-driver.interface';
 
 import { type FlatApplication } from 'src/engine/core-modules/application/types/flat-application.type';
 import { LOGIC_FUNCTION_EXECUTOR_TMPDIR_FOLDER } from 'src/engine/core-modules/logic-function/logic-function-drivers/constants/logic-function-executor-tmpdir-folder';
 import { ConsoleListener } from 'src/engine/core-modules/logic-function/logic-function-drivers/utils/intercept-console';
 import { TemporaryDirManager } from 'src/engine/core-modules/logic-function/logic-function-drivers/utils/temporary-dir-manager';
+import { HANDLER_NAME_REGEX } from 'src/engine/metadata-modules/logic-function/constants/handler.contant';
 import { LogicFunctionExecutionStatus } from 'src/engine/metadata-modules/logic-function/dtos/logic-function-execution-result.dto';
-import { copyYarnEngineAndBuildDependencies } from 'src/engine/core-modules/application-layer/utils/copy-yarn-engine-and-build-dependencies';
+import { copyYarnEngineAndBuildDependencies } from 'src/engine/core-modules/application/application-package/utils/copy-yarn-engine-and-build-dependencies';
 import type { LogicFunctionResourceService } from 'src/engine/core-modules/logic-function/logic-function-resource/logic-function-resource.service';
 
 export interface LocalDriverOptions {
@@ -33,7 +39,7 @@ export class LocalDriver implements LogicFunctionDriver {
     return join(LOGIC_FUNCTION_EXECUTOR_TMPDIR_FOLDER, checksum);
   };
 
-  private async createLayerIfNotExists({
+  private async createLayerIfNotExist({
     flatApplication,
     applicationUniversalIdentifier,
   }: {
@@ -55,16 +61,52 @@ export class LocalDriver implements LogicFunctionDriver {
     }
   }
 
+  async transpile({
+    sourceCode,
+    sourceFileName,
+    builtFileName,
+  }: LogicFunctionTranspileParams): Promise<LogicFunctionTranspileResult> {
+    const temporaryDirManager = new TemporaryDirManager();
+    const { sourceTemporaryDir } = await temporaryDirManager.init();
+
+    try {
+      const entryFilePath = join(sourceTemporaryDir, sourceFileName);
+      const builtBundleFilePath = join(sourceTemporaryDir, builtFileName);
+
+      await fs.mkdir(dirname(entryFilePath), { recursive: true });
+      await fs.writeFile(entryFilePath, sourceCode, 'utf-8');
+      await fs.mkdir(dirname(builtBundleFilePath), { recursive: true });
+
+      await build({
+        entryPoints: [entryFilePath],
+        outfile: builtBundleFilePath,
+        platform: 'node',
+        format: 'esm',
+        target: 'es2017',
+        bundle: true,
+        sourcemap: true,
+        packages: 'external',
+        banner: NODE_ESM_CJS_BANNER,
+      });
+
+      const builtCode = await fs.readFile(builtBundleFilePath, 'utf-8');
+
+      return { builtCode };
+    } finally {
+      await temporaryDirManager.clean();
+    }
+  }
+
   async delete() {}
 
-  private async build({
+  async build({
     flatApplication,
     applicationUniversalIdentifier,
   }: {
     flatApplication: FlatApplication;
     applicationUniversalIdentifier: string;
   }) {
-    await this.createLayerIfNotExists({
+    await this.createLayerIfNotExist({
       flatApplication,
       applicationUniversalIdentifier,
     });
@@ -76,8 +118,9 @@ export class LocalDriver implements LogicFunctionDriver {
     applicationUniversalIdentifier,
     payload,
     env,
+    timeoutMs = 900_000,
   }: LogicFunctionExecuteParams): Promise<LogicFunctionExecuteResult> {
-    await this.build({
+    await this.createLayerIfNotExist({
       flatApplication,
       applicationUniversalIdentifier,
     });
@@ -89,17 +132,13 @@ export class LocalDriver implements LogicFunctionDriver {
     try {
       const { sourceTemporaryDir } = await temporaryDirManager.init();
 
-      const inMemoryBuiltHandlerPath = join(
-        sourceTemporaryDir,
-        flatLogicFunction.builtHandlerPath,
-      );
-
-      await this.logicFunctionResourceService.copyBuiltCodeInMemory({
-        workspaceId: flatLogicFunction.workspaceId,
-        applicationUniversalIdentifier,
-        builtHandlerPath: flatLogicFunction.builtHandlerPath,
-        inMemoryDestinationPath: inMemoryBuiltHandlerPath,
-      });
+      const inMemoryBuiltHandlerPath =
+        await this.logicFunctionResourceService.copyBuiltCodeInMemory({
+          workspaceId: flatLogicFunction.workspaceId,
+          applicationUniversalIdentifier,
+          builtHandlerPath: flatLogicFunction.builtHandlerPath,
+          inMemoryDestinationPath: sourceTemporaryDir,
+        });
 
       try {
         await fs.symlink(
@@ -161,7 +200,7 @@ export class LocalDriver implements LogicFunctionDriver {
             runnerPath,
             env: env ?? {},
             payload,
-            timeoutMs: 900_000, // timeout is handled by the logic function service
+            timeoutMs,
           });
 
         if (stdout)
@@ -218,6 +257,12 @@ export class LocalDriver implements LogicFunctionDriver {
     builtFileAbsPath: string;
     handlerName: string;
   }) {
+    if (!HANDLER_NAME_REGEX.test(handlerName)) {
+      throw new Error(
+        `Invalid handlerName "${handlerName}": must be a valid JavaScript identifier or dotted path`,
+      );
+    }
+
     const runnerPath = join(dir, '__runner.cjs');
     const code = `
       // Auto-generated. Do not edit.
@@ -249,7 +294,7 @@ export class LocalDriver implements LogicFunctionDriver {
             const json = process.argv[2];
             payload = json ? JSON.parse(json) : undefined;
             const out = await mod.${handlerName}(payload);
-            console.log(JSON.stringify({ ok: true, result: out }));
+            process.stdout.write(JSON.stringify({ ok: true, result: out }));
             process.exit(0);
           }
         } catch (err) {
@@ -257,7 +302,7 @@ export class LocalDriver implements LogicFunctionDriver {
           if (process.send) {
             process.send({ ok: false, error: msg, stack: err?.stack });
           } else {
-            console.error(msg);
+            process.stdout.write(msg);
           }
           process.exit(1);
         }

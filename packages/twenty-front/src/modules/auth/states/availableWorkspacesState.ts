@@ -1,7 +1,7 @@
-import { createState } from 'twenty-ui/utilities';
-import { type AvailableWorkspaces } from '~/generated/graphql';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
+import { type AvailableWorkspaces } from '~/generated-metadata/graphql';
 
-export const availableWorkspacesState = createState<AvailableWorkspaces>({
+export const availableWorkspacesState = createAtomState<AvailableWorkspaces>({
   key: 'availableWorkspacesState',
   defaultValue: {
     availableWorkspacesForSignIn: [],

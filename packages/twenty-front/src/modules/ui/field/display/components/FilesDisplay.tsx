@@ -5,7 +5,8 @@ import { FileChip } from '@/ui/field/display/components/FileChip';
 import { UploadFileChip } from '@/ui/field/display/components/UploadFileChip';
 import { filePreviewState } from '@/ui/field/display/states/filePreviewState';
 import { ExpandableList } from '@/ui/layout/expandable-list/components/ExpandableList';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { useSetAtomState } from '@/ui/utilities/state/jotai/hooks/useSetAtomState';
 import { isDefined } from 'twenty-shared/utils';
 
 type FilesDisplayProps = {
@@ -21,8 +22,8 @@ export const FilesDisplay = ({
   isUploadWindowOpen = false,
   isFileUploading = false,
 }: FilesDisplayProps) => {
-  const setFilePreview = useSetRecoilState(filePreviewState);
-  const isAttachmentPreviewEnabled = useRecoilValue(
+  const setFilePreview = useSetAtomState(filePreviewState);
+  const isAttachmentPreviewEnabled = useAtomStateValue(
     isAttachmentPreviewEnabledState,
   );
 

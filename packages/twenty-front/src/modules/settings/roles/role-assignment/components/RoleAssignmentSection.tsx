@@ -3,12 +3,12 @@ import { SettingsRoleAssignmentTable } from '@/settings/roles/role-assignment/co
 import { SettingsRoleAssignmentWorkspaceMemberPickerDropdown } from '@/settings/roles/role-assignment/components/SettingsRoleAssignmentWorkspaceMemberPickerDropdown';
 import { Dropdown } from '@/ui/layout/dropdown/components/Dropdown';
 import { useCloseDropdown } from '@/ui/layout/dropdown/hooks/useCloseDropdown';
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
 import { AppTooltip, IconPlus, TooltipDelay } from 'twenty-ui/display';
 import { Button } from 'twenty-ui/input';
 import { Section } from 'twenty-ui/layout';
-import { type Agent } from '~/generated-metadata/graphql';
-import { type ApiKeyForRole } from '~/generated/graphql';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
+import { type Agent, type ApiKeyForRole } from '~/generated-metadata/graphql';
 import {
   type PartialWorkspaceMember,
   type RoleWithPartialMembers,
@@ -18,7 +18,7 @@ import { ROLE_TARGET_CONFIG } from '@/settings/roles/role-assignment/constants/R
 const StyledAssignToMemberContainer = styled.div`
   display: flex;
   justify-content: flex-end;
-  padding-block: ${({ theme }) => theme.spacing(2)};
+  padding-block: ${themeCssVariables.spacing[2]};
 `;
 
 type RoleAssignmentSectionProps = {

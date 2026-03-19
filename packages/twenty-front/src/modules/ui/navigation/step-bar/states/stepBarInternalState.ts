@@ -1,9 +1,9 @@
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 export type StepsState = {
   activeStep: number;
 };
 
-export const stepBarInternalState = createState<StepsState>({
+export const stepBarInternalState = createAtomState<StepsState>({
   key: 'step-bar/internal-state',
   defaultValue: {
     activeStep: -1,

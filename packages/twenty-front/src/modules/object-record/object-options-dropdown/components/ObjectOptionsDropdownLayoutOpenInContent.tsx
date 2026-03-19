@@ -11,11 +11,11 @@ import { DropdownMenuItemsContainer } from '@/ui/layout/dropdown/components/Drop
 import { SelectableList } from '@/ui/layout/selectable-list/components/SelectableList';
 import { SelectableListItem } from '@/ui/layout/selectable-list/components/SelectableListItem';
 import { selectedItemIdComponentState } from '@/ui/layout/selectable-list/states/selectedItemIdComponentState';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { useGetCurrentViewOnly } from '@/views/hooks/useGetCurrentViewOnly';
-import { ViewOpenRecordInType } from '@/views/types/ViewOpenRecordInType';
+import { ViewOpenRecordIn } from '~/generated-metadata/graphql';
 import { t } from '@lingui/core/macro';
-import { useRecoilValue } from 'recoil';
 import {
   IconChevronLeft,
   IconLayoutNavbar,
@@ -25,7 +25,9 @@ import { MenuItemSelect } from 'twenty-ui/navigation';
 
 export const ObjectOptionsDropdownLayoutOpenInContent = () => {
   const { onContentChange } = useObjectOptionsDropdown();
-  const recordIndexOpenRecordIn = useRecoilValue(recordIndexOpenRecordInState);
+  const recordIndexOpenRecordIn = useAtomStateValue(
+    recordIndexOpenRecordInState,
+  );
   const { currentView } = useGetCurrentViewOnly();
   const { setAndPersistOpenRecordIn } = useUpdateObjectViewOptions();
   const { objectMetadataItem } = useRecordIndexContextOrThrow();
@@ -33,14 +35,14 @@ export const ObjectOptionsDropdownLayoutOpenInContent = () => {
     objectMetadataItem.nameSingular,
   );
 
-  const selectedItemId = useRecoilComponentValue(
+  const selectedItemId = useAtomComponentStateValue(
     selectedItemIdComponentState,
     OBJECT_OPTIONS_DROPDOWN_ID,
   );
 
   const selectableItemIdArray = [
-    ViewOpenRecordInType.SIDE_PANEL,
-    ViewOpenRecordInType.RECORD_PAGE,
+    ViewOpenRecordIn.SIDE_PANEL,
+    ViewOpenRecordIn.RECORD_PAGE,
   ];
 
   return (
@@ -62,13 +64,13 @@ export const ObjectOptionsDropdownLayoutOpenInContent = () => {
           selectableItemIdArray={selectableItemIdArray}
         >
           <SelectableListItem
-            itemId={ViewOpenRecordInType.SIDE_PANEL}
+            itemId={ViewOpenRecordIn.SIDE_PANEL}
             onEnter={() => {
               if (!canOpenInSidePanel) {
                 return;
               }
               setAndPersistOpenRecordIn(
-                ViewOpenRecordInType.SIDE_PANEL,
+                ViewOpenRecordIn.SIDE_PANEL,
                 currentView,
               );
             }}
@@ -76,17 +78,15 @@ export const ObjectOptionsDropdownLayoutOpenInContent = () => {
             <MenuItemSelect
               LeftIcon={IconLayoutSidebarRight}
               text={t`Side Panel`}
-              selected={
-                recordIndexOpenRecordIn === ViewOpenRecordInType.SIDE_PANEL
-              }
-              focused={selectedItemId === ViewOpenRecordInType.SIDE_PANEL}
+              selected={recordIndexOpenRecordIn === ViewOpenRecordIn.SIDE_PANEL}
+              focused={selectedItemId === ViewOpenRecordIn.SIDE_PANEL}
               onClick={() => {
                 if (!canOpenInSidePanel) {
                   return;
                 }
 
                 setAndPersistOpenRecordIn(
-                  ViewOpenRecordInType.SIDE_PANEL,
+                  ViewOpenRecordIn.SIDE_PANEL,
                   currentView,
                 );
               }}
@@ -94,10 +94,10 @@ export const ObjectOptionsDropdownLayoutOpenInContent = () => {
             />
           </SelectableListItem>
           <SelectableListItem
-            itemId={ViewOpenRecordInType.RECORD_PAGE}
+            itemId={ViewOpenRecordIn.RECORD_PAGE}
             onEnter={() =>
               setAndPersistOpenRecordIn(
-                ViewOpenRecordInType.RECORD_PAGE,
+                ViewOpenRecordIn.RECORD_PAGE,
                 currentView,
               )
             }
@@ -106,15 +106,15 @@ export const ObjectOptionsDropdownLayoutOpenInContent = () => {
               LeftIcon={IconLayoutNavbar}
               text={t`Record Page`}
               selected={
-                recordIndexOpenRecordIn === ViewOpenRecordInType.RECORD_PAGE
+                recordIndexOpenRecordIn === ViewOpenRecordIn.RECORD_PAGE
               }
               onClick={() =>
                 setAndPersistOpenRecordIn(
-                  ViewOpenRecordInType.RECORD_PAGE,
+                  ViewOpenRecordIn.RECORD_PAGE,
                   currentView,
                 )
               }
-              focused={selectedItemId === ViewOpenRecordInType.RECORD_PAGE}
+              focused={selectedItemId === ViewOpenRecordIn.RECORD_PAGE}
             />
           </SelectableListItem>
         </SelectableList>

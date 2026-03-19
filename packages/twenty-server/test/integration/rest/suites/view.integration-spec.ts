@@ -2,7 +2,7 @@ import { createOneSelectFieldMetadataForIntegrationTests } from 'test/integratio
 import { createOneObjectMetadata } from 'test/integration/metadata/suites/object-metadata/utils/create-one-object-metadata.util';
 import { deleteOneObjectMetadata } from 'test/integration/metadata/suites/object-metadata/utils/delete-one-object-metadata.util';
 import { updateOneObjectMetadata } from 'test/integration/metadata/suites/object-metadata/utils/update-one-object-metadata.util';
-import { destroyOneCoreView } from 'test/integration/metadata/suites/view/utils/destroy-one-core-view.util';
+import { destroyOneView } from 'test/integration/metadata/suites/view/utils/destroy-one-view.util';
 import { makeRestAPIRequest } from 'test/integration/rest/utils/make-rest-api-request.util';
 import {
   assertRestApiErrorNotFoundResponse,
@@ -11,10 +11,9 @@ import {
 import { createTestViewWithRestApi } from 'test/integration/rest/utils/view-rest-api.util';
 import { generateRecordName } from 'test/integration/utils/generate-record-name';
 import { assertViewStructure } from 'test/integration/utils/view-test.util';
+import { ViewOpenRecordIn, ViewType } from 'twenty-shared/types';
 
-import { ViewKey } from 'src/engine/metadata-modules/view/enums/view-key.enum';
-import { ViewOpenRecordIn } from 'src/engine/metadata-modules/view/enums/view-open-record-in';
-import { ViewType } from 'src/engine/metadata-modules/view/enums/view-type.enum';
+import { ViewKey } from 'twenty-shared/types';
 
 describe('View REST API', () => {
   let testObjectMetadataId: string;
@@ -66,7 +65,7 @@ describe('View REST API', () => {
   afterEach(async () => {
     if (!testViewId) return;
 
-    await destroyOneCoreView({
+    await destroyOneView({
       viewId: testViewId,
       expectToFail: false,
     });

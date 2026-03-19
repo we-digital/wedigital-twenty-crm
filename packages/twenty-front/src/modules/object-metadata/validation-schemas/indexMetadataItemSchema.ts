@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { type IndexMetadataItem } from '@/object-metadata/types/IndexMetadataItem';
 import { indexFieldMetadataItemSchema } from '@/object-metadata/validation-schemas/indexFieldMetadataItemSchema';
-import { IndexType } from '~/generated/graphql';
+import { IndexType } from '~/generated-metadata/graphql';
 
 export const indexMetadataItemSchema = z.object({
   __typename: z.literal('Index'),
@@ -14,5 +14,6 @@ export const indexMetadataItemSchema = z.object({
   indexType: z.enum(IndexType),
   indexWhereClause: z.string().nullable(),
   isUnique: z.boolean(),
+  isCustom: z.boolean().nullable().optional(),
   objectMetadata: z.any(),
 }) satisfies z.ZodType<IndexMetadataItem>;

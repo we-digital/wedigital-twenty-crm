@@ -1,11 +1,11 @@
 import { type Decorator } from '@storybook/react-vite';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
 
-import { ActionMenuComponentInstanceContext } from '@/action-menu/states/contexts/ActionMenuComponentInstanceContext';
-import { getActionMenuIdFromRecordIndexId } from '@/action-menu/utils/getActionMenuIdFromRecordIndexId';
+import { getCommandMenuIdFromRecordIndexId } from '@/command-menu-item/utils/getCommandMenuIdFromRecordIndexId';
+import { CommandMenuComponentInstanceContext } from '@/command-menu/states/contexts/CommandMenuComponentInstanceContext';
+import { MAIN_CONTEXT_STORE_INSTANCE_ID } from '@/context-store/constants/MainContextStoreInstanceId';
 import { contextStoreCurrentViewIdComponentState } from '@/context-store/states/contextStoreCurrentViewIdComponentState';
 import { labelIdentifierFieldMetadataItemSelector } from '@/object-metadata/states/labelIdentifierFieldMetadataItemSelector';
-import { objectMetadataItemsState } from '@/object-metadata/states/objectMetadataItemsState';
+import { objectMetadataItemsSelector } from '@/object-metadata/states/objectMetadataItemsSelector';
 import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
 import { formatFieldMetadataItemAsColumnDefinition } from '@/object-metadata/utils/formatFieldMetadataItemAsColumnDefinition';
 import { RecordComponentInstanceContextsWrapper } from '@/object-record/components/RecordComponentInstanceContextsWrapper';
@@ -23,18 +23,23 @@ import { useSetRecordTableData } from '@/object-record/record-table/hooks/intern
 import { RecordTableComponentInstanceContext } from '@/object-record/record-table/states/context/RecordTableComponentInstanceContext';
 import { getRecordIndexIdFromObjectNamePluralAndViewId } from '@/object-record/utils/getRecordIndexIdFromObjectNamePluralAndViewId';
 import { getObjectPermissionsFromMapByObjectMetadataId } from '@/settings/roles/role-permissions/objects-permissions/utils/getObjectPermissionsFromMapByObjectMetadataId';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
-import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
+import { useAtomComponentSelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentSelectorValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { useAtomFamilySelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilySelectorValue';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
+import { jotaiStore } from '@/ui/utilities/state/jotai/jotaiStore';
 import { ViewComponentInstanceContext } from '@/views/states/contexts/ViewComponentInstanceContext';
-import { coreViewsState } from '@/views/states/coreViewState';
-import { type CoreViewWithRelations } from '@/views/types/CoreViewWithRelations';
+import { type ViewWithRelations } from '@/views/types/ViewWithRelations';
 import { type View } from '@/views/types/View';
 import { mapViewFieldToRecordField } from '@/views/utils/mapViewFieldToRecordField';
 import { useEffect, useMemo } from 'react';
 import { isDefined } from 'twenty-shared/utils';
-import { getCompaniesMock } from '~/testing/mock-data/companies';
-import { mockedViewFieldsData } from '~/testing/mock-data/view-fields';
-import { mockedViewsData } from '~/testing/mock-data/views';
+import { mockedCompanyRecords } from '~/testing/mock-data/generated/data/companies/mock-companies-data';
+import { mockedViews } from '~/testing/mock-data/generated/metadata/views/mock-views-data';
+import { setTestViewsInMetadataStore } from '~/testing/utils/setTestViewsInMetadataStore';
+
+const companyView = mockedViews.find((v) => v.name === 'All Companies')!;
 
 const InternalTableStateLoaderEffect = ({
   objectMetadataItem,
@@ -43,15 +48,14 @@ const InternalTableStateLoaderEffect = ({
 }) => {
   const { recordTableId } = useRecordTableContextOrThrow();
   const { loadRecordIndexStates } = useLoadRecordIndexStates();
-  const setCurrentRecordFields = useSetRecoilComponentState(
+  const setCurrentRecordFields = useSetAtomComponentState(
     currentRecordFieldsComponentState,
   );
 
-  const setContextStoreCurrentViewId = useSetRecoilComponentState(
+  const setContextStoreCurrentViewId = useSetAtomComponentState(
     contextStoreCurrentViewIdComponentState,
+    MAIN_CONTEXT_STORE_INSTANCE_ID,
   );
-
-  const setCoreViews = useSetRecoilState(coreViewsState);
 
   const setRecordTableData = useSetRecordTableData({
     recordTableId,
@@ -59,17 +63,15 @@ const InternalTableStateLoaderEffect = ({
 
   const view = useMemo(() => {
     return {
-      ...mockedViewsData[0],
-      viewFields: mockedViewFieldsData.filter(
-        (viewField) => viewField.viewId === mockedViewsData[0].id,
-      ),
+      ...companyView,
+      viewFields: companyView.viewFields,
     } as unknown as View;
   }, []);
 
   useEffect(() => {
     loadRecordIndexStates(view, objectMetadataItem);
     setRecordTableData({
-      records: getCompaniesMock(),
+      records: [...mockedCompanyRecords],
     });
     const recordFields = view.viewFields
       .map(mapViewFieldToRecordField)
@@ -77,7 +79,9 @@ const InternalTableStateLoaderEffect = ({
 
     setCurrentRecordFields(recordFields);
 
-    setCoreViews([view as unknown as CoreViewWithRelations]);
+    setTestViewsInMetadataStore(jotaiStore, [
+      view as unknown as ViewWithRelations,
+    ]);
 
     setContextStoreCurrentViewId(view.id);
   }, [
@@ -87,7 +91,6 @@ const InternalTableStateLoaderEffect = ({
     view,
     setCurrentRecordFields,
     setContextStoreCurrentViewId,
-    setCoreViews,
   ]);
 
   return null;
@@ -100,16 +103,15 @@ const InternalTableContextProviders = ({
   children: React.ReactNode;
   objectMetadataItem: ObjectMetadataItem;
 }) => {
+  const objectMetadataItems = useAtomStateValue(objectMetadataItemsSelector);
   const { objectPermissionsByObjectMetadataId } = useObjectPermissions();
 
-  const currentRecordFields = useRecoilComponentValue(
+  const currentRecordFields = useAtomComponentStateValue(
     currentRecordFieldsComponentState,
-    'record-index',
   );
 
-  const visibleRecordFields = useRecoilComponentValue(
+  const visibleRecordFields = useAtomComponentSelectorValue(
     visibleRecordFieldsComponentSelector,
-    'record-index',
   );
 
   const fieldMetadataItems = objectMetadataItem.fields;
@@ -142,10 +144,11 @@ const InternalTableContextProviders = ({
     ]),
   );
 
-  const labelIdentifierFieldMetadataItem = useRecoilValue(
-    labelIdentifierFieldMetadataItemSelector({
+  const labelIdentifierFieldMetadataItem = useAtomFamilySelectorValue(
+    labelIdentifierFieldMetadataItemSelector,
+    {
       objectMetadataItemId: objectMetadataItem.id,
-    }),
+    },
   );
 
   const triggerEvent = 'CLICK';
@@ -171,6 +174,7 @@ const InternalTableContextProviders = ({
         value={{
           objectNameSingular: objectMetadataItem.nameSingular,
           objectMetadataItem: objectMetadataItem,
+          objectMetadataItems: objectMetadataItems,
           recordTableId: objectMetadataItem.namePlural,
           viewBarId: 'view-bar',
           objectPermissions: getObjectPermissionsFromMapByObjectMetadataId({
@@ -186,7 +190,7 @@ const InternalTableContextProviders = ({
           value={{
             onCloseTableCell: () => {},
             onOpenTableCell: () => {},
-            onActionMenuDropdownOpened: () => {},
+            onCommandMenuDropdownOpened: () => {},
             onMoveFocus: () => {},
             onMoveHoverToCurrentCell: () => {},
           }}
@@ -202,7 +206,7 @@ export const RecordTableDecorator: Decorator = (Story, context) => {
   const { recordTableObjectNameSingular: objectNameSingular } =
     context.parameters;
 
-  const objectMetadataItems = useRecoilValue(objectMetadataItemsState);
+  const objectMetadataItems = useAtomStateValue(objectMetadataItemsSelector);
 
   const objectMetadataItem = objectMetadataItems.find(
     (objectMetadataItem) =>
@@ -217,7 +221,7 @@ export const RecordTableDecorator: Decorator = (Story, context) => {
 
   const recordIndexId = getRecordIndexIdFromObjectNamePluralAndViewId(
     objectMetadataItem.namePlural,
-    mockedViewsData[0].id,
+    companyView.id,
   );
 
   return (
@@ -230,9 +234,9 @@ export const RecordTableDecorator: Decorator = (Story, context) => {
         <RecordComponentInstanceContextsWrapper
           componentInstanceId={recordIndexId}
         >
-          <ActionMenuComponentInstanceContext.Provider
+          <CommandMenuComponentInstanceContext.Provider
             value={{
-              instanceId: getActionMenuIdFromRecordIndexId(recordIndexId),
+              instanceId: getCommandMenuIdFromRecordIndexId(recordIndexId),
             }}
           >
             <InternalTableContextProviders
@@ -243,7 +247,7 @@ export const RecordTableDecorator: Decorator = (Story, context) => {
               />
               <Story />
             </InternalTableContextProviders>
-          </ActionMenuComponentInstanceContext.Provider>
+          </CommandMenuComponentInstanceContext.Provider>
         </RecordComponentInstanceContextsWrapper>
       </ViewComponentInstanceContext.Provider>
     </RecordTableComponentInstanceContext.Provider>

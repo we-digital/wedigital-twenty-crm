@@ -1,5 +1,5 @@
-import { ApolloError } from '@apollo/client';
-import styled from '@emotion/styled';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
+import { styled } from '@linaria/react';
 import { useParams } from 'react-router-dom';
 import { useDebouncedCallback } from 'use-debounce';
 
@@ -14,7 +14,6 @@ import { SettingsTextInput } from '@/ui/input/components/SettingsTextInput';
 import { TextArea } from '@/ui/input/components/TextArea';
 import { TitleInput } from '@/ui/input/components/TitleInput';
 import { SubMenuTopBarContainer } from '@/ui/layout/page/components/SubMenuTopBarContainer';
-import { useTheme } from '@emotion/react';
 import { t } from '@lingui/core/macro';
 import { AppPath, SettingsPath } from 'twenty-shared/types';
 import { getSettingsPath, isDefined } from 'twenty-shared/utils';
@@ -30,14 +29,15 @@ import {
 } from 'twenty-ui/display';
 import { Button } from 'twenty-ui/input';
 import { Card, Section } from 'twenty-ui/layout';
+import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
+import { useMutation, useQuery } from '@apollo/client/react';
 import {
-  useActivateSkillMutation,
-  useCreateSkillMutation,
-  useDeactivateSkillMutation,
-  useDeleteSkillMutation,
-  useFindOneSkillQuery,
-  useUpdateSkillMutation,
-  type FindOneSkillQuery,
+  ActivateSkillDocument,
+  CreateSkillDocument,
+  DeactivateSkillDocument,
+  DeleteSkillDocument,
+  FindOneSkillDocument,
+  UpdateSkillDocument,
 } from '~/generated-metadata/graphql';
 import { useNavigateApp } from '~/hooks/useNavigateApp';
 import { useNavigateSettings } from '~/hooks/useNavigateSettings';
@@ -45,20 +45,20 @@ import { computeMetadataNameFromLabel } from '~/pages/settings/data-model/utils/
 
 import { ConfirmationModal } from '@/ui/layout/modal/components/ConfirmationModal';
 import { useModal } from '@/ui/layout/modal/hooks/useModal';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import Skeleton from 'react-loading-skeleton';
 import { isDeeplyEqual } from '~/utils/isDeeplyEqual';
 
 const StyledFormContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.spacing(4)};
+  gap: ${themeCssVariables.spacing[4]};
 `;
 
 const StyledIconNameRow = styled.div`
   align-items: flex-start;
   display: flex;
-  gap: ${({ theme }) => theme.spacing(2)};
+  gap: ${themeCssVariables.spacing[2]};
 `;
 
 const StyledNameContainer = styled.div`
@@ -66,30 +66,30 @@ const StyledNameContainer = styled.div`
 `;
 
 const StyledAdvancedSettingsOuterContainer = styled.div`
-  padding-top: ${({ theme }) => theme.spacing(4)};
+  padding-top: ${themeCssVariables.spacing[4]};
 `;
 
 const StyledAdvancedSettingsContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.spacing(4)};
+  gap: ${themeCssVariables.spacing[4]};
   width: 100%;
 `;
 
 const StyledHeaderTitle = styled.div`
-  color: ${({ theme }) => theme.font.color.primary};
-  font-weight: ${({ theme }) => theme.font.weight.semiBold};
-  font-size: ${({ theme }) => theme.font.size.lg};
-  width: fit-content;
+  color: ${themeCssVariables.font.color.primary};
+  font-size: ${themeCssVariables.font.size.lg};
+  font-weight: ${themeCssVariables.font.weight.semiBold};
   max-width: 420px;
+  width: fit-content;
   & > input:disabled {
-    color: ${({ theme }) => theme.font.color.primary};
+    color: ${themeCssVariables.font.color.primary};
   }
 `;
 
 const StyledDangerButtonsContainer = styled.div`
   display: flex;
-  gap: ${({ theme }) => theme.spacing(2)};
+  gap: ${themeCssVariables.spacing[2]};
 `;
 
 type SkillFormValues = {
@@ -104,11 +104,11 @@ type SkillFormValues = {
 const DELETE_SKILL_MODAL_ID = 'delete-skill-modal';
 
 export const SettingsSkillForm = ({ mode }: { mode: 'create' | 'edit' }) => {
+  const { theme } = useContext(ThemeContext);
   const { skillId = '' } = useParams<{ skillId: string }>();
   const navigate = useNavigateSettings();
   const navigateApp = useNavigateApp();
   const { enqueueErrorSnackBar } = useSnackBar();
-  const theme = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReadonlyMode, setIsReadonlyMode] = useState(false);
   const [originalFormValues, setOriginalFormValues] =
@@ -127,10 +127,17 @@ export const SettingsSkillForm = ({ mode }: { mode: 'create' | 'edit' }) => {
     isLabelSyncedWithName: true,
   });
 
-  const { data, loading } = useFindOneSkillQuery({
+  const {
+    data,
+    loading,
+    error: skillQueryError,
+  } = useQuery(FindOneSkillDocument, {
     variables: { id: skillId },
     skip: isCreateMode || !skillId,
-    onCompleted: (data: FindOneSkillQuery) => {
+  });
+
+  useEffect(() => {
+    if (data) {
       const skill = data?.skill;
       if (isDefined(skill)) {
         if (!skill.isCustom) {
@@ -155,20 +162,25 @@ export const SettingsSkillForm = ({ mode }: { mode: 'create' | 'edit' }) => {
         });
         navigateApp(AppPath.NotFound);
       }
-    },
-    onError: (error: ApolloError) => {
+    }
+  }, [data, enqueueErrorSnackBar, navigateApp]);
+
+  useEffect(() => {
+    if (skillQueryError) {
       enqueueErrorSnackBar({
-        apolloError: error,
+        apolloError: CombinedGraphQLErrors.is(skillQueryError)
+          ? skillQueryError
+          : undefined,
       });
       navigateApp(AppPath.NotFound);
-    },
-  });
+    }
+  }, [skillQueryError, enqueueErrorSnackBar, navigateApp]);
 
-  const [createSkill] = useCreateSkillMutation();
-  const [updateSkill] = useUpdateSkillMutation();
-  const [deleteSkill] = useDeleteSkillMutation();
-  const [activateSkill] = useActivateSkillMutation();
-  const [deactivateSkill] = useDeactivateSkillMutation();
+  const [createSkill] = useMutation(CreateSkillDocument);
+  const [updateSkill] = useMutation(UpdateSkillDocument);
+  const [deleteSkill] = useMutation(DeleteSkillDocument);
+  const [activateSkill] = useMutation(ActivateSkillDocument);
+  const [deactivateSkill] = useMutation(DeactivateSkillDocument);
 
   const skill = data?.skill;
 
@@ -236,7 +248,7 @@ export const SettingsSkillForm = ({ mode }: { mode: 'create' | 'edit' }) => {
       setOriginalFormValues({ ...formValues });
     } catch (error) {
       enqueueErrorSnackBar({
-        apolloError: error instanceof ApolloError ? error : undefined,
+        apolloError: CombinedGraphQLErrors.is(error) ? error : undefined,
       });
     } finally {
       setIsSubmitting(false);
@@ -305,7 +317,7 @@ export const SettingsSkillForm = ({ mode }: { mode: 'create' | 'edit' }) => {
       navigate(SettingsPath.AI);
     } catch (error) {
       enqueueErrorSnackBar({
-        apolloError: error instanceof ApolloError ? error : undefined,
+        apolloError: CombinedGraphQLErrors.is(error) ? error : undefined,
       });
     } finally {
       setIsSubmitting(false);
@@ -324,7 +336,7 @@ export const SettingsSkillForm = ({ mode }: { mode: 'create' | 'edit' }) => {
       navigate(SettingsPath.AI);
     } catch (error) {
       enqueueErrorSnackBar({
-        apolloError: error instanceof ApolloError ? error : undefined,
+        apolloError: CombinedGraphQLErrors.is(error) ? error : undefined,
       });
     } finally {
       setIsSubmitting(false);
@@ -342,7 +354,7 @@ export const SettingsSkillForm = ({ mode }: { mode: 'create' | 'edit' }) => {
       navigate(SettingsPath.AI);
     } catch (error) {
       enqueueErrorSnackBar({
-        apolloError: error instanceof ApolloError ? error : undefined,
+        apolloError: CombinedGraphQLErrors.is(error) ? error : undefined,
       });
     } finally {
       setIsSubmitting(false);
@@ -360,7 +372,7 @@ export const SettingsSkillForm = ({ mode }: { mode: 'create' | 'edit' }) => {
       navigate(SettingsPath.AI);
     } catch (error) {
       enqueueErrorSnackBar({
-        apolloError: error instanceof ApolloError ? error : undefined,
+        apolloError: CombinedGraphQLErrors.is(error) ? error : undefined,
       });
     } finally {
       setIsSubmitting(false);
@@ -582,7 +594,7 @@ export const SettingsSkillForm = ({ mode }: { mode: 'create' | 'edit' }) => {
       </SettingsPageContainer>
 
       <ConfirmationModal
-        modalId={DELETE_SKILL_MODAL_ID}
+        modalInstanceId={DELETE_SKILL_MODAL_ID}
         title={t`Delete Skill`}
         subtitle={t`Are you sure you want to delete this skill? This action cannot be undone.`}
         onConfirmClick={handleDelete}

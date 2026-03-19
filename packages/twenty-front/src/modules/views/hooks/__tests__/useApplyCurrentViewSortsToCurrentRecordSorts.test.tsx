@@ -2,23 +2,21 @@ import { act, renderHook } from '@testing-library/react';
 
 import { currentRecordSortsComponentState } from '@/object-record/record-sort/states/currentRecordSortsComponentState';
 
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 
 import { contextStoreCurrentViewIdComponentState } from '@/context-store/states/contextStoreCurrentViewIdComponentState';
 
-import { coreViewsState } from '@/views/states/coreViewState';
-import { type CoreViewSortEssential } from '@/views/types/CoreViewSortEssential';
-import { type CoreViewWithRelations } from '@/views/types/CoreViewWithRelations';
-import { type View } from '@/views/types/View';
-import { isDefined } from 'twenty-shared/utils';
-import { ViewSortDirection } from '~/generated/graphql';
-import { getJestMetadataAndApolloMocksAndActionMenuWrapper } from '~/testing/jest/getJestMetadataAndApolloMocksAndActionMenuWrapper';
-import {
-  mockedCoreViewsData,
-  mockedViewsData,
-} from '~/testing/mock-data/views';
-import { generatedMockObjectMetadataItems } from '~/testing/utils/generatedMockObjectMetadataItems';
 import { useApplyCurrentViewSortsToCurrentRecordSorts } from '@/views/hooks/useApplyCurrentViewSortsToCurrentRecordSorts';
+import { type ViewSortEssential } from '@/views/types/ViewSortEssential';
+import { type ViewWithRelations } from '@/views/types/ViewWithRelations';
+import { type View } from '@/views/types/View';
+import { type ViewSort } from '@/views/types/ViewSort';
+import { isDefined } from 'twenty-shared/utils';
+import { ViewSortDirection } from '~/generated-metadata/graphql';
+import { getJestMetadataAndApolloMocksAndCommandMenuWrapper } from '~/testing/jest/getJestMetadataAndApolloMocksAndCommandMenuWrapper';
+import { mockedViews } from '~/testing/mock-data/generated/metadata/views/mock-views-data';
+import { generatedMockObjectMetadataItems } from '~/testing/utils/generatedMockObjectMetadataItems';
+import { setTestViewsInMetadataStore } from '~/testing/utils/setTestViewsInMetadataStore';
 
 const mockObjectMetadataItemNameSingular = 'company';
 
@@ -41,17 +39,19 @@ describe('useApplyCurrentViewSortsToCurrentRecordSorts', () => {
     throw new Error('Missing mock field metadata item with type TEXT');
   }
 
-  const mockViewSort: CoreViewSortEssential = {
+  const mockViewSort: ViewSort = {
     id: 'sort-1',
     fieldMetadataId: mockFieldMetadataItem.id,
     direction: ViewSortDirection.ASC,
     viewId: 'view-1',
   };
 
-  const allCompaniesView = mockedViewsData[0];
-  const allCompaniesCoreView = mockedCoreViewsData[0];
+  const allCompaniesViewData = mockedViews.find(
+    (v) => v.name === 'All Companies',
+  )!;
+  const allCompaniesView = allCompaniesViewData as unknown as View;
 
-  const mockCoreViewSort: CoreViewSortEssential = {
+  const mockViewSortData: ViewSortEssential = {
     id: 'sort-1',
     fieldMetadataId: mockFieldMetadataItem.id,
     direction: ViewSortDirection.ASC,
@@ -63,10 +63,10 @@ describe('useApplyCurrentViewSortsToCurrentRecordSorts', () => {
     viewSorts: [mockViewSort],
   } satisfies View;
 
-  const mockCoreView = {
-    ...allCompaniesCoreView,
-    viewSorts: [mockCoreViewSort],
-  } satisfies CoreViewWithRelations;
+  const mockViewWithRelations = {
+    ...allCompaniesViewData,
+    viewSorts: [mockViewSortData],
+  } satisfies ViewWithRelations;
 
   it('should apply sorts from current view', () => {
     const { result } = renderHook(
@@ -74,24 +74,25 @@ describe('useApplyCurrentViewSortsToCurrentRecordSorts', () => {
         const { applyCurrentViewSortsToCurrentRecordSorts } =
           useApplyCurrentViewSortsToCurrentRecordSorts();
 
-        const currentSorts = useRecoilComponentValue(
+        const currentRecordSorts = useAtomComponentStateValue(
           currentRecordSortsComponentState,
+          'recordIndexId',
         );
 
         return {
           applyCurrentViewSortsToCurrentRecordSorts,
-          currentSorts,
+          currentRecordSorts,
         };
       },
       {
-        wrapper: getJestMetadataAndApolloMocksAndActionMenuWrapper({
+        wrapper: getJestMetadataAndApolloMocksAndCommandMenuWrapper({
           apolloMocks: [],
           componentInstanceId: 'instanceId',
           contextStoreCurrentObjectMetadataNameSingular:
             mockObjectMetadataItemNameSingular,
           contextStoreCurrentViewId: mockView.id,
-          onInitializeRecoilSnapshot: (snapshot) => {
-            snapshot.set(coreViewsState, [mockCoreView]);
+          onInitializeJotaiStore: (store) => {
+            setTestViewsInMetadataStore(store, [mockViewWithRelations]);
           },
         }),
       },
@@ -101,7 +102,7 @@ describe('useApplyCurrentViewSortsToCurrentRecordSorts', () => {
       result.current.applyCurrentViewSortsToCurrentRecordSorts();
     });
 
-    expect(result.current.currentSorts).toEqual([
+    expect(result.current.currentRecordSorts).toEqual([
       {
         id: mockViewSort.id,
         fieldMetadataId: mockViewSort.fieldMetadataId,
@@ -116,30 +117,29 @@ describe('useApplyCurrentViewSortsToCurrentRecordSorts', () => {
         const { applyCurrentViewSortsToCurrentRecordSorts } =
           useApplyCurrentViewSortsToCurrentRecordSorts();
 
-        const currentSorts = useRecoilComponentValue(
+        const currentRecordSorts = useAtomComponentStateValue(
           currentRecordSortsComponentState,
+          'recordIndexId',
         );
 
         return {
           applyCurrentViewSortsToCurrentRecordSorts,
-          currentSorts,
+          currentRecordSorts,
         };
       },
       {
-        wrapper: getJestMetadataAndApolloMocksAndActionMenuWrapper({
+        wrapper: getJestMetadataAndApolloMocksAndCommandMenuWrapper({
           apolloMocks: [],
           componentInstanceId: 'instanceId',
           contextStoreCurrentObjectMetadataNameSingular:
             mockObjectMetadataItemNameSingular,
-          onInitializeRecoilSnapshot: (snapshot) => {
-            snapshot.set(
+          onInitializeJotaiStore: (store) => {
+            store.set(
               contextStoreCurrentViewIdComponentState.atomFamily({
                 instanceId: 'instanceId',
               }),
               mockView.id,
             );
-
-            snapshot.set(coreViewsState, []);
           },
         }),
       },
@@ -149,12 +149,12 @@ describe('useApplyCurrentViewSortsToCurrentRecordSorts', () => {
       result.current.applyCurrentViewSortsToCurrentRecordSorts();
     });
 
-    expect(result.current.currentSorts).toEqual([]);
+    expect(result.current.currentRecordSorts).toEqual([]);
   });
 
   it('should handle view with empty sorts', () => {
     const viewWithNoSorts = {
-      ...mockCoreView,
+      ...mockViewWithRelations,
       viewSorts: [],
     };
 
@@ -163,30 +163,30 @@ describe('useApplyCurrentViewSortsToCurrentRecordSorts', () => {
         const { applyCurrentViewSortsToCurrentRecordSorts } =
           useApplyCurrentViewSortsToCurrentRecordSorts();
 
-        const currentSorts = useRecoilComponentValue(
+        const currentRecordSorts = useAtomComponentStateValue(
           currentRecordSortsComponentState,
+          'recordIndexId',
         );
 
         return {
           applyCurrentViewSortsToCurrentRecordSorts,
-          currentSorts,
+          currentRecordSorts,
         };
       },
       {
-        wrapper: getJestMetadataAndApolloMocksAndActionMenuWrapper({
+        wrapper: getJestMetadataAndApolloMocksAndCommandMenuWrapper({
           apolloMocks: [],
           componentInstanceId: 'instanceId',
           contextStoreCurrentObjectMetadataNameSingular:
             mockObjectMetadataItemNameSingular,
-          onInitializeRecoilSnapshot: (snapshot) => {
-            snapshot.set(
+          onInitializeJotaiStore: (store) => {
+            setTestViewsInMetadataStore(store, [viewWithNoSorts]);
+            store.set(
               contextStoreCurrentViewIdComponentState.atomFamily({
                 instanceId: 'instanceId',
               }),
               mockView.id,
             );
-
-            snapshot.set(coreViewsState, [viewWithNoSorts]);
           },
         }),
       },
@@ -196,6 +196,6 @@ describe('useApplyCurrentViewSortsToCurrentRecordSorts', () => {
       result.current.applyCurrentViewSortsToCurrentRecordSorts();
     });
 
-    expect(result.current.currentSorts).toEqual([]);
+    expect(result.current.currentRecordSorts).toEqual([]);
   });
 });

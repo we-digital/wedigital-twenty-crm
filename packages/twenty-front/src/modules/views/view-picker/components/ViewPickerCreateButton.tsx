@@ -1,4 +1,4 @@
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { ViewType } from '@/views/types/ViewType';
 import { useCreateViewFromCurrentState } from '@/views/view-picker/hooks/useCreateViewFromCurrentState';
 import { useDestroyViewFromCurrentState } from '@/views/view-picker/hooks/useDestroyViewFromCurrentState';
@@ -20,14 +20,16 @@ export const ViewPickerCreateButton = () => {
     useGetAvailableFieldsForCalendar();
 
   const { viewPickerMode } = useViewPickerMode();
-  const viewPickerType = useRecoilComponentValue(viewPickerTypeComponentState);
-  const viewPickerIsPersisting = useRecoilComponentValue(
+  const viewPickerType = useAtomComponentStateValue(
+    viewPickerTypeComponentState,
+  );
+  const viewPickerIsPersisting = useAtomComponentStateValue(
     viewPickerIsPersistingComponentState,
   );
-  const viewPickerMainGroupByFieldMetadataId = useRecoilComponentValue(
+  const viewPickerMainGroupByFieldMetadataId = useAtomComponentStateValue(
     viewPickerMainGroupByFieldMetadataIdComponentState,
   );
-  const viewPickerCalendarFieldMetadataId = useRecoilComponentValue(
+  const viewPickerCalendarFieldMetadataId = useAtomComponentStateValue(
     viewPickerCalendarFieldMetadataIdComponentState,
   );
 
@@ -55,7 +57,7 @@ export const ViewPickerCreateButton = () => {
   }
 
   if (
-    viewPickerType === ViewType.Kanban &&
+    viewPickerType === ViewType.KANBAN &&
     availableFieldsForGrouping.length === 0
   ) {
     return (
@@ -71,7 +73,7 @@ export const ViewPickerCreateButton = () => {
   }
 
   if (
-    viewPickerType === ViewType.Calendar &&
+    viewPickerType === ViewType.CALENDAR &&
     availableFieldsForCalendar.length === 0
   ) {
     return (
@@ -87,7 +89,7 @@ export const ViewPickerCreateButton = () => {
   }
 
   if (
-    viewPickerType !== ViewType.Kanban ||
+    viewPickerType !== ViewType.KANBAN ||
     viewPickerMainGroupByFieldMetadataId !== ''
   ) {
     return (
@@ -101,9 +103,9 @@ export const ViewPickerCreateButton = () => {
         justify="center"
         disabled={
           viewPickerIsPersisting ||
-          (viewPickerType === ViewType.Kanban &&
+          (viewPickerType === ViewType.KANBAN &&
             viewPickerMainGroupByFieldMetadataId === '') ||
-          (viewPickerType === ViewType.Calendar &&
+          (viewPickerType === ViewType.CALENDAR &&
             viewPickerCalendarFieldMetadataId === '')
         }
       />

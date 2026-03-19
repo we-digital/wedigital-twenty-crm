@@ -1,5 +1,5 @@
-import { createState } from 'twenty-ui/utilities';
-export const canManageFeatureFlagsState = createState<boolean>({
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
+export const canManageFeatureFlagsState = createAtomState<boolean>({
   key: 'canManageFeatureFlagsState',
   defaultValue: false,
 });

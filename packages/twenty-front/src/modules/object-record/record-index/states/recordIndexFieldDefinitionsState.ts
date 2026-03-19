@@ -1,8 +1,8 @@
 import { type FieldMetadata } from '@/object-record/record-field/ui/types/FieldMetadata';
 import { type ColumnDefinition } from '@/object-record/record-table/types/ColumnDefinition';
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const recordIndexFieldDefinitionsState = createState<
+export const recordIndexFieldDefinitionsState = createAtomState<
   ColumnDefinition<FieldMetadata>[]
 >({
   key: 'recordIndexFieldDefinitionsState',

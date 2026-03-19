@@ -2,7 +2,7 @@ import { usePageLayoutContentContext } from '@/page-layout/contexts/PageLayoutCo
 import { useCurrentPageLayoutOrThrow } from '@/page-layout/hooks/useCurrentPageLayoutOrThrow';
 import { useDeletePageLayoutWidget } from '@/page-layout/hooks/useDeletePageLayoutWidget';
 import { useEditPageLayoutWidget } from '@/page-layout/hooks/useEditPageLayoutWidget';
-import { isPageLayoutInEditModeComponentState } from '@/page-layout/states/isPageLayoutInEditModeComponentState';
+import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
 import { pageLayoutDraggingWidgetIdComponentState } from '@/page-layout/states/pageLayoutDraggingWidgetIdComponentState';
 import { pageLayoutEditingWidgetIdComponentState } from '@/page-layout/states/pageLayoutEditingWidgetIdComponentState';
 import { pageLayoutResizingWidgetIdComponentState } from '@/page-layout/states/pageLayoutResizingWidgetIdComponentState';
@@ -22,18 +22,22 @@ import { WidgetCardContent } from '@/page-layout/widgets/widget-card/components/
 import { WidgetCardHeader } from '@/page-layout/widgets/widget-card/components/WidgetCardHeader';
 import { useLayoutRenderingContext } from '@/ui/layout/contexts/LayoutRenderingContext';
 import { useIsMobile } from '@/ui/utilities/responsive/hooks/useIsMobile';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
-import { useSetRecoilComponentFamilyState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentFamilyState';
-import { useTheme } from '@emotion/react';
-import styled from '@emotion/styled';
-import { type MouseEvent } from 'react';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { useSetAtomComponentFamilyState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentFamilyState';
+import { styled } from '@linaria/react';
+import { type MouseEvent, useContext } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { IconLock } from 'twenty-ui/display';
+import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
 import {
   PageLayoutTabLayoutMode,
   PageLayoutType,
   WidgetType,
-} from '~/generated/graphql';
+} from '~/generated-metadata/graphql';
+
+const StyledEditingWidgetWrapper = styled.div`
+  padding: ${themeCssVariables.spacing[2]};
+`;
 
 const StyledNoAccessContainer = styled.div`
   align-items: center;
@@ -46,37 +50,35 @@ type WidgetRendererProps = {
 };
 
 export const WidgetRenderer = ({ widget }: WidgetRendererProps) => {
-  const theme = useTheme();
+  const { theme } = useContext(ThemeContext);
   const { deletePageLayoutWidget } = useDeletePageLayoutWidget();
   const { handleEditWidget } = useEditPageLayoutWidget();
 
-  const isPageLayoutInEditMode = useRecoilComponentValue(
-    isPageLayoutInEditModeComponentState,
-  );
+  const isPageLayoutInEditMode = useIsPageLayoutInEditMode();
 
-  const draggingWidgetId = useRecoilComponentValue(
+  const pageLayoutDraggingWidgetId = useAtomComponentStateValue(
     pageLayoutDraggingWidgetIdComponentState,
   );
 
-  const resizingWidgetId = useRecoilComponentValue(
+  const pageLayoutResizingWidgetId = useAtomComponentStateValue(
     pageLayoutResizingWidgetIdComponentState,
   );
 
-  const currentlyEditingWidgetId = useRecoilComponentValue(
+  const pageLayoutEditingWidgetId = useAtomComponentStateValue(
     pageLayoutEditingWidgetIdComponentState,
   );
 
-  const isEditing = currentlyEditingWidgetId === widget.id;
+  const isEditing = pageLayoutEditingWidgetId === widget.id;
 
-  const isDragging = draggingWidgetId === widget.id;
+  const isDragging = pageLayoutDraggingWidgetId === widget.id;
 
-  const isResizing = resizingWidgetId === widget.id;
+  const isResizing = pageLayoutResizingWidgetId === widget.id;
 
   const { hasAccess, restriction } = useWidgetPermissions(widget);
 
   const { layoutMode } = usePageLayoutContentContext();
   const { isInPinnedTab } = useIsInPinnedTab();
-  const { isInRightDrawer } = useLayoutRenderingContext();
+  const { isInSidePanel } = useLayoutRenderingContext();
   const isMobile = useIsMobile();
 
   const { currentPageLayout } = useCurrentPageLayoutOrThrow();
@@ -85,6 +87,14 @@ export const WidgetRenderer = ({ widget }: WidgetRendererProps) => {
 
   const isReorderEnabled =
     currentPageLayout.type !== PageLayoutType.RECORD_PAGE;
+
+  const isDeletingWidgetEnabled =
+    currentPageLayout.type !== PageLayoutType.RECORD_PAGE;
+
+  const isWidgetEditable =
+    isPageLayoutInEditMode &&
+    (currentPageLayout.type !== PageLayoutType.RECORD_PAGE ||
+      widget.type === WidgetType.FIELDS);
 
   // TODO: when we have more widgets without headers, we should use a more generic approach to hide the header
   // each widget type could have metadata (e.g., hasHeader: boolean or headerMode: 'always' | 'editOnly' | 'never')
@@ -106,17 +116,17 @@ export const WidgetRenderer = ({ widget }: WidgetRendererProps) => {
     deletePageLayoutWidget(widget.id);
   };
 
-  const setIsHovered = useSetRecoilComponentFamilyState(
+  const setWidgetCardHovered = useSetAtomComponentFamilyState(
     widgetCardHoveredComponentFamilyState,
     widget.id,
   );
 
   const handleMouseEnter = () => {
-    setIsHovered(true);
+    setWidgetCardHovered(true);
   };
 
   const handleMouseLeave = () => {
-    setIsHovered(false);
+    setWidgetCardHovered(false);
   };
 
   const variant = getWidgetCardVariant({
@@ -124,70 +134,88 @@ export const WidgetRenderer = ({ widget }: WidgetRendererProps) => {
     isInPinnedTab,
     pageLayoutType: currentPageLayout.type,
     isMobile,
-    isInRightDrawer,
+    isInSidePanel,
   });
 
   const actions = useWidgetActions({ widget });
 
+  // TODO: remove once all record page layouts widgets use the editable contain in edit mode
+  const shouldWrapWithEditingWrapper =
+    isWidgetEditable && variant === 'side-column';
+
+  const widgetCard = (
+    <WidgetCard
+      headerLess={!showHeader}
+      variant={variant}
+      isEditable={isWidgetEditable}
+      onClick={isWidgetEditable ? handleClick : undefined}
+      isEditing={isEditing}
+      isDragging={isDragging}
+      isResizing={isResizing}
+      isLastWidget={isLastWidget}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      data-widget-id={widget.id}
+      data-testid={widget.id}
+      className="widget"
+    >
+      {showHeader && (
+        <WidgetCardHeader
+          widgetId={widget.id}
+          variant={variant}
+          isInEditMode={isWidgetEditable}
+          isResizing={isResizing}
+          isReorderEnabled={isReorderEnabled}
+          isDeletingWidgetEnabled={isDeletingWidgetEnabled}
+          title={widget.title}
+          onRemove={handleRemove}
+          actions={actions}
+          forbiddenDisplay={
+            !hasAccess && (
+              <PageLayoutWidgetForbiddenDisplay
+                widgetId={widget.id}
+                restriction={restriction}
+              />
+            )
+          }
+        />
+      )}
+
+      <WidgetCardContent
+        variant={variant}
+        hasHeader={showHeader}
+        isEditable={isWidgetEditable}
+      >
+        {hasAccess ? (
+          <ErrorBoundary
+            FallbackComponent={PageLayoutWidgetInvalidConfigDisplay}
+            resetKeys={[
+              widget.id,
+              widget.configuration,
+              widget.objectMetadataId,
+            ]}
+          >
+            <WidgetContentRenderer widget={widget} />
+          </ErrorBoundary>
+        ) : (
+          <StyledNoAccessContainer>
+            <IconLock
+              color={theme.font.color.tertiary}
+              stroke={theme.icon.stroke.sm}
+            />
+          </StyledNoAccessContainer>
+        )}
+      </WidgetCardContent>
+    </WidgetCard>
+  );
+
   return (
     <WidgetComponentInstanceContext.Provider value={{ instanceId: widget.id }}>
-      <WidgetCard
-        headerLess={!showHeader}
-        variant={variant}
-        isEditable={isPageLayoutInEditMode}
-        onClick={isPageLayoutInEditMode ? handleClick : undefined}
-        isEditing={isEditing}
-        isDragging={isDragging}
-        isResizing={isResizing}
-        isLastWidget={isLastWidget}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        data-widget-id={widget.id}
-        data-testid={widget.id}
-        className="widget"
-      >
-        {showHeader && (
-          <WidgetCardHeader
-            widgetId={widget.id}
-            variant={variant}
-            isInEditMode={isPageLayoutInEditMode}
-            isResizing={isResizing}
-            isReorderEnabled={isReorderEnabled}
-            title={widget.title}
-            onRemove={handleRemove}
-            actions={actions}
-            forbiddenDisplay={
-              !hasAccess && (
-                <PageLayoutWidgetForbiddenDisplay
-                  widgetId={widget.id}
-                  restriction={restriction}
-                />
-              )
-            }
-          />
-        )}
-
-        <WidgetCardContent
-          variant={variant}
-          hasHeader={showHeader}
-          isEditable={isPageLayoutInEditMode}
-        >
-          {hasAccess ? (
-            <ErrorBoundary
-              FallbackComponent={PageLayoutWidgetInvalidConfigDisplay}
-            >
-              <WidgetContentRenderer widget={widget} />
-            </ErrorBoundary>
-          ) : (
-            <StyledNoAccessContainer>
-              <IconLock
-                color={theme.font.color.tertiary}
-                stroke={theme.icon.stroke.sm}
-              />
-            </StyledNoAccessContainer>
-          )}
-        </WidgetCardContent>
-      </WidgetCard>
+      {shouldWrapWithEditingWrapper ? (
+        <StyledEditingWidgetWrapper>{widgetCard}</StyledEditingWidgetWrapper>
+      ) : (
+        widgetCard
+      )}
     </WidgetComponentInstanceContext.Provider>
   );
 };

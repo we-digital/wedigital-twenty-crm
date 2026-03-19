@@ -1,6 +1,5 @@
-import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
 import { GET_TOOL_INDEX } from '@/ai/graphql/queries/getToolIndex';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 
 type ToolIndexEntry = {
   name: string;
@@ -14,11 +13,7 @@ type GetToolIndexQuery = {
 };
 
 export const useGetToolIndex = () => {
-  const apolloMetadataClient = useApolloCoreClient();
-
-  const { data, loading, error } = useQuery<GetToolIndexQuery>(GET_TOOL_INDEX, {
-    client: apolloMetadataClient ?? undefined,
-  });
+  const { data, loading, error } = useQuery<GetToolIndexQuery>(GET_TOOL_INDEX);
 
   return {
     toolIndex: data?.getToolIndex ?? [],

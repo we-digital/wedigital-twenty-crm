@@ -3,14 +3,26 @@
 import { renderHook } from '@testing-library/react';
 
 import { useCreateSSOIdentityProvider } from '@/settings/security/hooks/useCreateSSOIdentityProvider';
+import {
+  CreateOidcIdentityProviderDocument,
+  CreateSamlIdentityProviderDocument,
+} from '~/generated-metadata/graphql';
 import { getJestMetadataAndApolloMocksWrapper } from '~/testing/jest/getJestMetadataAndApolloMocksWrapper';
 
 const mutationOIDCCallSpy = jest.fn();
 const mutationSAMLCallSpy = jest.fn();
 
-jest.mock('~/generated-metadata/graphql', () => ({
-  useCreateOidcIdentityProviderMutation: () => [mutationOIDCCallSpy],
-  useCreateSamlIdentityProviderMutation: () => [mutationSAMLCallSpy],
+jest.mock('@apollo/client/react', () => ({
+  ...jest.requireActual('@apollo/client/react'),
+  useMutation: (document: unknown) => {
+    if (document === CreateOidcIdentityProviderDocument) {
+      return [mutationOIDCCallSpy];
+    }
+    if (document === CreateSamlIdentityProviderDocument) {
+      return [mutationSAMLCallSpy];
+    }
+    return [jest.fn()];
+  },
 }));
 
 const Wrapper = getJestMetadataAndApolloMocksWrapper({
@@ -38,7 +50,7 @@ describe('useCreateSSOIdentityProvider', () => {
       { wrapper: Wrapper },
     );
 
-    // eslint-disable-next-line unused-imports/no-unused-vars
+    // oxlint-disable-next-line unused-imports/no-unused-vars
     const { type, ...input } = OIDCParams;
     expect(mutationOIDCCallSpy).toHaveBeenCalledWith({
       onCompleted: expect.any(Function),
@@ -65,7 +77,7 @@ describe('useCreateSSOIdentityProvider', () => {
       { wrapper: Wrapper },
     );
 
-    // eslint-disable-next-line unused-imports/no-unused-vars
+    // oxlint-disable-next-line unused-imports/no-unused-vars
     const { type, ...input } = SAMLParams;
     expect(mutationOIDCCallSpy).not.toHaveBeenCalled();
     expect(mutationSAMLCallSpy).toHaveBeenCalledWith({
@@ -79,15 +91,13 @@ describe('useCreateSSOIdentityProvider', () => {
     const OTHERParams = {
       type: 'OTHER' as const,
     };
-    renderHook(
-      async () => {
-        const { createSSOIdentityProvider } = useCreateSSOIdentityProvider();
-        await expect(
-          // @ts-expect-error - It's expected to throw an error
-          createSSOIdentityProvider(OTHERParams),
-        ).rejects.toThrowError();
-      },
-      { wrapper: Wrapper },
-    );
+    const { result } = renderHook(() => useCreateSSOIdentityProvider(), {
+      wrapper: Wrapper,
+    });
+
+    await expect(
+      // @ts-expect-error - It's expected to throw an error
+      result.current.createSSOIdentityProvider(OTHERParams),
+    ).rejects.toThrow('Invalid IdpType');
   });
 });

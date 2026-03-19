@@ -1,5 +1,5 @@
-import { createState } from 'twenty-ui/utilities';
-export const emailThreadIdWhenEmailThreadWasClosedState = createState<
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
+export const emailThreadIdWhenEmailThreadWasClosedState = createAtomState<
   string | null
 >({
   key: 'emailThreadIdWhenEmailThreadWasClosedState',

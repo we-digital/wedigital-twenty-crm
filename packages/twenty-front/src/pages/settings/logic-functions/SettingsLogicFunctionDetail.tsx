@@ -1,69 +1,88 @@
-import { useExecuteLogicFunction } from '@/logic-functions/hooks/useExecuteLogicFunction';
+import { useNavigate, useParams } from 'react-router-dom';
+
+import { useLogicFunctionForm } from '@/logic-functions/hooks/useLogicFunctionForm';
 import { SettingsPageContainer } from '@/settings/components/SettingsPageContainer';
 import { SettingsLogicFunctionLabelContainer } from '@/settings/logic-functions/components/SettingsLogicFunctionLabelContainer';
 import { SettingsLogicFunctionSettingsTab } from '@/settings/logic-functions/components/tabs/SettingsLogicFunctionSettingsTab';
 import { SettingsLogicFunctionTestTab } from '@/settings/logic-functions/components/tabs/SettingsLogicFunctionTestTab';
 import { SettingsLogicFunctionTriggersTab } from '@/settings/logic-functions/components/tabs/SettingsLogicFunctionTriggersTab';
-import {
-  type LogicFunctionFormValues,
-  useLogicFunctionUpdateFormState,
-} from '@/settings/logic-functions/hooks/useLogicFunctionUpdateFormState';
 import { SubMenuTopBarContainer } from '@/ui/layout/page/components/SubMenuTopBarContainer';
 import { TabList } from '@/ui/layout/tab-list/components/TabList';
 import { activeTabIdComponentState } from '@/ui/layout/tab-list/states/activeTabIdComponentState';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { t } from '@lingui/core/macro';
-import { useParams } from 'react-router-dom';
 import { SettingsPath } from 'twenty-shared/types';
 import { getSettingsPath, isDefined } from 'twenty-shared/utils';
-import { IconBolt, IconPlayerPlay, IconSettings } from 'twenty-ui/display';
-import { useFindOneApplicationQuery } from '~/generated-metadata/graphql';
+import {
+  IconBolt,
+  IconCode,
+  IconPlayerPlay,
+  IconSettings,
+} from 'twenty-ui/display';
+import { useQuery } from '@apollo/client/react';
+import { FindOneApplicationDocument } from '~/generated-metadata/graphql';
+import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { SettingsLogicFunctionCodeEditorTab } from '@/settings/logic-functions/components/tabs/SettingsLogicFunctionCodeEditorTab';
+import { useExecuteLogicFunction } from '@/logic-functions/hooks/useExecuteLogicFunction';
 
 const LOGIC_FUNCTION_DETAIL_ID = 'logic-function-detail';
 
 export const SettingsLogicFunctionDetail = () => {
   const { logicFunctionId = '', applicationId = '' } = useParams();
 
-  const { data, loading: applicationLoading } = useFindOneApplicationQuery({
-    variables: { id: applicationId },
-    skip: !applicationId,
-  });
+  const navigate = useNavigate();
+  const currentWorkspace = useAtomStateValue(currentWorkspaceState);
+
+  const { data, loading: applicationLoading } = useQuery(
+    FindOneApplicationDocument,
+    {
+      variables: { id: applicationId },
+      skip: !applicationId,
+    },
+  );
 
   const applicationName = data?.findOneApplication?.name;
 
+  const workspaceCustomApplicationId =
+    currentWorkspace?.workspaceCustomApplication?.id;
+
+  const isManaged = applicationId !== workspaceCustomApplicationId;
+
   const instanceId = `${LOGIC_FUNCTION_DETAIL_ID}-${logicFunctionId}`;
 
-  const activeTabId = useRecoilComponentValue(
+  const activeTabId = useAtomComponentStateValue(
     activeTabIdComponentState,
     instanceId,
   );
 
-  const { formValues, setFormValues, logicFunction, loading } =
-    useLogicFunctionUpdateFormState({ logicFunctionId });
+  const { formValues, logicFunction, loading, onChange } = useLogicFunctionForm(
+    { logicFunctionId },
+  );
 
   const { executeLogicFunction, isExecuting } = useExecuteLogicFunction({
     logicFunctionId,
   });
 
-  const handleExecute = async () => {
-    await executeLogicFunction({ forceRebuild: false });
-  };
-
-  const onChange = (key: string) => {
-    return (value: string) => {
-      setFormValues((prevState: LogicFunctionFormValues) => ({
-        ...prevState,
-        [key]: value,
-      }));
-    };
+  const handleTestFunction = async () => {
+    navigate('#test');
+    await executeLogicFunction();
   };
 
   const tabs = [
+    {
+      id: 'editor',
+      title: t`Editor`,
+      Icon: IconCode,
+      disabled: isManaged,
+      hide: isManaged,
+    },
     { id: 'settings', title: t`Settings`, Icon: IconSettings },
     { id: 'test', title: t`Test`, Icon: IconPlayerPlay },
     { id: 'triggers', title: t`Triggers`, Icon: IconBolt },
   ];
 
+  const isEditorTab = activeTabId === 'editor';
   const isTriggersTab = activeTabId === 'triggers';
   const isSettingsTab = activeTabId === 'settings';
   const isTestTab = activeTabId === 'test';
@@ -104,6 +123,14 @@ export const SettingsLogicFunctionDetail = () => {
           { children: `${logicFunction?.name}` },
         ];
 
+  const files = [
+    {
+      path: 'index.ts',
+      content: formValues.sourceHandlerCode,
+      language: 'typescript',
+    },
+  ];
+
   return (
     !loading &&
     !applicationLoading && (
@@ -118,6 +145,14 @@ export const SettingsLogicFunctionDetail = () => {
       >
         <SettingsPageContainer>
           <TabList tabs={tabs} componentInstanceId={instanceId} />
+          {isEditorTab && (
+            <SettingsLogicFunctionCodeEditorTab
+              files={files}
+              handleExecute={handleTestFunction}
+              onChange={onChange('sourceHandlerCode')}
+              isTesting={isExecuting}
+            />
+          )}
           {isTriggersTab && logicFunction && (
             <SettingsLogicFunctionTriggersTab logicFunction={logicFunction} />
           )}
@@ -129,7 +164,7 @@ export const SettingsLogicFunctionDetail = () => {
           )}
           {isTestTab && (
             <SettingsLogicFunctionTestTab
-              handleExecute={handleExecute}
+              handleExecute={executeLogicFunction}
               logicFunctionId={logicFunctionId}
               isTesting={isExecuting}
             />

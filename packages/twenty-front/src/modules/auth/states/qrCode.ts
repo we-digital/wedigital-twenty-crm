@@ -1,6 +1,6 @@
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const qrCodeState = createState<string | null>({
+export const qrCodeState = createAtomState<string | null>({
   key: 'qrCodeState',
   defaultValue: null,
 });

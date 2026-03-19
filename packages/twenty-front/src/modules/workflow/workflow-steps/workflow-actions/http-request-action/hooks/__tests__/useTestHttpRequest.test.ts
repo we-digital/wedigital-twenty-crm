@@ -1,15 +1,14 @@
 import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
 import { type HttpRequestFormData } from '@/workflow/workflow-steps/workflow-actions/http-request-action/constants/HttpRequest';
-import { useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
 import { act, renderHook } from '@testing-library/react';
 import React from 'react';
-import { RecoilRoot } from 'recoil';
 import { resolveInput } from 'twenty-shared/utils';
 import { useTestHttpRequest } from '@/workflow/workflow-steps/workflow-actions/http-request-action/hooks/useTestHttpRequest';
 
 // Mock Apollo Client
-jest.mock('@apollo/client', () => ({
-  ...jest.requireActual('@apollo/client'),
+jest.mock('@apollo/client/react', () => ({
+  ...jest.requireActual('@apollo/client/react'),
   useMutation: jest.fn(),
 }));
 
@@ -87,12 +86,12 @@ describe('useTestHttpRequest', () => {
   };
 
   const wrapper = ({ children }: { children: React.ReactNode }) =>
-    React.createElement(RecoilRoot, null, children);
+    React.createElement(React.Fragment, null, children);
 
   beforeEach(() => {
     jest.clearAllMocks();
     (useApolloCoreClient as jest.Mock).mockReturnValue(mockApolloClient);
-    (useMutation as jest.Mock).mockReturnValue([mockMutate]);
+    (useMutation as unknown as jest.Mock).mockReturnValue([mockMutate]);
   });
 
   it('should initialize with correct default values', () => {

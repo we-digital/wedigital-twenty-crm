@@ -7,7 +7,7 @@ import {
   PageLayoutType,
   WidgetConfigurationType,
   WidgetType,
-} from '~/generated/graphql';
+} from '~/generated-metadata/graphql';
 
 describe('convertPageLayoutToTabLayouts', () => {
   it('should convert page layout to tab layouts', () => {
@@ -19,6 +19,7 @@ describe('convertPageLayoutToTabLayouts', () => {
       tabs: [
         {
           id: 'tab-1',
+          applicationId: '',
           title: 'Tab 1',
           position: 0,
           pageLayoutId: 'page-layout-1',
@@ -37,6 +38,7 @@ describe('convertPageLayoutToTabLayouts', () => {
               },
               gridPosition: { row: 0, column: 0, rowSpan: 2, columnSpan: 2 },
               objectMetadataId: 'object-metadata-1',
+              isOverridden: false,
               createdAt: '2025-01-01T00:00:00.000Z',
               updatedAt: '2025-01-01T00:00:00.000Z',
               deletedAt: null,
@@ -57,11 +59,13 @@ describe('convertPageLayoutToTabLayouts', () => {
               },
               gridPosition: { row: 2, column: 0, rowSpan: 2, columnSpan: 2 },
               objectMetadataId: 'object-metadata-1',
+              isOverridden: false,
               createdAt: '2025-01-01T00:00:00.000Z',
               updatedAt: '2025-01-01T00:00:00.000Z',
               deletedAt: null,
             },
           ],
+          isOverridden: false,
           createdAt: '2025-01-01T00:00:00.000Z',
           updatedAt: '2025-01-01T00:00:00.000Z',
           deletedAt: null,
@@ -97,6 +101,7 @@ describe('convertPageLayoutToTabLayouts', () => {
       tabs: [
         {
           id: 'tab-1',
+          applicationId: '',
           title: 'Tab 1',
           position: 0,
           pageLayoutId: 'page-layout-1',
@@ -113,11 +118,13 @@ describe('convertPageLayoutToTabLayouts', () => {
               },
               gridPosition: { row: 0, column: 0, rowSpan: 4, columnSpan: 4 },
               objectMetadataId: null,
+              isOverridden: false,
               createdAt: '2025-01-01T00:00:00.000Z',
               updatedAt: '2025-01-01T00:00:00.000Z',
               deletedAt: null,
             },
           ],
+          isOverridden: false,
           createdAt: '2025-01-01T00:00:00.000Z',
           updatedAt: '2025-01-01T00:00:00.000Z',
           deletedAt: null,

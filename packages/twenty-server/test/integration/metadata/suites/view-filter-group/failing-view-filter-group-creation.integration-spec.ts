@@ -1,17 +1,17 @@
 import { expectOneNotInternalServerErrorSnapshot } from 'test/integration/graphql/utils/expect-one-not-internal-server-error-snapshot.util';
 import { findManyObjectMetadata } from 'test/integration/metadata/suites/object-metadata/utils/find-many-object-metadata.util';
-import { createOneCoreViewFilterGroup } from 'test/integration/metadata/suites/view-filter-group/utils/create-one-core-view-filter-group.util';
-import { createOneCoreView } from 'test/integration/metadata/suites/view/utils/create-one-core-view.util';
-import { destroyOneCoreView } from 'test/integration/metadata/suites/view/utils/destroy-one-core-view.util';
+import { createOneViewFilterGroup } from 'test/integration/metadata/suites/view-filter-group/utils/create-one-view-filter-group.util';
+import { createOneView } from 'test/integration/metadata/suites/view/utils/create-one-view.util';
+import { destroyOneView } from 'test/integration/metadata/suites/view/utils/destroy-one-view.util';
 import { jestExpectToBeDefined } from 'test/utils/jest-expect-to-be-defined.util.test';
 import {
   eachTestingContextFilter,
   type EachTestingContext,
 } from 'twenty-shared/testing';
+import { ViewType } from 'twenty-shared/types';
 import { v4 } from 'uuid';
 
 import { type CreateViewFilterGroupInput } from 'src/engine/metadata-modules/view-filter-group/dtos/inputs/create-view-filter-group.input';
-import { ViewType } from 'src/engine/metadata-modules/view/enums/view-type.enum';
 
 type TestSetup = {
   createdViewId: string;
@@ -86,7 +86,7 @@ describe('View Filter Group creation should fail', () => {
 
     jestExpectToBeDefined(companyObjectMetadata);
 
-    const { data: viewData } = await createOneCoreView({
+    const { data: viewData } = await createOneView({
       expectToFail: false,
       input: {
         name: 'Test View For Failing Filter Group Creation',
@@ -96,13 +96,13 @@ describe('View Filter Group creation should fail', () => {
       },
     });
 
-    createdViewId = viewData?.createCoreView?.id;
+    createdViewId = viewData?.createView?.id;
     jestExpectToBeDefined(createdViewId);
   });
 
   afterAll(async () => {
     if (createdViewId) {
-      await destroyOneCoreView({
+      await destroyOneView({
         expectToFail: false,
         viewId: createdViewId,
       });
@@ -112,7 +112,7 @@ describe('View Filter Group creation should fail', () => {
   it.each(eachTestingContextFilter(failingViewFilterGroupCreationTestCases))(
     '$title',
     async ({ context }) => {
-      const { errors } = await createOneCoreViewFilterGroup({
+      const { errors } = await createOneViewFilterGroup({
         expectToFail: true,
         input: context.input({ createdViewId }),
       });

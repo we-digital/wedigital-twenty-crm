@@ -20,6 +20,7 @@ jobs:
     with:
       files: |
         packages/create-twenty-app/**
+        !packages/create-twenty-app/package.json
   create-app-test:
     needs: changed-files-check
     if: needs.changed-files-check.outputs.any_changed == 'true'
@@ -36,7 +37,7 @@ jobs:
       - name: Fetch custom Github Actions and base branch history
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 10
       - name: Install dependencies
         uses: ./.github/actions/yarn-install
       - name: Build

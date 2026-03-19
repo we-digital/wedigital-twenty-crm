@@ -1,6 +1,6 @@
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const allowRequestsToTwentyIconsState = createState<boolean>({
+export const allowRequestsToTwentyIconsState = createAtomState<boolean>({
   key: 'allowRequestsToTwentyIcons',
   defaultValue: true,
 });

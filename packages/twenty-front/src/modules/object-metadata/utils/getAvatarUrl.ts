@@ -1,15 +1,10 @@
 import { type Company } from '@/companies/types/Company';
-import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
+import { CoreObjectNameSingular } from 'twenty-shared/types';
 import { type FieldMetadataItem } from '@/object-metadata/types/FieldMetadataItem';
 import { getCompanyDomainName } from '@/object-metadata/utils/getCompanyDomainName';
 import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
-import { REACT_APP_SERVER_BASE_URL } from '~/config';
+import { getLogoUrlFromDomainName, isDefined } from 'twenty-shared/utils';
 import { getImageIdentifierFieldValue } from './getImageIdentifierFieldValue';
-import {
-  getImageAbsoluteURI,
-  getLogoUrlFromDomainName,
-  isDefined,
-} from 'twenty-shared/utils';
 
 export const getAvatarUrl = (
   objectNameSingular: string,
@@ -31,12 +26,7 @@ export const getAvatarUrl = (
   }
 
   if (objectNameSingular === CoreObjectNameSingular.Person) {
-    return isDefined(record.avatarUrl)
-      ? getImageAbsoluteURI({
-          imageUrl: record.avatarUrl,
-          baseUrl: REACT_APP_SERVER_BASE_URL,
-        })
-      : '';
+    return record.avatarFile?.[0]?.url ?? '';
   }
 
   const imageIdentifierFieldValue = getImageIdentifierFieldValue(

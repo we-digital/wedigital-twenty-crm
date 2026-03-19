@@ -1,5 +1,4 @@
 import { useLingui } from '@lingui/react/macro';
-import { useRecoilValue } from 'recoil';
 
 import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
 import { SettingsBillingCreditsSection } from '@/billing/components/SettingsBillingCreditsSection';
@@ -11,18 +10,20 @@ import { isDefined } from 'twenty-shared/utils';
 import { H2Title, IconCircleX, IconCreditCard } from 'twenty-ui/display';
 import { Button } from 'twenty-ui/input';
 import { Section } from 'twenty-ui/layout';
+import { useQuery } from '@apollo/client/react';
 import {
   SubscriptionStatus,
-  useBillingPortalSessionQuery,
+  BillingPortalSessionDocument,
 } from '~/generated-metadata/graphql';
 import { useGetWorkflowNodeExecutionUsage } from '@/billing/hooks/useGetWorkflowNodeExecutionUsage';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 
 export const SettingsBillingContent = () => {
   const { t } = useLingui();
 
   const { redirect } = useRedirect();
 
-  const currentWorkspace = useRecoilValue(currentWorkspaceState);
+  const currentWorkspace = useAtomStateValue(currentWorkspaceState);
 
   const subscriptions = currentWorkspace?.billingSubscriptions;
 
@@ -37,7 +38,7 @@ export const SettingsBillingContent = () => {
     isDefined(subscriptionStatus) &&
     subscriptionStatus !== SubscriptionStatus.Canceled;
 
-  const { data, loading } = useBillingPortalSessionQuery({
+  const { data, loading } = useQuery(BillingPortalSessionDocument, {
     variables: {
       returnUrlPath: '/settings/billing',
     },

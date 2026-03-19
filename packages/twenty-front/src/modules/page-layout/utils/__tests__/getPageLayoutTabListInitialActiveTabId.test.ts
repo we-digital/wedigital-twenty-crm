@@ -4,10 +4,12 @@ import { getPageLayoutTabListInitialActiveTabId } from '@/page-layout/utils/getP
 describe('getPageLayoutTabListInitialActiveTabId', () => {
   const createMockTab = (id: string): PageLayoutTab => ({
     id,
+    applicationId: '',
     pageLayoutId: 'page-layout-1',
     title: `Tab ${id}`,
     position: 0,
     widgets: [],
+    isOverridden: false,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
   });
@@ -25,7 +27,7 @@ describe('getPageLayoutTabListInitialActiveTabId', () => {
         tabs: mockTabs,
         defaultTabToFocusOnMobileAndSidePanelId: 'tab-3',
         isMobile: true,
-        isInRightDrawer: true,
+        isInSidePanel: true,
       });
 
       expect(result).toBe('tab-2');
@@ -37,7 +39,7 @@ describe('getPageLayoutTabListInitialActiveTabId', () => {
         tabs: mockTabs,
         defaultTabToFocusOnMobileAndSidePanelId: 'tab-3',
         isMobile: false,
-        isInRightDrawer: false,
+        isInSidePanel: false,
       });
 
       expect(result).toBe('tab-1');
@@ -45,38 +47,38 @@ describe('getPageLayoutTabListInitialActiveTabId', () => {
   });
 
   describe('when activeTabId does not exist in tabs', () => {
-    describe('on mobile or in right drawer', () => {
+    describe('on mobile or in side panel', () => {
       it('should return defaultTabToFocusOnMobileAndSidePanelId when on mobile and default exists', () => {
         const result = getPageLayoutTabListInitialActiveTabId({
           activeTabId: 'non-existent-tab',
           tabs: mockTabs,
           defaultTabToFocusOnMobileAndSidePanelId: 'tab-3',
           isMobile: true,
-          isInRightDrawer: false,
+          isInSidePanel: false,
         });
 
         expect(result).toBe('tab-3');
       });
 
-      it('should return defaultTabToFocusOnMobileAndSidePanelId when in right drawer and default exists', () => {
+      it('should return defaultTabToFocusOnMobileAndSidePanelId when in side panel and default exists', () => {
         const result = getPageLayoutTabListInitialActiveTabId({
           activeTabId: null,
           tabs: mockTabs,
           defaultTabToFocusOnMobileAndSidePanelId: 'tab-2',
           isMobile: false,
-          isInRightDrawer: true,
+          isInSidePanel: true,
         });
 
         expect(result).toBe('tab-2');
       });
 
-      it('should return defaultTabToFocusOnMobileAndSidePanelId when on mobile and in right drawer', () => {
+      it('should return defaultTabToFocusOnMobileAndSidePanelId when on mobile and in side panel', () => {
         const result = getPageLayoutTabListInitialActiveTabId({
           activeTabId: null,
           tabs: mockTabs,
           defaultTabToFocusOnMobileAndSidePanelId: 'tab-1',
           isMobile: true,
-          isInRightDrawer: true,
+          isInSidePanel: true,
         });
 
         expect(result).toBe('tab-1');
@@ -88,7 +90,7 @@ describe('getPageLayoutTabListInitialActiveTabId', () => {
           tabs: mockTabs,
           defaultTabToFocusOnMobileAndSidePanelId: 'non-existent-tab',
           isMobile: true,
-          isInRightDrawer: false,
+          isInSidePanel: false,
         });
 
         expect(result).toBe('tab-1');
@@ -100,21 +102,21 @@ describe('getPageLayoutTabListInitialActiveTabId', () => {
           tabs: mockTabs,
           defaultTabToFocusOnMobileAndSidePanelId: undefined,
           isMobile: true,
-          isInRightDrawer: false,
+          isInSidePanel: false,
         });
 
         expect(result).toBe('tab-1');
       });
     });
 
-    describe('not on mobile and not in right drawer', () => {
+    describe('not on mobile and not in side panel', () => {
       it('should return first tab when default is provided', () => {
         const result = getPageLayoutTabListInitialActiveTabId({
           activeTabId: null,
           tabs: mockTabs,
           defaultTabToFocusOnMobileAndSidePanelId: 'tab-3',
           isMobile: false,
-          isInRightDrawer: false,
+          isInSidePanel: false,
         });
 
         expect(result).toBe('tab-1');
@@ -126,7 +128,7 @@ describe('getPageLayoutTabListInitialActiveTabId', () => {
           tabs: mockTabs,
           defaultTabToFocusOnMobileAndSidePanelId: undefined,
           isMobile: false,
-          isInRightDrawer: false,
+          isInSidePanel: false,
         });
 
         expect(result).toBe('tab-1');
@@ -141,7 +143,7 @@ describe('getPageLayoutTabListInitialActiveTabId', () => {
         tabs: [],
         defaultTabToFocusOnMobileAndSidePanelId: 'tab-1',
         isMobile: false,
-        isInRightDrawer: false,
+        isInSidePanel: false,
       });
 
       expect(result).toBe(null);
@@ -153,7 +155,7 @@ describe('getPageLayoutTabListInitialActiveTabId', () => {
         tabs: [],
         defaultTabToFocusOnMobileAndSidePanelId: 'tab-1',
         isMobile: true,
-        isInRightDrawer: false,
+        isInSidePanel: false,
       });
 
       expect(result).toBe(null);
@@ -165,7 +167,7 @@ describe('getPageLayoutTabListInitialActiveTabId', () => {
         tabs: mockTabs,
         defaultTabToFocusOnMobileAndSidePanelId: undefined,
         isMobile: false,
-        isInRightDrawer: false,
+        isInSidePanel: false,
       });
 
       expect(result).toBe('tab-1');
@@ -179,7 +181,7 @@ describe('getPageLayoutTabListInitialActiveTabId', () => {
         tabs: singleTab,
         defaultTabToFocusOnMobileAndSidePanelId: undefined,
         isMobile: false,
-        isInRightDrawer: false,
+        isInSidePanel: false,
       });
 
       expect(result).toBe('only-tab');
@@ -193,7 +195,7 @@ describe('getPageLayoutTabListInitialActiveTabId', () => {
         tabs: mockTabs,
         defaultTabToFocusOnMobileAndSidePanelId: 'tab-2',
         isMobile: true,
-        isInRightDrawer: true,
+        isInSidePanel: true,
       });
 
       expect(result).toBe('tab-1');
@@ -205,7 +207,7 @@ describe('getPageLayoutTabListInitialActiveTabId', () => {
         tabs: mockTabs,
         defaultTabToFocusOnMobileAndSidePanelId: 'tab-3',
         isMobile: true,
-        isInRightDrawer: false,
+        isInSidePanel: false,
       });
 
       expect(result).toBe('tab-3');
@@ -217,7 +219,7 @@ describe('getPageLayoutTabListInitialActiveTabId', () => {
         tabs: mockTabs,
         defaultTabToFocusOnMobileAndSidePanelId: 'invalid-tab',
         isMobile: true,
-        isInRightDrawer: false,
+        isInSidePanel: false,
       });
 
       expect(result).toBe('tab-1');

@@ -4,22 +4,23 @@ import { useUpdateAgentRole } from '@/settings/roles/hooks/useUpdateAgentRole';
 import { useUpdateApiKeyRole } from '@/settings/roles/hooks/useUpdateApiKeyRole';
 import { useUpdateWorkspaceMemberRole } from '@/settings/roles/hooks/useUpdateWorkspaceMemberRole';
 import { useRemoveFieldPermissionInDraftRole } from '@/settings/roles/role-permissions/object-level-permissions/field-permissions/hooks/useRemoveFieldPermissionInDraftRole';
-import { newFieldPermissionsFilter } from '@/settings/roles/role/hooks/utils/newFieldPermissionsFilter.util';
+import { newFieldPermissionsFilter } from '@/settings/roles/role/utils/newFieldPermissionsFilter';
 import { settingsDraftRoleFamilyState } from '@/settings/roles/states/settingsDraftRoleFamilyState';
 import { settingsPersistedRoleFamilyState } from '@/settings/roles/states/settingsPersistedRoleFamilyState';
-import { getOperationName } from '@apollo/client/utilities';
-import { useRecoilValue } from 'recoil';
+import { useAtomFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilyStateValue';
+import { getOperationName } from '~/utils/getOperationName';
 import { isDefined, isNonEmptyArray } from 'twenty-shared/utils';
+import { useMutation } from '@apollo/client/react';
 import {
   type RowLevelPermissionPredicateGroupLogicalOperator,
   type RowLevelPermissionPredicateOperand,
-  useCreateOneRoleMutation,
-  useUpdateOneRoleMutation,
-  useUpsertFieldPermissionsMutation,
-  useUpsertObjectPermissionsMutation,
-  useUpsertPermissionFlagsMutation,
+  type Role,
+  CreateOneRoleDocument,
+  UpdateOneRoleDocument,
+  UpsertFieldPermissionsDocument,
+  UpsertObjectPermissionsDocument,
+  UpsertPermissionFlagsDocument,
 } from '~/generated-metadata/graphql';
-import { type Role } from '~/generated/graphql';
 import { getDirtyFields } from '~/utils/getDirtyFields';
 
 const ROLE_BASIC_KEYS: Array<keyof Role> = [
@@ -46,23 +47,27 @@ export const useSaveDraftRoleToDB = ({
   isCreateMode: boolean;
   onSuccess?: (savedRoleId: string) => void | Promise<void>;
 }) => {
-  const [createRole] = useCreateOneRoleMutation();
-  const [updateRole] = useUpdateOneRoleMutation();
-  const [upsertPermissionFlags] = useUpsertPermissionFlagsMutation();
-  const [upsertObjectPermissions] = useUpsertObjectPermissionsMutation();
-  const [upsertFieldPermissions] = useUpsertFieldPermissionsMutation();
+  const [createRole] = useMutation(CreateOneRoleDocument);
+  const [updateRole] = useMutation(UpdateOneRoleDocument);
+  const [upsertPermissionFlags] = useMutation(UpsertPermissionFlagsDocument);
+  const [upsertObjectPermissions] = useMutation(
+    UpsertObjectPermissionsDocument,
+  );
+  const [upsertFieldPermissions] = useMutation(UpsertFieldPermissionsDocument);
   const [upsertRowLevelPermissionPredicates] =
     useUpsertRowLevelPermissionPredicatesMutation();
   const { addWorkspaceMembersToRole } = useUpdateWorkspaceMemberRole(roleId);
   const { addAgentsToRole } = useUpdateAgentRole(roleId);
   const { addApiKeysToRole } = useUpdateApiKeyRole(roleId);
 
-  const settingsPersistedRole = useRecoilValue(
-    settingsPersistedRoleFamilyState(roleId),
+  const settingsPersistedRole = useAtomFamilyStateValue(
+    settingsPersistedRoleFamilyState,
+    roleId,
   );
 
-  const settingsDraftRole = useRecoilValue(
-    settingsDraftRoleFamilyState(roleId),
+  const settingsDraftRole = useAtomFamilyStateValue(
+    settingsDraftRoleFamilyState,
+    roleId,
   );
 
   const dirtyFields = getDirtyFields(settingsDraftRole, settingsPersistedRole);
@@ -261,7 +266,7 @@ export const useSaveDraftRoleToDB = ({
       (acc, predicate) => {
         const objectMetadataId = predicate.objectMetadataId;
 
-        if (!acc[objectMetadataId]) {
+        if (!isDefined(acc[objectMetadataId])) {
           acc[objectMetadataId] = [];
         }
         acc[objectMetadataId].push(predicate);
@@ -278,7 +283,7 @@ export const useSaveDraftRoleToDB = ({
     );
 
     for (const objectMetadataId of persistedObjectIds) {
-      if (!predicatesByObject[objectMetadataId]) {
+      if (!isDefined(predicatesByObject[objectMetadataId])) {
         predicatesByObject[objectMetadataId] = [];
       }
     }

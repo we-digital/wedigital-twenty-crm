@@ -1,4 +1,5 @@
-import { useQuery } from '@apollo/client';
+import { isDefined } from 'twenty-shared/utils';
+import { useQuery } from '@apollo/client/react';
 
 import {
   type EventLogQueryInput,
@@ -42,7 +43,7 @@ export const useEventLogs = (input: EventLogQueryInput) => {
         },
       },
       updateQuery: (previousResult, { fetchMoreResult }) => {
-        if (!fetchMoreResult) {
+        if (!isDefined(fetchMoreResult)) {
           return previousResult;
         }
 

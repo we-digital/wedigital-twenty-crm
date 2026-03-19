@@ -47,8 +47,6 @@ export const SettingsObjectNewFieldSelect = () => {
   const excludedFieldTypes: FieldType[] = (
     [
       FieldMetadataType.NUMERIC,
-      FieldMetadataType.RICH_TEXT,
-      FieldMetadataType.RICH_TEXT_V2,
       FieldMetadataType.ACTOR,
       FieldMetadataType.UUID,
     ] as const
@@ -63,7 +61,7 @@ export const SettingsObjectNewFieldSelect = () => {
   if (!activeObjectMetadataItem) return null;
 
   return (
-    <FormProvider // eslint-disable-next-line react/jsx-props-no-spreading
+    <FormProvider // oxlint-disable-next-line react/jsx-props-no-spreading
       {...formMethods}
     >
       <SubMenuTopBarContainer

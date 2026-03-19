@@ -1,6 +1,6 @@
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const isCloudflareIntegrationEnabledState = createState<boolean>({
+export const isCloudflareIntegrationEnabledState = createAtomState<boolean>({
   key: 'isCloudflareIntegrationEnabled',
   defaultValue: false,
 });

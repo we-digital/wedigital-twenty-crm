@@ -1,11 +1,13 @@
 import { isNonEmptyString } from '@sniptt/guards';
-
-import { useCommandMenuOnItemClick } from '@/command-menu/hooks/useCommandMenuOnItemClick';
-import { isSelectedItemIdComponentFamilySelector } from '@/ui/layout/selectable-list/states/selectors/isSelectedItemIdComponentFamilySelector';
-import { useRecoilComponentFamilyValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentFamilyValue';
 import { type ReactNode } from 'react';
 import { IconArrowUpRight, type IconComponent } from 'twenty-ui/display';
 import { MenuItem } from 'twenty-ui/navigation';
+
+import { useCommandMenuOnItemClick } from '@/command-menu/hooks/useCommandMenuOnItemClick';
+import { isSelectedItemIdComponentFamilyState } from '@/ui/layout/selectable-list/states/isSelectedItemIdComponentFamilyState';
+import { useAtomComponentFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentFamilyStateValue';
+import { type Nullable } from 'twenty-shared/types';
+import { isDefined } from 'twenty-shared/utils';
 
 export type CommandMenuItemProps = {
   label: string;
@@ -14,7 +16,8 @@ export type CommandMenuItemProps = {
   id: string;
   onClick?: () => void;
   Icon?: IconComponent;
-  hotKeys?: string[];
+  hotKeys?: Nullable<string[]>;
+  LeftComponent?: ReactNode;
   RightComponent?: ReactNode;
   contextualTextPosition?: 'left' | 'right';
   hasSubMenu?: boolean;
@@ -31,6 +34,7 @@ export const CommandMenuItem = ({
   onClick,
   Icon,
   hotKeys,
+  LeftComponent,
   RightComponent,
   hasSubMenu = false,
   isSubMenuOpened = false,
@@ -42,15 +46,16 @@ export const CommandMenuItem = ({
     Icon = IconArrowUpRight;
   }
 
-  const isSelectedItemId = useRecoilComponentFamilyValue(
-    isSelectedItemIdComponentFamilySelector,
+  const isSelectedItemId = useAtomComponentFamilyStateValue(
+    isSelectedItemIdComponentFamilyState,
     id,
   );
 
   return (
     <MenuItem
-      withIconContainer={true}
-      LeftIcon={Icon}
+      withIconContainer={!isDefined(LeftComponent)}
+      LeftIcon={isDefined(LeftComponent) ? undefined : Icon}
+      LeftComponent={LeftComponent}
       text={label}
       contextualText={description}
       contextualTextPosition={contextualTextPosition}
@@ -64,7 +69,7 @@ export const CommandMenuItem = ({
               })
           : undefined
       }
-      focused={isSelectedItemId}
+      focused={!disabled && isSelectedItemId}
       RightComponent={RightComponent}
       hasSubMenu={hasSubMenu}
       isSubMenuOpened={isSubMenuOpened}

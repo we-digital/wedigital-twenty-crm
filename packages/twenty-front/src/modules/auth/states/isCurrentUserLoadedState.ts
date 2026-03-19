@@ -1,5 +1,5 @@
-import { createState } from 'twenty-ui/utilities';
-export const isCurrentUserLoadedState = createState<boolean>({
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
+export const isCurrentUserLoadedState = createAtomState<boolean>({
   key: 'isCurrentUserLoadedState',
   defaultValue: false,
 });

@@ -3,23 +3,25 @@ import { SettingsRolesQueryEffect } from '@/settings/roles/components/SettingsRo
 import { SettingsRolePermissionsObjectLevelObjectPicker } from '@/settings/roles/role-permissions/object-level-permissions/components/SettingsRolePermissionsObjectLevelObjectPicker';
 import { settingsDraftRoleFamilyState } from '@/settings/roles/states/settingsDraftRoleFamilyState';
 import { SubMenuTopBarContainer } from '@/ui/layout/page/components/SubMenuTopBarContainer';
+import { useAtomFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilyStateValue';
 import { t } from '@lingui/core/macro';
 import { Navigate, useParams, useSearchParams } from 'react-router-dom';
-import { useRecoilValue } from 'recoil';
 import { SettingsPath } from 'twenty-shared/types';
 import { getSettingsPath, isDefined } from 'twenty-shared/utils';
-import { useFindOneAgentQuery } from '~/generated-metadata/graphql';
+import { useQuery } from '@apollo/client/react';
+import { FindOneAgentDocument } from '~/generated-metadata/graphql';
 
 export const SettingsRoleAddObjectLevel = () => {
   const { roleId } = useParams();
   const [searchParams] = useSearchParams();
   const fromAgentId = searchParams.get('fromAgent');
 
-  const settingsDraftRole = useRecoilValue(
-    settingsDraftRoleFamilyState(roleId ?? ''),
+  const settingsDraftRole = useAtomFamilyStateValue(
+    settingsDraftRoleFamilyState,
+    roleId ?? '',
   );
 
-  const { data: agentData } = useFindOneAgentQuery({
+  const { data: agentData } = useQuery(FindOneAgentDocument, {
     variables: { id: fromAgentId || '' },
     skip: !fromAgentId,
   });

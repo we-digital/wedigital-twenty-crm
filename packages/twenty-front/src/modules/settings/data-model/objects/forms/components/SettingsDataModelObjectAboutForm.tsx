@@ -6,8 +6,8 @@ import { type SettingsDataModelObjectAboutFormValues } from '@/settings/data-mod
 import { IconPicker } from '@/ui/input/components/IconPicker';
 import { SettingsTextInput } from '@/ui/input/components/SettingsTextInput';
 import { TextArea } from '@/ui/input/components/TextArea';
-import { useTheme } from '@emotion/react';
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
+import { useContext } from 'react';
 import { useLingui } from '@lingui/react/macro';
 import { plural } from 'pluralize';
 import { Controller, useFormContext } from 'react-hook-form';
@@ -22,9 +22,10 @@ import {
 } from 'twenty-ui/display';
 import { Button } from 'twenty-ui/input';
 import { Card } from 'twenty-ui/layout';
+import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
 import { type StringKeyOf } from 'type-fest';
 import { useNavigateSettings } from '~/hooks/useNavigateSettings';
-import { computeMetadataNameFromLabel } from '~/pages/settings/data-model/utils/computeMetadataNameFromLabel';
+import { computeMetadataNamesFromLabels } from '~/pages/settings/data-model/utils/computeMetadataNamesFromLabels';
 
 type SettingsDataModelObjectAboutFormProps = {
   disableEdition?: boolean;
@@ -35,8 +36,8 @@ type SettingsDataModelObjectAboutFormProps = {
 
 const StyledInputsContainer = styled.div`
   display: flex;
-  gap: ${({ theme }) => theme.spacing(2)};
-  margin-bottom: ${({ theme }) => theme.spacing(2)};
+  gap: ${themeCssVariables.spacing[2]};
+  margin-bottom: ${themeCssVariables.spacing[2]};
   width: 100%;
 `;
 
@@ -47,61 +48,63 @@ const StyledInputContainer = styled.div`
 
 const StyledAdvancedSettingsSectionInputWrapper = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: ${({ theme }) => theme.spacing(4)};
-  width: 100%;
   flex: 1;
+  flex-direction: column;
+  gap: ${themeCssVariables.spacing[4]};
+  width: 100%;
 `;
 
 const StyledAdvancedSettingsOuterContainer = styled.div`
-  padding-top: ${({ theme }) => theme.spacing(4)};
+  padding-top: ${themeCssVariables.spacing[4]};
 `;
 
 const StyledAdvancedSettingsContainer = styled.div`
   display: flex;
-  gap: ${({ theme }) => theme.spacing(2)};
+  gap: ${themeCssVariables.spacing[2]};
   position: relative;
   width: 100%;
 `;
 
 const StyledLabel = styled.span`
-  color: ${({ theme }) => theme.font.color.light};
-  font-size: ${({ theme }) => theme.font.size.xs};
-  font-weight: ${({ theme }) => theme.font.weight.semiBold};
-  margin-bottom: ${({ theme }) => theme.spacing(1)};
+  color: ${themeCssVariables.font.color.light};
+  font-size: ${themeCssVariables.font.size.xs};
+  font-weight: ${themeCssVariables.font.weight.semiBold};
+  margin-bottom: ${themeCssVariables.spacing[1]};
 `;
 
 const StyledConflictBanner = styled.div`
   align-items: center;
-  background-color: ${({ theme }) => theme.accent.secondary};
-  border-radius: ${({ theme }) => theme.border.radius.md};
+  background-color: ${themeCssVariables.accent.secondary};
+  border-radius: ${themeCssVariables.border.radius.md};
   box-sizing: border-box;
   display: flex;
-  gap: ${({ theme }) => theme.spacing(2)};
-  margin-bottom: ${({ theme }) => theme.spacing(2)};
-  padding: ${({ theme }) => theme.spacing(2)};
+  gap: ${themeCssVariables.spacing[2]};
+  margin-bottom: ${themeCssVariables.spacing[2]};
+  padding: ${themeCssVariables.spacing[2]};
 `;
 
 const StyledBannerContent = styled.div`
   align-items: center;
   display: flex;
-  gap: ${({ theme }) => theme.spacing(2)};
   flex: 1;
+  gap: ${themeCssVariables.spacing[2]};
 `;
 
 const StyledBannerText = styled.span`
-  color: ${({ theme }) => theme.color.blue};
+  color: ${themeCssVariables.color.blue};
   flex: 1;
 `;
 
-const StyledConflictButton = styled(Button)`
-  border-color: ${({ theme }) => theme.color.blue};
-  color: ${({ theme }) => theme.color.blue};
-  &:hover {
-    background: ${({ theme }) => theme.accent.secondary};
-  }
-  &:focus-visible {
-    box-shadow: 0 0 0 3px ${({ theme }) => theme.accent.tertiary};
+const StyledConflictButtonContainer = styled.div`
+  > button {
+    border-color: ${themeCssVariables.color.blue};
+    color: ${themeCssVariables.color.blue};
+    &:hover {
+      background: ${themeCssVariables.accent.secondary};
+    }
+    &:focus-visible {
+      box-shadow: 0 0 0 3px ${themeCssVariables.accent.tertiary};
+    }
   }
 `;
 
@@ -113,10 +116,10 @@ export const SettingsDataModelObjectAboutForm = ({
   objectMetadataItem,
   conflictingObjectMetadataItem,
 }: SettingsDataModelObjectAboutFormProps) => {
+  const { theme } = useContext(ThemeContext);
   const { control, watch, setValue } =
     useFormContext<SettingsDataModelObjectAboutFormValues>();
   const { t } = useLingui();
-  const theme = useTheme();
   const navigateSettings = useNavigateSettings();
 
   const isLabelSyncedWithName = watch('isLabelSyncedWithName');
@@ -143,25 +146,24 @@ export const SettingsDataModelObjectAboutForm = ({
       shouldValidate: true,
     });
     if (isLabelSyncedWithName) {
-      fillNamePluralFromLabelPlural(labelPluralFromSingularLabel);
+      fillNamesFromLabels(labelSingular, labelPluralFromSingularLabel);
     }
   };
 
-  const fillNameSingularFromLabelSingular = (
-    labelSingular: string | undefined,
+  const fillNamesFromLabels = (
+    currentLabelSingular: string,
+    currentLabelPlural: string,
   ) => {
-    if (!isDefined(labelSingular)) return;
+    const { nameSingular, namePlural } = computeMetadataNamesFromLabels(
+      currentLabelSingular,
+      currentLabelPlural,
+    );
 
-    setValue('nameSingular', computeMetadataNameFromLabel(labelSingular), {
+    setValue('nameSingular', nameSingular, {
       shouldDirty: true,
       shouldValidate: true,
     });
-  };
-
-  const fillNamePluralFromLabelPlural = (labelPlural: string | undefined) => {
-    if (!isDefined(labelPlural)) return;
-
-    setValue('namePlural', computeMetadataNameFromLabel(labelPlural), {
+    setValue('namePlural', namePlural, {
       shouldDirty: true,
       shouldValidate: true,
     });
@@ -212,9 +214,6 @@ export const SettingsDataModelObjectAboutForm = ({
               onChange={(value) => {
                 onChange(capitalize(value));
                 fillLabelPlural(capitalize(value));
-                if (isLabelSyncedWithName === true) {
-                  fillNameSingularFromLabelSingular(value);
-                }
               }}
               onBlur={() => onNewDirtyField?.()}
               disabled={disableEdition}
@@ -240,7 +239,7 @@ export const SettingsDataModelObjectAboutForm = ({
               onChange={(value) => {
                 onChange(capitalize(value));
                 if (isLabelSyncedWithName === true) {
-                  fillNamePluralFromLabelPlural(value);
+                  fillNamesFromLabels(labelSingular, capitalize(value));
                 }
               }}
               onBlur={() => onNewDirtyField?.()}
@@ -280,18 +279,20 @@ export const SettingsDataModelObjectAboutForm = ({
                     {t`An object with this name already exists`}
                   </StyledBannerText>
                 </StyledBannerContent>
-                <StyledConflictButton
-                  size="small"
-                  variant="secondary"
-                  accent="blue"
-                  title={t`Open`}
-                  onClick={() =>
-                    navigateSettings(SettingsPath.ObjectDetail, {
-                      objectNamePlural:
-                        conflictingObjectMetadataItem.namePlural,
-                    })
-                  }
-                />
+                <StyledConflictButtonContainer>
+                  <Button
+                    size="small"
+                    variant="secondary"
+                    accent="blue"
+                    title={t`Open`}
+                    onClick={() =>
+                      navigateSettings(SettingsPath.ObjectDetail, {
+                        objectNamePlural:
+                          conflictingObjectMetadataItem.namePlural,
+                      })
+                    }
+                  />
+                </StyledConflictButtonContainer>
               </StyledConflictBanner>
             )}
             {[
@@ -406,8 +407,7 @@ export const SettingsDataModelObjectAboutForm = ({
                             value === true &&
                             (isCustomObject || isbeingCreatedObject)
                           ) {
-                            fillNamePluralFromLabelPlural(labelPlural);
-                            fillNameSingularFromLabelSingular(labelSingular);
+                            fillNamesFromLabels(labelSingular, labelPlural);
                           }
                           onNewDirtyField?.();
                         }}

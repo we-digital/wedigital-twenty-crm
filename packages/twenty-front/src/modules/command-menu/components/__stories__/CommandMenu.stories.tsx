@@ -3,11 +3,11 @@ import {
   type Meta,
   type StoryObj,
 } from '@storybook/react-vite';
-import { useSetRecoilState } from 'recoil';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 
 import { currentWorkspaceMemberState } from '@/auth/states/currentWorkspaceMemberState';
 import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
+import { jotaiStore } from '@/ui/utilities/state/jotai/jotaiStore';
 import { ComponentWithRouterDecorator } from '~/testing/decorators/ComponentWithRouterDecorator';
 import { ObjectMetadataItemsDecorator } from '~/testing/decorators/ObjectMetadataItemsDecorator';
 import { SnackBarDecorator } from '~/testing/decorators/SnackBarDecorator';
@@ -20,21 +20,28 @@ import {
 } from '~/testing/mock-data/users';
 import { sleep } from '~/utils/sleep';
 
-import { ActionMenuComponentInstanceContext } from '@/action-menu/states/contexts/ActionMenuComponentInstanceContext';
 import { currentUserWorkspaceState } from '@/auth/states/currentUserWorkspaceState';
-import { type CommandMenu } from '@/command-menu/components/CommandMenu';
-import { CommandMenuRouter } from '@/command-menu/components/CommandMenuRouter';
-import { COMMAND_MENU_COMPONENT_INSTANCE_ID } from '@/command-menu/constants/CommandMenuComponentInstanceId';
-import { SIDE_PANEL_FOCUS_ID } from '@/command-menu/constants/SidePanelFocusId';
-import { commandMenuNavigationStackState } from '@/command-menu/states/commandMenuNavigationStackState';
-import { isCommandMenuOpenedState } from '@/command-menu/states/isCommandMenuOpenedState';
-import { CommandMenuPages } from '@/command-menu/types/CommandMenuPages';
+import { CommandMenuComponentInstanceContext } from '@/command-menu/states/contexts/CommandMenuComponentInstanceContext';
+import { MAIN_CONTEXT_STORE_INSTANCE_ID } from '@/context-store/constants/MainContextStoreInstanceId';
+import { contextStoreCurrentObjectMetadataItemIdComponentState } from '@/context-store/states/contextStoreCurrentObjectMetadataItemIdComponentState';
+import { contextStoreCurrentViewTypeComponentState } from '@/context-store/states/contextStoreCurrentViewTypeComponentState';
 import { ContextStoreComponentInstanceContext } from '@/context-store/states/contexts/ContextStoreComponentInstanceContext';
 import { ContextStoreViewType } from '@/context-store/types/ContextStoreViewType';
+import { objectMetadataItemsSelector } from '@/object-metadata/states/objectMetadataItemsSelector';
 import { RecordComponentInstanceContextsWrapper } from '@/object-record/components/RecordComponentInstanceContextsWrapper';
+import { SidePanelRouter } from '@/side-panel/components/SidePanelRouter';
+import { SIDE_PANEL_COMPONENT_INSTANCE_ID } from '@/side-panel/constants/SidePanelComponentInstanceId';
+import { SIDE_PANEL_FOCUS_ID } from '@/side-panel/constants/SidePanelFocusId';
+import { type SidePanelRootPage } from '@/side-panel/pages/root/components/SidePanelRootPage';
+import { isSidePanelOpenedState } from '@/side-panel/states/isSidePanelOpenedState';
+import { sidePanelNavigationStackState } from '@/side-panel/states/sidePanelNavigationStackState';
+import { sidePanelPageInfoState } from '@/side-panel/states/sidePanelPageInfoState';
+import { sidePanelPageState } from '@/side-panel/states/sidePanelPageState';
 import { ViewComponentInstanceContext } from '@/views/states/contexts/ViewComponentInstanceContext';
 import { HttpResponse, graphql } from 'msw';
-import { IconDotsVertical } from 'twenty-ui/display';
+import { SidePanelPages } from 'twenty-shared/types';
+import { isDefined } from 'twenty-shared/utils';
+import { IconDotsVertical, IconPlus } from 'twenty-ui/display';
 import { JestContextStoreSetter } from '~/testing/jest/JestContextStoreSetter';
 
 const openTimeout = 50;
@@ -42,16 +49,16 @@ const openTimeout = 50;
 const ContextStoreDecorator: Decorator = (Story) => {
   return (
     <RecordComponentInstanceContextsWrapper
-      componentInstanceId={COMMAND_MENU_COMPONENT_INSTANCE_ID}
+      componentInstanceId={SIDE_PANEL_COMPONENT_INSTANCE_ID}
     >
       <ContextStoreComponentInstanceContext.Provider
-        value={{ instanceId: COMMAND_MENU_COMPONENT_INSTANCE_ID }}
+        value={{ instanceId: SIDE_PANEL_COMPONENT_INSTANCE_ID }}
       >
         <ViewComponentInstanceContext.Provider
-          value={{ instanceId: COMMAND_MENU_COMPONENT_INSTANCE_ID }}
+          value={{ instanceId: SIDE_PANEL_COMPONENT_INSTANCE_ID }}
         >
-          <ActionMenuComponentInstanceContext.Provider
-            value={{ instanceId: COMMAND_MENU_COMPONENT_INSTANCE_ID }}
+          <CommandMenuComponentInstanceContext.Provider
+            value={{ instanceId: SIDE_PANEL_COMPONENT_INSTANCE_ID }}
           >
             <JestContextStoreSetter
               contextStoreCurrentObjectMetadataNameSingular="company"
@@ -60,45 +67,61 @@ const ContextStoreDecorator: Decorator = (Story) => {
             >
               <Story />
             </JestContextStoreSetter>
-          </ActionMenuComponentInstanceContext.Provider>
+          </CommandMenuComponentInstanceContext.Provider>
         </ViewComponentInstanceContext.Provider>
       </ContextStoreComponentInstanceContext.Provider>
     </RecordComponentInstanceContextsWrapper>
   );
 };
 
-const meta: Meta<typeof CommandMenu> = {
+const meta: Meta<typeof SidePanelRootPage> = {
   title: 'Modules/CommandMenu/CommandMenu',
-  component: CommandMenuRouter,
+  component: SidePanelRouter,
   decorators: [
     (Story) => {
-      const setCurrentWorkspace = useSetRecoilState(currentWorkspaceState);
-      const setCurrentUserWorkspace = useSetRecoilState(
-        currentUserWorkspaceState,
+      jotaiStore.set(currentWorkspaceState.atom, mockCurrentWorkspace);
+      jotaiStore.set(
+        currentWorkspaceMemberState.atom,
+        mockedWorkspaceMemberData,
       );
-      const setCurrentWorkspaceMember = useSetRecoilState(
-        currentWorkspaceMemberState,
+      jotaiStore.set(
+        currentUserWorkspaceState.atom,
+        mockedUserData.currentUserWorkspace,
       );
-      const setIsCommandMenuOpened = useSetRecoilState(
-        isCommandMenuOpenedState,
-      );
-      const setCommandMenuNavigationStack = useSetRecoilState(
-        commandMenuNavigationStackState,
-      );
-
-      setCurrentWorkspace(mockCurrentWorkspace);
-      setCurrentWorkspaceMember(mockedWorkspaceMemberData);
-      setCurrentUserWorkspace(mockedUserData.currentUserWorkspace);
-
-      setIsCommandMenuOpened(true);
-      setCommandMenuNavigationStack([
+      jotaiStore.set(isSidePanelOpenedState.atom, true);
+      jotaiStore.set(sidePanelPageInfoState.atom, {
+        title: 'Command Menu',
+        instanceId: SIDE_PANEL_COMPONENT_INSTANCE_ID,
+      });
+      jotaiStore.set(sidePanelNavigationStackState.atom, [
         {
-          page: CommandMenuPages.Root,
+          page: SidePanelPages.Root,
           pageTitle: 'Command Menu',
           pageIcon: IconDotsVertical,
           pageId: '1',
         },
       ]);
+
+      const objectMetadataItems = jotaiStore.get(
+        objectMetadataItemsSelector.atom,
+      );
+      const companyMetadataItem = objectMetadataItems.find(
+        (item) => item.nameSingular === 'company',
+      );
+      if (isDefined(companyMetadataItem)) {
+        jotaiStore.set(
+          contextStoreCurrentObjectMetadataItemIdComponentState.atomFamily({
+            instanceId: MAIN_CONTEXT_STORE_INSTANCE_ID,
+          }),
+          companyMetadataItem.id,
+        );
+        jotaiStore.set(
+          contextStoreCurrentViewTypeComponentState.atomFamily({
+            instanceId: MAIN_CONTEXT_STORE_INSTANCE_ID,
+          }),
+          ContextStoreViewType.Table,
+        );
+      }
 
       return <Story />;
     },
@@ -113,7 +136,7 @@ const meta: Meta<typeof CommandMenu> = {
 };
 
 export default meta;
-type Story = StoryObj<typeof CommandMenu>;
+type Story = StoryObj<typeof SidePanelRootPage>;
 
 export const DefaultWithoutSearch: Story = {
   play: async ({ canvasElement }) => {
@@ -131,17 +154,17 @@ export const LimitedPermissions: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     expect(await canvas.findByText('Go to People')).toBeVisible();
-    expect(canvas.queryByText('Go to Opportunities')).not.toBeInTheDocument();
-    expect(canvas.queryByText('Go to Tasks')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(canvas.queryByText('Go to Opportunities')).not.toBeInTheDocument();
+      expect(canvas.queryByText('Go to Tasks')).not.toBeInTheDocument();
+    });
     expect(await canvas.findByText('Go to Settings')).toBeVisible();
     expect(await canvas.findByText('Go to Notes')).toBeVisible();
   },
   decorators: [
     (Story) => {
-      const setCurrentUserWorkspace = useSetRecoilState(
-        currentUserWorkspaceState,
-      );
-      setCurrentUserWorkspace(
+      jotaiStore.set(
+        currentUserWorkspaceState.atom,
         mockedLimitedPermissionsUserData.currentUserWorkspace,
       );
 
@@ -231,3 +254,43 @@ export const NoResultsSearchFallback: Story = {
 //     expect(await canvas.findByText('Search records')).toBeVisible();
 //   },
 // };
+
+export const SubPageNavigation: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const objectButton = await canvas.findByText('Object');
+    expect(objectButton).toBeVisible();
+
+    await userEvent.click(objectButton);
+
+    expect(await canvas.findByText('Pick an object')).toBeVisible();
+
+    const backButton = await canvas.findByRole('button', { name: 'Go back' });
+    await userEvent.click(backButton);
+
+    expect(await canvas.findByText('Object')).toBeVisible();
+  },
+  decorators: [
+    (Story) => {
+      jotaiStore.set(
+        sidePanelPageState.atom,
+        SidePanelPages.NavigationMenuAddItem,
+      );
+      jotaiStore.set(sidePanelPageInfoState.atom, {
+        title: 'Add item',
+        instanceId: SIDE_PANEL_COMPONENT_INSTANCE_ID,
+      });
+      jotaiStore.set(sidePanelNavigationStackState.atom, [
+        {
+          page: SidePanelPages.NavigationMenuAddItem,
+          pageTitle: 'Add item',
+          pageIcon: IconPlus,
+          pageId: '1',
+        },
+      ]);
+
+      return <Story />;
+    },
+  ],
+};

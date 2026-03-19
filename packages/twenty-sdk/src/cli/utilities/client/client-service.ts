@@ -1,155 +1,178 @@
-import { ApiService } from '@/cli/utilities/api/api-service';
-import { ConfigService } from '@/cli/utilities/config/config-service';
-import { generate } from '@genql/cli';
-import chalk from 'chalk';
-import * as fs from 'fs-extra';
-import { join, resolve } from 'path';
-import {
-  DEFAULT_API_KEY_NAME,
-  DEFAULT_API_URL_NAME,
-} from 'twenty-shared/application';
+import { appendFile } from 'node:fs/promises';
+import { join } from 'path';
 
-export const GENERATED_FOLDER_NAME = 'generated';
+import { CLIENTS_GENERATED_DIR } from '@/cli/constants/clients-dir';
+import { ApiService } from '@/cli/utilities/api/api-service';
+import twentyClientTemplateSource from '@/cli/utilities/client/twenty-client-template.ts?raw';
+import {
+  emptyDir,
+  ensureDir,
+  move,
+  remove,
+} from '@/cli/utilities/file/fs-utils';
+import { generate } from '@genql/cli';
+import { DEFAULT_API_URL_NAME } from 'twenty-shared/application';
+
+type ClientWrapperOptions = {
+  apiClientName: string;
+  defaultUrl: string;
+  includeUploadFile: boolean;
+};
+
+const COMMON_SCALAR_TYPES = {
+  DateTime: 'string',
+  JSON: 'Record<string, unknown>',
+  UUID: 'string',
+};
+
+const STRIPPED_TYPES_START = '// __STRIPPED_DURING_INJECTION_START__';
+const STRIPPED_TYPES_END = '// __STRIPPED_DURING_INJECTION_END__';
+const UPLOAD_FILE_START = '// __UPLOAD_FILE_START__';
+const UPLOAD_FILE_END = '// __UPLOAD_FILE_END__';
+
+const buildClientWrapperSource = (
+  templateSource: string,
+  options: ClientWrapperOptions,
+): string => {
+  let source = templateSource;
+
+  source = source.replace(
+    new RegExp(
+      `${escapeRegExp(STRIPPED_TYPES_START)}[\\s\\S]*?${escapeRegExp(STRIPPED_TYPES_END)}\\n?`,
+    ),
+    '',
+  );
+
+  source = source.replace("'__TWENTY_DEFAULT_URL__'", options.defaultUrl);
+
+  source = source.replace(/TwentyGeneratedClient/g, options.apiClientName);
+
+  if (!options.includeUploadFile) {
+    source = source.replace(
+      new RegExp(
+        `\\s*${escapeRegExp(UPLOAD_FILE_START)}[\\s\\S]*?${escapeRegExp(UPLOAD_FILE_END)}\\n?`,
+      ),
+      '\n',
+    );
+  } else {
+    source = source.replace(
+      new RegExp(`\\s*${escapeRegExp(UPLOAD_FILE_START)}\\n`),
+      '\n',
+    );
+    source = source.replace(
+      new RegExp(`\\s*${escapeRegExp(UPLOAD_FILE_END)}\\n`),
+      '\n',
+    );
+  }
+
+  return `\n// ${options.apiClientName} (auto-injected by twenty-sdk)\n${source}`;
+};
+
+const escapeRegExp = (value: string): string =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export class ClientService {
-  private configService: ConfigService;
   private apiService: ApiService;
+  private clientWrapperTemplateSource: string;
 
-  constructor() {
-    this.configService = new ConfigService();
-    this.apiService = new ApiService();
+  constructor(options?: {
+    clientWrapperTemplateSource?: string;
+    serverUrl?: string;
+    token?: string;
+  }) {
+    this.clientWrapperTemplateSource =
+      options?.clientWrapperTemplateSource ?? twentyClientTemplateSource;
+    this.apiService = new ApiService({
+      disableInterceptors: true,
+      serverUrl: options?.serverUrl,
+      token: options?.token,
+    });
   }
 
-  async generate(appPath: string): Promise<void> {
-    const outputPath = join(appPath, GENERATED_FOLDER_NAME);
+  async generateCoreClient({
+    appPath,
+    authToken,
+  }: {
+    appPath: string;
+    authToken?: string;
+  }): Promise<void> {
+    const generatedDir = join(
+      appPath,
+      'node_modules',
+      'twenty-sdk',
+      CLIENTS_GENERATED_DIR,
+    );
+    const coreOutputPath = join(generatedDir, 'core');
+    const tempPath = `${coreOutputPath}.tmp`;
 
-    console.log(chalk.blue('📦 Generating Twenty client...'));
-    console.log(chalk.gray(`📁 Output Path: ${outputPath}`));
-    console.log('');
-    const config = await this.configService.getConfig();
+    const coreSchemaResponse = await this.apiService.getSchema({ authToken });
 
-    const url = config.apiUrl;
-    const token = config.apiKey;
-
-    if (!url || !token) {
-      console.log(
-        chalk.yellow(
-          '⚠️  Skipping Client generation: API URL or token not configured',
-        ),
+    if (!coreSchemaResponse.success) {
+      throw new Error(
+        `Failed to introspect core schema: ${JSON.stringify(coreSchemaResponse.error)}`,
       );
-      return;
     }
 
-    console.log(chalk.gray(`API URL: ${url}`));
-    console.log(chalk.gray(`Output: ${outputPath}`));
-
-    const getSchemaResponse = await this.apiService.getSchema();
-
-    if (!getSchemaResponse.success) {
-      return;
-    }
-
-    const { data: schema } = getSchemaResponse;
-
-    const output = resolve(outputPath);
+    await ensureDir(tempPath);
+    await emptyDir(tempPath);
 
     await generate({
-      schema,
-      output,
-      scalarTypes: {
-        DateTime: 'string',
-        JSON: 'Record<string, unknown>',
-        UUID: 'string',
-      },
+      schema: coreSchemaResponse.data,
+      output: tempPath,
+      scalarTypes: COMMON_SCALAR_TYPES,
     });
 
-    await this.injectTwentyClient(output);
-
-    console.log(chalk.green('✓ Client generated successfully!'));
-    console.log(chalk.gray(`Generated files at: ${outputPath}`));
-  }
-
-  private async injectTwentyClient(output: string) {
-    const twentyClientContent = `
-
-// ----------------------------------------------------
-// ✨ Custom Twenty client (auto-injected)
-// ----------------------------------------------------
-
-const defaultOptions: ClientOptions = {
-  url: \`\${process.env.${DEFAULT_API_URL_NAME}}/graphql\`,
-  headers: {
-    'Content-Type': 'application/json',
-    Authorization: \`Bearer \${process.env.${DEFAULT_API_KEY_NAME}}\`,
-  },
-}
-
-export default class Twenty {
-  private client: Client;
-  private apiUrl: string;
-  private authorizationToken: string;
-
-  constructor(options?: ClientOptions) {
-    const merged: ClientOptions = {
-      ...defaultOptions,
-      ...options,
-      headers: {
-        ...defaultOptions.headers,
-        ...(options?.headers ?? {}),
-      },
-    };
-
-    this.client = createClient(merged);
-    this.apiUrl = merged.url;
-    this.authorizationToken = merged.headers.Authorization;
-  }
-
-  query<R extends QueryGenqlSelection>(request: R & { __name?: string }) {
-    return this.client.query(request);
-  }
-
-  mutation<R extends MutationGenqlSelection>(request: R & { __name?: string }) {
-    return this.client.mutation(request);
-  }
-
-  async uploadFile(
-    fileBuffer: Buffer,
-    filename: string,
-    contentType: string = 'application/octet-stream',
-    fileFolder: string = 'Attachment',
-  ): Promise<{ path: string; token: string }> {
-    const form = new FormData();
-
-    form.append('operations', JSON.stringify({
-      query: \`mutation UploadFile($file: Upload!, $fileFolder: FileFolder) {
-        uploadFile(file: $file, fileFolder: $fileFolder) { path token }
-      }\`,
-      variables: { file: null, fileFolder },
-    }));
-    form.append('map', JSON.stringify({ '0': ['variables.file'] }));
-    form.append('0', new Blob([fileBuffer], { type: contentType }), filename);
-
-
-    const response = await fetch(\`\${this.apiUrl}/graphql\`, {
-      method: 'POST',
-      headers: {
-        Authorization: this.authorizationToken,
-      },
-      body: form,
+    await this.injectClientWrapper(tempPath, {
+      apiClientName: 'CoreApiClient',
+      defaultUrl: `\`\${process.env.${DEFAULT_API_URL_NAME}}/graphql\``,
+      includeUploadFile: true,
     });
 
-    const result = await response.json();
+    await remove(coreOutputPath);
+    await move(tempPath, coreOutputPath);
+  }
 
-    if (result.errors) {
-      throw new GenqlError(result.errors, result.data);
+  async generateMetadataClient({
+    outputPath,
+  }: {
+    outputPath: string;
+  }): Promise<void> {
+    const metadataSchemaResponse = await this.apiService.getMetadataSchema();
+
+    if (!metadataSchemaResponse.success) {
+      throw new Error(
+        `Failed to introspect metadata schema: ${JSON.stringify(metadataSchemaResponse.error)}`,
+      );
     }
 
-    return result.data.uploadFile;
+    await ensureDir(outputPath);
+    await emptyDir(outputPath);
+
+    await generate({
+      schema: metadataSchemaResponse.data,
+      output: outputPath,
+      scalarTypes: {
+        ...COMMON_SCALAR_TYPES,
+        Upload: 'File',
+      },
+    });
+
+    await this.injectClientWrapper(outputPath, {
+      apiClientName: 'MetadataApiClient',
+      defaultUrl: `\`\${process.env.${DEFAULT_API_URL_NAME}}/metadata\``,
+      includeUploadFile: true,
+    });
   }
-}
 
-`;
+  private async injectClientWrapper(
+    output: string,
+    options: ClientWrapperOptions,
+  ): Promise<void> {
+    const clientContent = buildClientWrapperSource(
+      this.clientWrapperTemplateSource,
+      options,
+    );
 
-    await fs.appendFile(join(output, 'index.ts'), twentyClientContent);
+    await appendFile(join(output, 'index.ts'), clientContent);
   }
 }

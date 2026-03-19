@@ -1,36 +1,37 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { McpCoreController } from 'src/engine/api/mcp/controllers/mcp-core.controller';
-import { McpMetadataController } from 'src/engine/api/mcp/controllers/mcp-metadata.controller';
-import { MCPMetadataService } from 'src/engine/api/mcp/services/mcp-metadata.service';
+import { McpAuthGuard } from 'src/engine/api/mcp/guards/mcp-auth.guard';
 import { McpProtocolService } from 'src/engine/api/mcp/services/mcp-protocol.service';
 import { McpToolExecutorService } from 'src/engine/api/mcp/services/mcp-tool-executor.service';
 import { ApiKeyModule } from 'src/engine/core-modules/api-key/api-key.module';
 import { TokenModule } from 'src/engine/core-modules/auth/token/token.module';
-import { FeatureFlagModule } from 'src/engine/core-modules/feature-flag/feature-flag.module';
-import { MetricsModule } from 'src/engine/core-modules/metrics/metrics.module';
+import { TwentyConfigModule } from 'src/engine/core-modules/twenty-config/twenty-config.module';
 import { ToolProviderModule } from 'src/engine/core-modules/tool-provider/tool-provider.module';
-import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
-import { UserEntity } from 'src/engine/core-modules/user/user.entity';
+import { JwtAuthGuard } from 'src/engine/guards/jwt-auth.guard';
+import { WorkspaceAuthGuard } from 'src/engine/guards/workspace-auth.guard';
+import { SkillModule } from 'src/engine/metadata-modules/skill/skill.module';
 import { UserRoleModule } from 'src/engine/metadata-modules/user-role/user-role.module';
 import { WorkspaceCacheStorageModule } from 'src/engine/workspace-cache-storage/workspace-cache-storage.module';
-import { WorkspaceCacheModule } from 'src/engine/workspace-cache/workspace-cache.module';
 
 @Module({
   imports: [
     ApiKeyModule,
     TokenModule,
     WorkspaceCacheStorageModule,
-    FeatureFlagModule,
-    MetricsModule,
     UserRoleModule,
     ToolProviderModule,
-    TypeOrmModule.forFeature([UserEntity, UserWorkspaceEntity]),
-    WorkspaceCacheModule,
+    SkillModule,
+    TwentyConfigModule,
   ],
-  controllers: [McpCoreController, McpMetadataController],
+  controllers: [McpCoreController],
   exports: [McpProtocolService],
-  providers: [McpProtocolService, McpToolExecutorService, MCPMetadataService],
+  providers: [
+    JwtAuthGuard,
+    McpAuthGuard,
+    WorkspaceAuthGuard,
+    McpProtocolService,
+    McpToolExecutorService,
+  ],
 })
 export class McpModule {}

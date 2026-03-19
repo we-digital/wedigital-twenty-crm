@@ -1,36 +1,24 @@
-import { isAppEffectRedirectEnabledState } from '@/app/states/isAppEffectRedirectEnabledState';
-import { objectMetadataItemsState } from '@/object-metadata/states/objectMetadataItemsState';
-import { shouldAppBeLoadingState } from '@/object-metadata/states/shouldAppBeLoadingState';
-import { useRecoilCallback } from 'recoil';
-import { generatedMockObjectMetadataItems } from '~/testing/utils/generatedMockObjectMetadataItems';
-import { isDeeplyEqual } from '~/utils/isDeeplyEqual';
+import { useMetadataStore } from '@/metadata-store/hooks/useMetadataStore';
+import { splitObjectMetadataItemWithRelated } from '@/metadata-store/utils/splitObjectMetadataItemWithRelated';
+import { useCallback } from 'react';
 
 export const useLoadMockedObjectMetadataItems = () => {
-  const loadMockedObjectMetadataItems = useRecoilCallback(
-    ({ set, snapshot }) =>
-      async () => {
-        if (
-          !isDeeplyEqual(
-            snapshot.getLoadable(objectMetadataItemsState).getValue(),
-            generatedMockObjectMetadataItems,
-          )
-        ) {
-          set(objectMetadataItemsState, generatedMockObjectMetadataItems);
-        }
+  const { replaceDraft, applyChanges } = useMetadataStore();
 
-        if (snapshot.getLoadable(shouldAppBeLoadingState).getValue() === true) {
-          set(shouldAppBeLoadingState, false);
-        }
+  const loadMockedObjectMetadataItems = useCallback(async () => {
+    const { generatedMockObjectMetadataItems } = await import(
+      '~/testing/utils/generatedMockObjectMetadataItems'
+    );
 
-        if (
-          snapshot.getLoadable(isAppEffectRedirectEnabledState).getValue() ===
-          false
-        ) {
-          set(isAppEffectRedirectEnabledState, true);
-        }
-      },
-    [],
-  );
+    const { flatObjects, flatFields, flatIndexes } =
+      splitObjectMetadataItemWithRelated(generatedMockObjectMetadataItems);
+
+    replaceDraft('objectMetadataItems', flatObjects);
+    replaceDraft('fieldMetadataItems', flatFields);
+    replaceDraft('indexMetadataItems', flatIndexes);
+    applyChanges();
+  }, [replaceDraft, applyChanges]);
+
   return {
     loadMockedObjectMetadataItems,
   };

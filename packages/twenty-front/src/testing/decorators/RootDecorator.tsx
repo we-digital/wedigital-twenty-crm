@@ -1,21 +1,20 @@
-import { ApolloProvider } from '@apollo/client';
+import { ApolloProvider } from '@apollo/client/react';
 import { type Decorator } from '@storybook/react-vite';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 
 import { ApolloCoreClientMockedProvider } from '@/object-metadata/hooks/__mocks__/ApolloCoreClientMockedProvider';
+import { jotaiStore } from '@/ui/utilities/state/jotai/jotaiStore';
 
 import { mockedApolloClient } from '~/testing/mockedApolloClient';
 
-export const RootDecorator: Decorator = (Story, context) => {
-  const { parameters } = context;
-
+export const RootDecorator: Decorator = (Story) => {
   return (
-    <RecoilRoot initializeState={parameters.initializeState}>
+    <JotaiProvider store={jotaiStore}>
       <ApolloProvider client={mockedApolloClient}>
         <ApolloCoreClientMockedProvider>
           <Story />
         </ApolloCoreClientMockedProvider>
       </ApolloProvider>
-    </RecoilRoot>
+    </JotaiProvider>
   );
 };

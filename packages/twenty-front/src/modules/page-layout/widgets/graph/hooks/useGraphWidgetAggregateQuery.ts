@@ -5,16 +5,16 @@ import { AggregateOperations } from '@/object-record/record-table/constants/Aggr
 import { getRecordAggregateDisplayLabel } from '@/object-record/record-index/utils/getRecordndexAggregateDisplayLabel';
 
 import { convertAggregateOperationToExtendedAggregateOperation } from '@/object-record/utils/convertAggregateOperationToExtendedAggregateOperation';
-import { buildRatioNumeratorFilter } from '@/page-layout/widgets/graph/graphWidgetAggregateChart/utils/buildRatioNumeratorFilter';
-import { computeRatioDisplayValue } from '@/page-layout/widgets/graph/graphWidgetAggregateChart/utils/computeRatioDisplayValue';
+import { buildRatioNumeratorFilter } from '@/page-layout/widgets/graph/graph-widget-aggregate-chart/utils/buildRatioNumeratorFilter';
+import { computeRatioDisplayValue } from '@/page-layout/widgets/graph/graph-widget-aggregate-chart/utils/computeRatioDisplayValue';
 import { useGraphWidgetQueryCommon } from '@/page-layout/widgets/graph/hooks/useGraphWidgetQueryCommon';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { UserContext } from '@/users/contexts/UserContext';
 import { t } from '@lingui/core/macro';
 import { useContext } from 'react';
-import { useRecoilValue } from 'recoil';
 import { FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION } from 'twenty-shared/constants';
 import { findById, isDefined } from 'twenty-shared/utils';
-import { type AggregateChartConfiguration } from '~/generated/graphql';
+import { type AggregateChartConfiguration } from '~/generated-metadata/graphql';
 import { dateLocaleState } from '~/localization/states/dateLocaleState';
 
 export const useGraphWidgetAggregateQuery = ({
@@ -36,7 +36,7 @@ export const useGraphWidgetAggregateQuery = ({
 
   const ratioField = isRatioQuery
     ? objectMetadataItem.fields.find(
-        (field) => field.id === ratioConfig.fieldMetadataId,
+        (field: { id: string }) => field.id === ratioConfig.fieldMetadataId,
       )
     : undefined;
 
@@ -88,7 +88,7 @@ export const useGraphWidgetAggregateQuery = ({
   });
 
   const { dateFormat, timeFormat, timeZone } = useContext(UserContext);
-  const dateLocale = useRecoilValue(dateLocaleState);
+  const dateLocale = useAtomStateValue(dateLocaleState);
 
   if (isRatioQuery) {
     const isRatioLoading = ratioNumeratorLoading || ratioDenominatorLoading;

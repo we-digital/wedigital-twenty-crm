@@ -1,55 +1,107 @@
-import { REST_API_BASE_URL } from '@/apollo/constant/rest-api-base-url';
-import { getTokenPair } from '@/apollo/utils/getTokenPair';
-import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
-import { useTheme } from '@emotion/react';
-import { t } from '@lingui/core/macro';
-import { useState } from 'react';
-import { FrontComponentRenderer as SharedFrontComponentRenderer } from 'twenty-sdk/front-component';
-import { isDefined } from 'twenty-shared/utils';
-
+import { FrontComponentRendererProvider } from '@/front-components/components/FrontComponentRendererProvider';
 import { useFrontComponentExecutionContext } from '@/front-components/hooks/useFrontComponentExecutionContext';
+import { useOnFrontComponentUpdated } from '@/front-components/hooks/useOnFrontComponentUpdated';
+import { frontComponentApplicationTokenPairComponentState } from '@/front-components/states/frontComponentApplicationTokenPairComponentState';
+import { getFrontComponentUrl } from '@/front-components/utils/getFrontComponentUrl';
+import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
+import { t } from '@lingui/core/macro';
+import { useCallback, useContext, useEffect } from 'react';
+import { FrontComponentRenderer as SharedFrontComponentRenderer } from 'twenty-sdk/front-component-renderer';
+import { isDefined } from 'twenty-shared/utils';
+import { ThemeContext } from 'twenty-ui/theme-constants';
+import { REACT_APP_SERVER_BASE_URL } from '~/config';
+import { useQuery } from '@apollo/client/react';
+import { FindOneFrontComponentDocument } from '~/generated-metadata/graphql';
 
 type FrontComponentRendererProps = {
   frontComponentId: string;
+  commandMenuItemId?: string;
 };
 
 export const FrontComponentRenderer = ({
   frontComponentId,
+  commandMenuItemId,
 }: FrontComponentRendererProps) => {
-  const theme = useTheme();
-  const [hasError, setHasError] = useState(false);
-
+  const { colorScheme } = useContext(ThemeContext);
   const { enqueueErrorSnackBar } = useSnackBar();
+
+  const setFrontComponentApplicationTokenPair = useSetAtomComponentState(
+    frontComponentApplicationTokenPairComponentState,
+    frontComponentId,
+  );
+
   const { executionContext, frontComponentHostCommunicationApi } =
-    useFrontComponentExecutionContext();
+    useFrontComponentExecutionContext({ frontComponentId, commandMenuItemId });
 
-  const componentUrl = `${REST_API_BASE_URL}/front-components/${frontComponentId}`;
-  const authToken = getTokenPair()?.accessOrWorkspaceAgnosticToken?.token;
+  const handleError = useCallback(
+    (error?: Error) => {
+      if (!isDefined(error)) {
+        return;
+      }
 
-  const handleError = (error?: Error) => {
-    if (isDefined(error)) {
       const errorMessage = error.message;
 
       enqueueErrorSnackBar({
         message: t`Failed to load front component: ${errorMessage}`,
       });
-    }
-    setHasError(true);
-  };
+    },
+    [enqueueErrorSnackBar],
+  );
 
-  if (hasError || !isDefined(authToken)) {
-    // TODO: Add an error display component here
+  const { data, loading, error } = useQuery(FindOneFrontComponentDocument, {
+    variables: { id: frontComponentId },
+  });
+
+  useEffect(() => {
+    if (error) {
+      handleError(error);
+    }
+  }, [error, handleError]);
+
+  useEffect(() => {
+    if (data) {
+      const tokenPair = data.frontComponent?.applicationTokenPair;
+
+      if (isDefined(tokenPair)) {
+        setFrontComponentApplicationTokenPair(tokenPair);
+      }
+    }
+  }, [data, setFrontComponentApplicationTokenPair]);
+
+  useOnFrontComponentUpdated({
+    frontComponentId,
+  });
+
+  const componentUrl = getFrontComponentUrl({
+    frontComponentId,
+    checksum: data?.frontComponent?.builtComponentChecksum,
+  });
+
+  const applicationTokenPair =
+    data?.frontComponent?.applicationTokenPair ?? null;
+
+  if (
+    loading ||
+    !isDefined(data?.frontComponent) ||
+    !isDefined(applicationTokenPair)
+  ) {
     return null;
   }
 
   return (
-    <SharedFrontComponentRenderer
-      theme={theme}
-      componentUrl={componentUrl}
-      authToken={authToken}
-      executionContext={executionContext}
-      frontComponentHostCommunicationApi={frontComponentHostCommunicationApi}
-      onError={handleError}
-    />
+    <FrontComponentRendererProvider frontComponentId={frontComponentId}>
+      <SharedFrontComponentRenderer
+        colorScheme={colorScheme}
+        componentUrl={componentUrl}
+        applicationAccessToken={
+          applicationTokenPair.applicationAccessToken.token
+        }
+        apiUrl={REACT_APP_SERVER_BASE_URL}
+        executionContext={executionContext}
+        frontComponentHostCommunicationApi={frontComponentHostCommunicationApi}
+        onError={handleError}
+      />
+    </FrontComponentRendererProvider>
   );
 };

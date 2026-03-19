@@ -13,7 +13,7 @@ import {
   WorkspaceActivationStatus,
   WorkspaceMemberDateFormatEnum,
   WorkspaceMemberTimeFormatEnum,
-} from '~/generated/graphql';
+} from '~/generated-metadata/graphql';
 import { mockBillingPlans } from '~/testing/mock-data/billing-plans';
 import { generatedMockObjectMetadataItems } from '~/testing/utils/generatedMockObjectMetadataItems';
 
@@ -68,6 +68,8 @@ export const mockCurrentWorkspace = {
   allowImpersonation: true,
   activationStatus: WorkspaceActivationStatus.ACTIVE,
   hasValidEnterpriseKey: false,
+  hasValidSignedEnterpriseKey: false,
+  hasValidEnterpriseValidityToken: false,
   isGoogleAuthEnabled: true,
   isPasswordAuthEnabled: true,
   isMicrosoftAuthEnabled: false,
@@ -87,6 +89,10 @@ export const mockCurrentWorkspace = {
   fastModel: DEFAULT_FAST_MODEL,
   smartModel: DEFAULT_SMART_MODEL,
   routerModel: 'auto',
+  autoEnableNewAiModels: true,
+  disabledAiModelIds: [],
+  enabledAiModelIds: [],
+  useRecommendedModels: true,
   currentBillingSubscription: {
     __typename: 'BillingSubscription',
     id: '7efbc3f7-6e5e-4128-957e-8d86808cdf6a',
@@ -99,7 +105,7 @@ export const mockCurrentWorkspace = {
     phases: [],
     billingSubscriptionItems: [
       {
-        __typename: 'BillingSubscriptionItemDTO',
+        __typename: 'BillingSubscriptionItem',
         id: '11111111-1111-4111-8111-111111111111',
         hasReachedCurrentPeriodCap: false,
         quantity: 1,
@@ -112,7 +118,7 @@ export const mockCurrentWorkspace = {
         },
       },
       {
-        __typename: 'BillingSubscriptionItemDTO',
+        __typename: 'BillingSubscriptionItem',
         id: '11111111-1111-4111-8111-111111111112',
         hasReachedCurrentPeriodCap: false,
         quantity: null,
@@ -136,7 +142,7 @@ export const mockCurrentWorkspace = {
       phases: [],
       billingSubscriptionItems: [
         {
-          __typename: 'BillingSubscriptionItemDTO',
+          __typename: 'BillingSubscriptionItem',
           id: '22222222-2222-4222-8222-222222222222',
           hasReachedCurrentPeriodCap: false,
           quantity: 1,
@@ -192,7 +198,10 @@ export const mockedUserData: MockedUser = {
   workspaceMember: mockedWorkspaceMemberData,
   currentWorkspace: mockCurrentWorkspace,
   currentUserWorkspace: {
-    permissionFlags: [PermissionFlagType.WORKSPACE_MEMBERS],
+    permissionFlags: [
+      PermissionFlagType.WORKSPACE_MEMBERS,
+      PermissionFlagType.CONNECTED_ACCOUNTS,
+    ],
     twoFactorAuthenticationMethodSummary: [],
     objectsPermissions: generatedMockObjectMetadataItems.map((item) => ({
       objectMetadataId: item.id,

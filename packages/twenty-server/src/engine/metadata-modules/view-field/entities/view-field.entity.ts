@@ -10,11 +10,23 @@ import {
   type Relation,
   UpdateDateColumn,
 } from 'typeorm';
+import {
+  AggregateOperations,
+  type SerializedRelation,
+} from 'twenty-shared/types';
 
-import { AggregateOperations } from 'src/engine/api/graphql/graphql-query-runner/constants/aggregate-operations.constant';
 import { FieldMetadataEntity } from 'src/engine/metadata-modules/field-metadata/field-metadata.entity';
+import { ViewFieldGroupEntity } from 'src/engine/metadata-modules/view-field-group/entities/view-field-group.entity';
 import { ViewEntity } from 'src/engine/metadata-modules/view/entities/view.entity';
-import { SyncableEntity } from 'src/engine/workspace-manager/types/syncable-entity.interface';
+import { OverridableEntity } from 'src/engine/workspace-manager/types/overridable-entity';
+
+export type ViewFieldOverrides = {
+  isVisible?: boolean;
+  size?: number;
+  position?: number;
+  aggregateOperation?: AggregateOperations | null;
+  viewFieldGroupId?: SerializedRelation | null;
+};
 
 @Entity({ name: 'viewField', schema: 'core' })
 @Index('IDX_VIEW_FIELD_WORKSPACE_ID_VIEW_ID', ['workspaceId', 'viewId'])
@@ -29,7 +41,7 @@ import { SyncableEntity } from 'src/engine/workspace-manager/types/syncable-enti
   },
 )
 export class ViewFieldEntity
-  extends SyncableEntity
+  extends OverridableEntity<ViewFieldOverrides>
   implements Required<ViewFieldEntity>
 {
   @PrimaryGeneratedColumn('uuid')
@@ -64,6 +76,9 @@ export class ViewFieldEntity
   @Column({ nullable: false, type: 'uuid' })
   viewId: string;
 
+  @Column({ nullable: true, type: 'uuid' })
+  viewFieldGroupId: string | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
@@ -78,4 +93,15 @@ export class ViewFieldEntity
   })
   @JoinColumn({ name: 'viewId' })
   view: Relation<ViewEntity>;
+
+  @ManyToOne(
+    () => ViewFieldGroupEntity,
+    (viewFieldGroup) => viewFieldGroup.viewFields,
+    {
+      onDelete: 'SET NULL',
+      nullable: true,
+    },
+  )
+  @JoinColumn({ name: 'viewFieldGroupId' })
+  viewFieldGroup: Relation<ViewFieldGroupEntity> | null;
 }

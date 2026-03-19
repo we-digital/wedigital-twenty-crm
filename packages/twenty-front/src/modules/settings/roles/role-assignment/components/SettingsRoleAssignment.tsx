@@ -1,3 +1,4 @@
+import { isDefined } from 'twenty-shared/utils';
 import { currentWorkspaceMembersState } from '@/auth/states/currentWorkspaceMembersState';
 import { currentWorkspaceMemberState } from '@/auth/states/currentWorkspaceMemberState';
 import { useUpdateAgentRole } from '@/settings/roles/hooks/useUpdateAgentRole';
@@ -6,26 +7,29 @@ import { useUpdateWorkspaceMemberRole } from '@/settings/roles/hooks/useUpdateWo
 import { RoleAssignmentSection } from '@/settings/roles/role-assignment/components/RoleAssignmentSection';
 import { SettingsRoleAssignmentConfirmationModal } from '@/settings/roles/role-assignment/components/SettingsRoleAssignmentConfirmationModal';
 import { type SettingsRoleAssignmentConfirmationModalSelectedRoleTarget } from '@/settings/roles/role-assignment/types/SettingsRoleAssignmentConfirmationModalSelectedRoleTarget';
-import { settingsAllRolesSelector } from '@/settings/roles/states/settingsAllRolesSelector';
+import { useSettingsAllRoles } from '@/settings/roles/hooks/useSettingsAllRoles';
 import { settingsDraftRoleFamilyState } from '@/settings/roles/states/settingsDraftRoleFamilyState';
 import { useModal } from '@/ui/layout/modal/hooks/useModal';
 import { isModalOpenedComponentState } from '@/ui/layout/modal/states/isModalOpenedComponentState';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilyStateValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { useIsFeatureEnabled } from '@/workspace/hooks/useIsFeatureEnabled';
 import { useState } from 'react';
-import { useRecoilValue } from 'recoil';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { SettingsPath } from 'twenty-shared/types';
+import { useQuery } from '@apollo/client/react';
 import {
-  useFindManyAgentsQuery,
-  useGetApiKeysQuery,
   type Agent,
+  FeatureFlagKey,
+  type ApiKeyForRole,
+  FindManyAgentsDocument,
+  GetApiKeysDocument,
 } from '~/generated-metadata/graphql';
-import { FeatureFlagKey, type ApiKeyForRole } from '~/generated/graphql';
 import { useNavigateSettings } from '~/hooks/useNavigateSettings';
 import { type PartialWorkspaceMember } from '@/settings/roles/types/RoleWithPartialMembers';
 import { ROLE_ASSIGNMENT_CONFIRMATION_MODAL_ID } from '@/settings/roles/role-assignment/constants/RoleAssignmentConfirmationModalId';
 import { ROLE_TARGET_CONFIG } from '@/settings/roles/role-assignment/constants/RoleTargetConfig';
-import { buildRoleMaps } from '@/settings/roles/role-assignment/utils/build-role-maps';
+import { buildRoleMaps } from '@/settings/roles/role-assignment/utils/buildRoleMaps';
 
 type SettingsRoleAssignmentProps = {
   roleId: string;
@@ -38,8 +42,9 @@ export const SettingsRoleAssignment = ({
 }: SettingsRoleAssignmentProps) => {
   const isAiEnabled = useIsFeatureEnabled(FeatureFlagKey.IS_AI_ENABLED);
 
-  const settingsDraftRole = useRecoilValue(
-    settingsDraftRoleFamilyState(roleId),
+  const settingsDraftRole = useAtomFamilyStateValue(
+    settingsDraftRoleFamilyState,
+    roleId,
   );
 
   const navigateSettings = useNavigateSettings();
@@ -54,8 +59,10 @@ export const SettingsRoleAssignment = ({
   const { addApiKeyToRoleAndUpdateState, updateApiKeyRoleDraftState } =
     useUpdateApiKeyRole(roleId);
 
-  const { data: agentsData } = useFindManyAgentsQuery({ skip: !isAiEnabled });
-  const { data: apiKeysData } = useGetApiKeysQuery();
+  const { data: agentsData } = useQuery(FindManyAgentsDocument, {
+    skip: !isAiEnabled,
+  });
+  const { data: apiKeysData } = useQuery(GetApiKeysDocument);
 
   const { openModal, closeModal } = useModal();
   const [selectedRoleTarget, setSelectRoleTarget] =
@@ -63,9 +70,11 @@ export const SettingsRoleAssignment = ({
       null,
     );
 
-  const currentWorkspaceMembers = useRecoilValue(currentWorkspaceMembersState);
-  const currentWorkspaceMember = useRecoilValue(currentWorkspaceMemberState);
-  const settingsAllRoles = useRecoilValue(settingsAllRolesSelector);
+  const currentWorkspaceMembers = useAtomStateValue(
+    currentWorkspaceMembersState,
+  );
+  const currentWorkspaceMember = useAtomStateValue(currentWorkspaceMemberState);
+  const settingsAllRoles = useSettingsAllRoles();
 
   const roleMaps = buildRoleMaps(settingsAllRoles);
 
@@ -84,7 +93,7 @@ export const SettingsRoleAssignment = ({
     setSelectRoleTarget(null);
   };
 
-  const isModalOpened = useRecoilComponentValue(
+  const isModalOpened = useAtomComponentStateValue(
     isModalOpenedComponentState,
     ROLE_ASSIGNMENT_CONFIRMATION_MODAL_ID,
   );
@@ -189,7 +198,7 @@ export const SettingsRoleAssignment = ({
     closeModal(ROLE_ASSIGNMENT_CONFIRMATION_MODAL_ID);
   };
 
-  if (!settingsDraftRole) {
+  if (!isDefined(settingsDraftRole)) {
     return null;
   }
 

@@ -6,12 +6,12 @@ describe('getActivityAttachmentIdsAndNameToUpdate', () => {
     const attachments = [
       {
         id: '1',
-        fullPath: 'https://exemple.com/files/images/test.txt',
+        file: [{ url: 'https://exemple.com/files/images/test.txt' }],
         name: 'image',
       },
       {
         id: '2',
-        fullPath: 'https://exemple.com/files/images/test2.txt',
+        file: [{ url: 'https://exemple.com/files/images/test2.txt' }],
         name: 'image1',
       },
     ] as Attachment[];
@@ -41,12 +41,12 @@ describe('getActivityAttachmentIdsAndNameToUpdate', () => {
     const attachments = [
       {
         id: '1',
-        fullPath: 'https://exemple.com/files/images/test.txt',
+        file: [{ url: 'https://exemple.com/files/images/test.txt' }],
         name: 'image',
       },
       {
         id: '2',
-        fullPath: 'https://exemple.com/files/images/test2.txt',
+        file: [{ url: 'https://exemple.com/files/images/test2.txt' }],
         name: 'image1',
       },
     ] as Attachment[];

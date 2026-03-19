@@ -1,8 +1,10 @@
 import { settingsDraftRoleFamilyState } from '@/settings/roles/states/settingsDraftRoleFamilyState';
 import { settingsPersistedRoleFamilyState } from '@/settings/roles/states/settingsPersistedRoleFamilyState';
-import { useRecoilState, useSetRecoilState } from 'recoil';
-import { useUpdateWorkspaceMemberRoleMutation } from '~/generated-metadata/graphql';
 import { type PartialWorkspaceMember } from '@/settings/roles/types/RoleWithPartialMembers';
+import { useAtomFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilyStateValue';
+import { useSetAtomFamilyState } from '@/ui/utilities/state/jotai/hooks/useSetAtomFamilyState';
+import { useMutation } from '@apollo/client/react';
+import { UpdateWorkspaceMemberRoleDocument } from '~/generated-metadata/graphql';
 
 type AddWorkspaceMemberToRoleAndUpdateStateParams = {
   workspaceMemberId: string;
@@ -18,15 +20,22 @@ type AddWorkspaceMembersToRoleParams = {
 };
 
 export const useUpdateWorkspaceMemberRole = (roleId: string) => {
-  const setSettingsPersistedRole = useSetRecoilState(
-    settingsPersistedRoleFamilyState(roleId),
+  const setSettingsPersistedRole = useSetAtomFamilyState(
+    settingsPersistedRoleFamilyState,
+    roleId,
   );
-  const [settingsDraftRole, setSettingsDraftRole] = useRecoilState(
-    settingsDraftRoleFamilyState(roleId),
+  const settingsDraftRole = useAtomFamilyStateValue(
+    settingsDraftRoleFamilyState,
+    roleId,
+  );
+  const setSettingsDraftRole = useSetAtomFamilyState(
+    settingsDraftRoleFamilyState,
+    roleId,
   );
 
-  const [updateWorkspaceMemberRoleMutation] =
-    useUpdateWorkspaceMemberRoleMutation();
+  const [updateWorkspaceMemberRoleMutation] = useMutation(
+    UpdateWorkspaceMemberRoleDocument,
+  );
 
   const updateWorkspaceMemberRoleDraftState = ({
     workspaceMember,

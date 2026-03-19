@@ -1,5 +1,5 @@
-import { createState } from 'twenty-ui/utilities';
-export const isDeveloperDefaultSignInPrefilledState = createState<boolean>({
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
+export const isDeveloperDefaultSignInPrefilledState = createAtomState<boolean>({
   key: 'isDeveloperDefaultSignInPrefilledState',
   defaultValue: false,
 });

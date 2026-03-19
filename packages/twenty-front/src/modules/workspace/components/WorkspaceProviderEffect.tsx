@@ -1,22 +1,24 @@
-import { useRecoilValue } from 'recoil';
-
 import { isMultiWorkspaceEnabledState } from '@/client-config/states/isMultiWorkspaceEnabledState';
 import { useReadWorkspaceUrlFromCurrentLocation } from '@/domain-manager/hooks/useReadWorkspaceUrlFromCurrentLocation';
 import { useRedirectToWorkspaceDomain } from '@/domain-manager/hooks/useRedirectToWorkspaceDomain';
 import { lastAuthenticatedWorkspaceDomainState } from '@/domain-manager/states/lastAuthenticatedWorkspaceDomainState';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { useEffect, useCallback } from 'react';
 
 import { useInitializeQueryParamState } from '@/app/hooks/useInitializeQueryParamState';
 import { useGetPublicWorkspaceDataByDomain } from '@/domain-manager/hooks/useGetPublicWorkspaceDataByDomain';
 import { useIsCurrentLocationOnDefaultDomain } from '@/domain-manager/hooks/useIsCurrentLocationOnDefaultDomain';
 import { isDefined } from 'twenty-shared/utils';
-import { type WorkspaceUrls } from '~/generated/graphql';
+import { type WorkspaceUrls } from '~/generated-metadata/graphql';
 import { getWorkspaceUrl } from '~/utils/getWorkspaceUrl';
+
+const getCurrentSearchParams = (): Record<string, string> =>
+  Object.fromEntries(new URLSearchParams(window.location.search));
 
 export const WorkspaceProviderEffect = () => {
   const { data: getPublicWorkspaceData } = useGetPublicWorkspaceDataByDomain();
 
-  const lastAuthenticatedWorkspaceDomain = useRecoilValue(
+  const lastAuthenticatedWorkspaceDomain = useAtomStateValue(
     lastAuthenticatedWorkspaceDomainState,
   );
 
@@ -25,7 +27,9 @@ export const WorkspaceProviderEffect = () => {
 
   const { currentLocationHostname } = useReadWorkspaceUrlFromCurrentLocation();
 
-  const isMultiWorkspaceEnabled = useRecoilValue(isMultiWorkspaceEnabledState);
+  const isMultiWorkspaceEnabled = useAtomStateValue(
+    isMultiWorkspaceEnabledState,
+  );
 
   const { initializeQueryParamState } = useInitializeQueryParamState();
 
@@ -47,6 +51,8 @@ export const WorkspaceProviderEffect = () => {
     ) {
       redirectToWorkspaceDomain(
         getWorkspaceUrl(getPublicWorkspaceData.workspaceUrls),
+        window.location.pathname,
+        getCurrentSearchParams(),
       );
     }
   }, [
@@ -66,7 +72,11 @@ export const WorkspaceProviderEffect = () => {
       isDefined(lastAuthenticatedWorkspaceDomain?.workspaceUrl)
     ) {
       initializeQueryParamState();
-      redirectToWorkspaceDomain(lastAuthenticatedWorkspaceDomain.workspaceUrl);
+      redirectToWorkspaceDomain(
+        lastAuthenticatedWorkspaceDomain.workspaceUrl,
+        window.location.pathname,
+        getCurrentSearchParams(),
+      );
     }
   }, [
     isMultiWorkspaceEnabled,

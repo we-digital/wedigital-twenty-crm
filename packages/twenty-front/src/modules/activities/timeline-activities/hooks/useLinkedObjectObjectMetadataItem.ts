@@ -1,11 +1,10 @@
-import { useRecoilValue } from 'recoil';
-
-import { objectMetadataItemsState } from '@/object-metadata/states/objectMetadataItemsState';
+import { objectMetadataItemsSelector } from '@/object-metadata/states/objectMetadataItemsSelector';
 import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 
 export const useLinkedObjectObjectMetadataItem = (id: string | null) => {
-  const objectMetadataItems: ObjectMetadataItem[] = useRecoilValue(
-    objectMetadataItemsState,
+  const objectMetadataItems: ObjectMetadataItem[] = useAtomStateValue(
+    objectMetadataItemsSelector,
   );
 
   if (id === null) {

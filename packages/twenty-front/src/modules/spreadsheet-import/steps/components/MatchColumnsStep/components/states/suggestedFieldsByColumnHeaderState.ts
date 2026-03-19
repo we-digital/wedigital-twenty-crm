@@ -1,7 +1,7 @@
 import { type SpreadsheetImportField } from '@/spreadsheet-import/types';
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const suggestedFieldsByColumnHeaderState = createState({
+export const suggestedFieldsByColumnHeaderState = createAtomState({
   key: 'suggestedFieldsByColumnHeaderState',
   defaultValue: {} as Record<string, SpreadsheetImportField[]>,
 });

@@ -1,6 +1,6 @@
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const recordIndexCalendarFieldMetadataIdState = createState<
+export const recordIndexCalendarFieldMetadataIdState = createAtomState<
   string | null
 >({
   key: 'recordIndexCalendarFieldMetadataIdState',

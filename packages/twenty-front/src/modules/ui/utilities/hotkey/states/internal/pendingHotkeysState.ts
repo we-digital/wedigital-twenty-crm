@@ -1,7 +1,7 @@
 import { type Keys } from 'react-hotkeys-hook/dist/types';
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const pendingHotkeyState = createState<Keys | null>({
+export const pendingHotkeyState = createAtomState<Keys | null>({
   key: 'pendingHotkeyState',
   defaultValue: null,
 });

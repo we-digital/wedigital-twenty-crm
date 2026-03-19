@@ -1,7 +1,7 @@
-import { ViewOpenRecordInType } from '@/views/types/ViewOpenRecordInType';
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
+import { ViewOpenRecordIn } from '~/generated-metadata/graphql';
 
-export const recordIndexOpenRecordInState = createState<ViewOpenRecordInType>({
+export const recordIndexOpenRecordInState = createAtomState<ViewOpenRecordIn>({
   key: 'recordIndexOpenRecordInState',
-  defaultValue: ViewOpenRecordInType.SIDE_PANEL,
+  defaultValue: ViewOpenRecordIn.SIDE_PANEL,
 });

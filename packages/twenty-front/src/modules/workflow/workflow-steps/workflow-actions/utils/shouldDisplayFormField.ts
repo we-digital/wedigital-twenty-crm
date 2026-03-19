@@ -1,4 +1,5 @@
 import { type FieldMetadataItem } from '@/object-metadata/types/FieldMetadataItem';
+import { isHiddenSystemField } from '@/object-metadata/utils/isHiddenSystemField';
 import { type WorkflowActionType } from '@/workflow/types/Workflow';
 import { CustomError } from 'twenty-shared/utils';
 import { FieldMetadataType } from '~/generated-metadata/graphql';
@@ -21,7 +22,7 @@ const SUPPORTED_FORM_FIELD_TYPES = [
   FieldMetadataType.UUID,
   FieldMetadataType.ARRAY,
   FieldMetadataType.RELATION,
-  FieldMetadataType.RICH_TEXT_V2,
+  FieldMetadataType.RICH_TEXT,
 ];
 
 export const shouldDisplayFormField = ({
@@ -46,21 +47,21 @@ export const shouldDisplayFormField = ({
       return (
         !isNotSupportedRelation &&
         !fieldMetadataItem.isUIReadOnly &&
-        !fieldMetadataItem.isSystem &&
+        !isHiddenSystemField(fieldMetadataItem) &&
         fieldMetadataItem.isActive
       );
     case 'UPSERT_RECORD':
       return (
         (!isNotSupportedRelation &&
           !fieldMetadataItem.isUIReadOnly &&
-          !fieldMetadataItem.isSystem &&
+          !isHiddenSystemField(fieldMetadataItem) &&
           fieldMetadataItem.isActive) ||
         isIdField
       );
     case 'FIND_RECORDS':
       return (
         !isNotSupportedRelation &&
-        (!fieldMetadataItem.isSystem || isIdField) &&
+        (!isHiddenSystemField(fieldMetadataItem) || isIdField) &&
         fieldMetadataItem.isActive
       );
     default:

@@ -6,14 +6,13 @@ import { FormSingleRecordPicker } from '@/object-record/record-field/ui/form-typ
 import { isFieldRelation } from '@/object-record/record-field/ui/types/guards/isFieldRelation';
 import { Select } from '@/ui/input/components/Select';
 import { GenericDropdownContentWidth } from '@/ui/layout/dropdown/constants/GenericDropdownContentWidth';
-import { useViewOrDefaultViewFromPrefetchedViews } from '@/views/hooks/useViewOrDefaultViewFromPrefetchedViews';
+import { useViewOrDefaultView } from '@/views/hooks/useViewOrDefaultView';
 import { WorkflowFieldsMultiSelect } from '@/workflow/components/WorkflowEditUpdateEventFieldsMultiSelect';
 import { type WorkflowUpsertRecordAction } from '@/workflow/types/Workflow';
 import { WorkflowStepBody } from '@/workflow/workflow-steps/components/WorkflowStepBody';
 import { WorkflowStepFooter } from '@/workflow/workflow-steps/components/WorkflowStepFooter';
 import { shouldDisplayFormField } from '@/workflow/workflow-steps/workflow-actions/utils/shouldDisplayFormField';
 import { WorkflowVariablePicker } from '@/workflow/workflow-variables/components/WorkflowVariablePicker';
-import { useTheme } from '@emotion/react';
 import { t } from '@lingui/core/macro';
 import { useEffect, useState } from 'react';
 import { isDefined } from 'twenty-shared/utils';
@@ -76,8 +75,6 @@ export const WorkflowEditActionUpsertRecord = ({
   action,
   actionOptions,
 }: WorkflowEditActionUpsertRecordProps) => {
-  const theme = useTheme();
-
   const { getIcon } = useIcons();
 
   const { activeNonSystemObjectMetadataItems } =
@@ -114,7 +111,7 @@ export const WorkflowEditActionUpsertRecord = ({
 
   const objectLabelSingular = objectMetadataItem?.labelSingular;
 
-  const { view: indexView } = useViewOrDefaultViewFromPrefetchedViews({
+  const { view: indexView } = useViewOrDefaultView({
     objectMetadataItemId: objectMetadataItem?.id ?? '',
   });
 
@@ -235,7 +232,7 @@ export const WorkflowEditActionUpsertRecord = ({
             saveAction(newFormData);
           }}
           withSearchInput
-          dropdownOffset={{ y: parseInt(theme.spacing(1), 10) }}
+          dropdownOffset={{ y: 4 }}
           dropdownWidth={GenericDropdownContentWidth.ExtraLarge}
         />
 

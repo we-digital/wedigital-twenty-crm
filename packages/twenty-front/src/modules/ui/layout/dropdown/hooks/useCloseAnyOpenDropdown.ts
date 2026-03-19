@@ -1,8 +1,10 @@
+import { useCallback } from 'react';
+
 import { useCloseDropdown } from '@/ui/layout/dropdown/hooks/useCloseDropdown';
 import { activeDropdownFocusIdState } from '@/ui/layout/dropdown/states/activeDropdownFocusIdState';
-import { previousDropdownFocusIdState } from '@/ui/layout/dropdown/states/previousDropdownFocusIdState';
+import { previousDropdownFocusIdStackState } from '@/ui/layout/dropdown/states/previousDropdownFocusIdStackState';
 import { useRemoveFocusItemFromFocusStackById } from '@/ui/utilities/focus/hooks/useRemoveFocusItemFromFocusStackById';
-import { useRecoilCallback } from 'recoil';
+import { useStore } from 'jotai';
 import { isDefined } from 'twenty-shared/utils';
 
 export const useCloseAnyOpenDropdown = () => {
@@ -11,46 +13,36 @@ export const useCloseAnyOpenDropdown = () => {
   const { removeFocusItemFromFocusStackById } =
     useRemoveFocusItemFromFocusStackById();
 
-  const closeAnyOpenDropdown = useRecoilCallback(
-    ({ snapshot, set }) =>
-      () => {
-        const previousDropdownFocusId = snapshot
-          .getLoadable(previousDropdownFocusIdState)
-          .getValue();
+  const store = useStore();
 
-        const activeDropdownFocusId = snapshot
-          .getLoadable(activeDropdownFocusIdState)
-          .getValue();
+  const closeAnyOpenDropdown = useCallback(() => {
+    const previousStack = store.get(previousDropdownFocusIdStackState.atom);
+    const activeDropdownFocusId = store.get(activeDropdownFocusIdState.atom);
 
-        const thereIsNoDropdownOpen =
-          !isDefined(activeDropdownFocusId) &&
-          !isDefined(previousDropdownFocusId);
+    const thereIsNoDropdownOpen =
+      !isDefined(activeDropdownFocusId) && previousStack.length === 0;
 
-        if (thereIsNoDropdownOpen) {
-          return;
-        }
+    if (thereIsNoDropdownOpen) {
+      return;
+    }
 
-        const thereIsOneNestedDropdownOpen = isDefined(previousDropdownFocusId);
+    if (isDefined(activeDropdownFocusId)) {
+      closeDropdown(activeDropdownFocusId);
+      removeFocusItemFromFocusStackById({
+        focusId: activeDropdownFocusId,
+      });
+    }
 
-        if (isDefined(activeDropdownFocusId)) {
-          closeDropdown(activeDropdownFocusId);
-          removeFocusItemFromFocusStackById({
-            focusId: activeDropdownFocusId,
-          });
-        }
+    for (const previousId of previousStack) {
+      closeDropdown(previousId);
+      removeFocusItemFromFocusStackById({
+        focusId: previousId,
+      });
+    }
 
-        if (thereIsOneNestedDropdownOpen) {
-          closeDropdown(previousDropdownFocusId);
-          removeFocusItemFromFocusStackById({
-            focusId: previousDropdownFocusId,
-          });
-        }
-
-        set(previousDropdownFocusIdState, null);
-        set(activeDropdownFocusIdState, null);
-      },
-    [closeDropdown, removeFocusItemFromFocusStackById],
-  );
+    store.set(previousDropdownFocusIdStackState.atom, []);
+    store.set(activeDropdownFocusIdState.atom, null);
+  }, [closeDropdown, removeFocusItemFromFocusStackById, store]);
 
   return { closeAnyOpenDropdown };
 };

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { isDefined } from 'twenty-shared/utils';
 
-import { ApplicationService } from 'src/engine/core-modules/application/services/application.service';
+import { ApplicationService } from 'src/engine/core-modules/application/application.service';
 import {
   CommandMenuItemException,
   CommandMenuItemExceptionCode,
@@ -40,7 +40,7 @@ export class CommandMenuItemService {
 
     return Object.values(flatCommandMenuItemMaps.byUniversalIdentifier)
       .filter(isDefined)
-      .sort((a, b) => a.label.localeCompare(b.label))
+      .sort((a, b) => a.position - b.position)
       .map(fromFlatCommandMenuItemToCommandMenuItemDto);
   }
 
@@ -127,7 +127,7 @@ export class CommandMenuItemService {
         },
       );
 
-    if (isDefined(validateAndBuildResult)) {
+    if (validateAndBuildResult.status === 'fail') {
       throw new WorkspaceMigrationBuilderException(
         validateAndBuildResult,
         'Multiple validation errors occurred while creating command menu item',
@@ -194,7 +194,7 @@ export class CommandMenuItemService {
         },
       );
 
-    if (isDefined(validateAndBuildResult)) {
+    if (validateAndBuildResult.status === 'fail') {
       throw new WorkspaceMigrationBuilderException(
         validateAndBuildResult,
         'Multiple validation errors occurred while updating command menu item',
@@ -254,7 +254,7 @@ export class CommandMenuItemService {
         },
       );
 
-    if (isDefined(validateAndBuildResult)) {
+    if (validateAndBuildResult.status === 'fail') {
       throw new WorkspaceMigrationBuilderException(
         validateAndBuildResult,
         'Multiple validation errors occurred while deleting command menu item',
@@ -279,7 +279,7 @@ export class CommandMenuItemService {
 
     return Object.values(flatCommandMenuItemMaps.byUniversalIdentifier)
       .filter(isDefined)
-      .sort((a, b) => a.label.localeCompare(b.label));
+      .sort((a, b) => a.position - b.position);
   }
 
   async findByWorkflowVersionId(

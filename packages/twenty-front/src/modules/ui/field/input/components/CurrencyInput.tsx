@@ -1,20 +1,40 @@
-import { useTheme } from '@emotion/react';
-import styled from '@emotion/styled';
-import { useEffect, useRef, useState } from 'react';
+import { isDefined } from 'twenty-shared/utils';
+import { styled } from '@linaria/react';
+import { useContext, useEffect, useRef, useState } from 'react';
 
 import { useRegisterInputEvents } from '@/object-record/record-field/ui/meta-types/input/hooks/useRegisterInputEvents';
+import { useNumberFormat } from '@/localization/hooks/useNumberFormat';
 import { CURRENCIES } from '@/settings/data-model/constants/Currencies';
 import { CurrencyPickerDropdownButton } from '@/ui/input/components/internal/currency/components/CurrencyPickerDropdownButton';
 import { type Currency } from '@/ui/input/components/internal/types/Currency';
 import { IMaskInput } from 'react-imask';
 import { type IconComponent } from 'twenty-ui/display';
-import { TEXT_INPUT_STYLE } from 'twenty-ui/theme';
+import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
+import { getSeparatorsForNumberFormat } from '~/utils/format/getSeparatorsForNumberFormat';
 
-export const StyledIMaskInput = styled(IMaskInput)`
-  margin: 0;
-  ${TEXT_INPUT_STYLE}
-  width: 100%;
-  padding: ${({ theme }) => `${theme.spacing(0)} ${theme.spacing(1.5)}`};
+export const StyledIMaskInput = styled.div`
+  display: contents;
+
+  > input {
+    background-color: transparent;
+    border: none;
+    color: ${themeCssVariables.font.color.primary};
+    font-family: ${themeCssVariables.font.family};
+    font-size: inherit;
+    font-weight: inherit;
+    margin: 0;
+    outline: none;
+    padding: ${themeCssVariables.spacing[0]} ${themeCssVariables.spacing[1.5]};
+
+    &::placeholder,
+    &::-webkit-input-placeholder {
+      color: ${themeCssVariables.font.color.light};
+      font-family: ${themeCssVariables.font.family};
+      font-weight: ${themeCssVariables.font.weight.medium};
+    }
+
+    width: 100%;
+  }
 `;
 
 const StyledContainer = styled.div`
@@ -29,10 +49,10 @@ const StyledIcon = styled.div`
   display: flex;
 
   & > svg {
-    padding-left: ${({ theme }) => theme.spacing(1)};
-    color: ${({ theme }) => theme.font.color.tertiary};
-    height: ${({ theme }) => theme.icon.size.md}px;
-    width: ${({ theme }) => theme.icon.size.md}px;
+    color: ${themeCssVariables.font.color.tertiary};
+    height: ${themeCssVariables.icon.size.md}px;
+    padding-left: ${themeCssVariables.spacing[1]};
+    width: ${themeCssVariables.icon.size.md}px;
   }
 `;
 
@@ -67,11 +87,14 @@ export const CurrencyInput = ({
   onSelect,
   decimals,
 }: CurrencyInputProps) => {
-  const theme = useTheme();
-
+  const { theme } = useContext(ThemeContext);
   const [internalText, setInternalText] = useState(value);
+  const { numberFormat } = useNumberFormat();
 
   const wrapperRef = useRef<HTMLInputElement>(null);
+
+  const { thousandsSeparator, radix } =
+    getSeparatorsForNumberFormat(numberFormat);
 
   const handleChange = (value: string) => {
     setInternalText(value);
@@ -108,23 +131,25 @@ export const CurrencyInput = ({
         onChange={handleCurrencyChange}
       />
       <StyledIcon>
-        {Icon && (
+        {isDefined(Icon) && (
           <Icon size={theme.icon.size.md} stroke={theme.icon.stroke.sm} />
         )}
       </StyledIcon>
-      <StyledIMaskInput
-        mask={Number}
-        thousandsSeparator=","
-        radix="."
-        scale={decimals}
-        onAccept={(value: string) => handleChange(value)}
-        inputRef={wrapperRef}
-        autoComplete="off"
-        placeholder={placeholder}
-        autoFocus={autoFocus}
-        value={value}
-        unmask
-      />
+      <StyledIMaskInput>
+        <IMaskInput
+          mask={Number}
+          thousandsSeparator={thousandsSeparator}
+          radix={radix}
+          scale={decimals}
+          onAccept={(value: string) => handleChange(value)}
+          inputRef={wrapperRef}
+          autoComplete="off"
+          placeholder={placeholder}
+          autoFocus={autoFocus}
+          value={value}
+          unmask
+        />
+      </StyledIMaskInput>
     </StyledContainer>
   );
 };

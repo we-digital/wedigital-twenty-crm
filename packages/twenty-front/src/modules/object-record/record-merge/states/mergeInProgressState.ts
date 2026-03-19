@@ -1,6 +1,6 @@
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const isMergeInProgressState = createState<boolean>({
+export const isMergeInProgressState = createAtomState<boolean>({
   key: 'isMergeInProgress',
   defaultValue: false,
 });

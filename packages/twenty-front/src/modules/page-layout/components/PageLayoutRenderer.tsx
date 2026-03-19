@@ -1,11 +1,11 @@
+import { PageLayoutEditModeProvider } from '@/page-layout/components/PageLayoutEditModeProvider';
 import { PageLayoutInitializationQueryEffect } from '@/page-layout/components/PageLayoutInitializationQueryEffect';
+import { PageLayoutRecordPageCustomizationSessionRegistrationEffect } from '@/page-layout/components/PageLayoutRecordPageCustomizationSessionRegistrationEffect';
 import { PageLayoutRelationWidgetsSyncEffect } from '@/page-layout/components/PageLayoutRelationWidgetsSyncEffect';
 import { PageLayoutRendererContent } from '@/page-layout/components/PageLayoutRendererContent';
-import { useSetIsPageLayoutInEditMode } from '@/page-layout/hooks/useSetIsPageLayoutInEditMode';
 import { PageLayoutComponentInstanceContext } from '@/page-layout/states/contexts/PageLayoutComponentInstanceContext';
-import { type PageLayout } from '@/page-layout/types/PageLayout';
-import { getTabListInstanceIdFromPageLayoutId } from '@/page-layout/utils/getTabListInstanceIdFromPageLayoutId';
-import { isPageLayoutEmpty } from '@/page-layout/utils/isPageLayoutEmpty';
+import { getTabListInstanceIdFromPageLayoutAndRecord } from '@/page-layout/utils/getTabListInstanceIdFromPageLayoutAndRecord';
+import { useLayoutRenderingContext } from '@/ui/layout/contexts/LayoutRenderingContext';
 import { TabListComponentInstanceContext } from '@/ui/layout/tab-list/states/contexts/TabListComponentInstanceContext';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -17,16 +17,13 @@ type PageLayoutRendererProps = {
 export const PageLayoutRenderer = ({
   pageLayoutId,
 }: PageLayoutRendererProps) => {
-  const { setIsPageLayoutInEditMode } =
-    useSetIsPageLayoutInEditMode(pageLayoutId);
+  const { targetRecordIdentifier, layoutType } = useLayoutRenderingContext();
 
-  const onInitialized = (pageLayout: PageLayout) => {
-    if (isPageLayoutEmpty(pageLayout)) {
-      setIsPageLayoutInEditMode(true);
-    } else {
-      setIsPageLayoutInEditMode(false);
-    }
-  };
+  const tabListInstanceId = getTabListInstanceIdFromPageLayoutAndRecord({
+    pageLayoutId,
+    layoutType,
+    targetRecordIdentifier,
+  });
 
   return (
     <PageLayoutComponentInstanceContext.Provider
@@ -36,15 +33,18 @@ export const PageLayoutRenderer = ({
     >
       <TabListComponentInstanceContext.Provider
         value={{
-          instanceId: getTabListInstanceIdFromPageLayoutId(pageLayoutId),
+          instanceId: tabListInstanceId,
         }}
       >
-        <PageLayoutInitializationQueryEffect
+        <PageLayoutEditModeProvider
+          layoutType={layoutType}
           pageLayoutId={pageLayoutId}
-          onInitialized={onInitialized}
-        />
-        <PageLayoutRelationWidgetsSyncEffect pageLayoutId={pageLayoutId} />
-        <PageLayoutRendererContent />
+        >
+          <PageLayoutInitializationQueryEffect pageLayoutId={pageLayoutId} />
+          <PageLayoutRecordPageCustomizationSessionRegistrationEffect />
+          <PageLayoutRelationWidgetsSyncEffect pageLayoutId={pageLayoutId} />
+          <PageLayoutRendererContent />
+        </PageLayoutEditModeProvider>
       </TabListComponentInstanceContext.Provider>
     </PageLayoutComponentInstanceContext.Provider>
   );

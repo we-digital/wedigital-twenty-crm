@@ -40,10 +40,10 @@ export const COMPOSITE_FIELD_SUB_FIELD_LABELS: {
   [FieldMetadataType.ACTOR]: {
     source: 'Source',
     name: 'Name',
-    workspaceMemberId: 'Workspace Member ID',
+    workspaceMemberId: 'Workspace Member',
     context: 'Context',
   },
-  [FieldMetadataType.RICH_TEXT_V2]: {
+  [FieldMetadataType.RICH_TEXT]: {
     blocknote: 'BlockNote',
     markdown: 'Markdown',
   },

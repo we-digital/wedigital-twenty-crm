@@ -1,6 +1,6 @@
 import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
 import { type RecordField } from '@/object-record/record-field/types/RecordField';
-import { type ObjectPermission } from '~/generated/graphql';
+import { type ObjectPermission } from '~/generated-metadata/graphql';
 import { createRequiredContext } from '~/utils/createRequiredContext';
 
 type RecordTableContextValue = {
@@ -8,6 +8,7 @@ type RecordTableContextValue = {
   viewBarId: string;
   objectNameSingular: string;
   objectMetadataItem: ObjectMetadataItem;
+  objectMetadataItems: ObjectMetadataItem[];
   objectPermissions: ObjectPermission;
   visibleRecordFields: RecordField[];
   onRecordIdentifierClick?: (rowIndex: number, recordId: string) => void;

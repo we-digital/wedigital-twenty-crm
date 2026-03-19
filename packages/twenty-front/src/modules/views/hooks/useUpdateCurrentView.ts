@@ -1,35 +1,36 @@
-import { useRecoilCallback, useSetRecoilState } from 'recoil';
+import { useStore } from 'jotai';
+import { useSetAtomState } from '@/ui/utilities/state/jotai/hooks/useSetAtomState';
 
 import { useContextStoreObjectMetadataItemOrThrow } from '@/context-store/hooks/useContextStoreObjectMetadataItemOrThrow';
 import { contextStoreCurrentViewIdComponentState } from '@/context-store/states/contextStoreCurrentViewIdComponentState';
 import { useLoadRecordIndexStates } from '@/object-record/record-index/hooks/useLoadRecordIndexStates';
 import { recordIndexViewTypeState } from '@/object-record/record-index/states/recordIndexViewTypeState';
-import { useRecoilComponentCallbackState } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentCallbackState';
+import { useAtomComponentStateCallbackState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateCallbackState';
 import { useCanPersistViewChanges } from '@/views/hooks/useCanPersistViewChanges';
-import { useRefreshCoreViewsByObjectMetadataId } from '@/views/hooks/useRefreshCoreViewsByObjectMetadataId';
-import { coreViewFromViewIdFamilySelector } from '@/views/states/selectors/coreViewFromViewIdFamilySelector';
+import { viewFromViewIdFamilySelector } from '@/views/states/selectors/viewFromViewIdFamilySelector';
 import { type GraphQLView } from '@/views/types/GraphQLView';
 import { type View } from '@/views/types/View';
 import { type ViewGroup } from '@/views/types/ViewGroup';
 import { type ViewType } from '@/views/types/ViewType';
-import { convertUpdateViewInputToCore } from '@/views/utils/convertUpdateViewInputToCore';
-import { useMemo } from 'react';
+import { convertUpdateViewInputToGql } from '@/views/utils/convertUpdateViewInputToGql';
+import { useCallback, useMemo } from 'react';
 import { isDefined } from 'twenty-shared/utils';
 import { v4 } from 'uuid';
-import { useUpdateCoreViewMutation } from '~/generated-metadata/graphql';
+import { useMutation } from '@apollo/client/react';
+import { UpdateViewDocument } from '~/generated-metadata/graphql';
 
 export const useUpdateCurrentView = () => {
   const { canPersistChanges } = useCanPersistViewChanges();
-  const currentViewIdCallbackState = useRecoilComponentCallbackState(
+  const currentViewIdCallbackState = useAtomComponentStateCallbackState(
     contextStoreCurrentViewIdComponentState,
   );
   const { objectMetadataItem } = useContextStoreObjectMetadataItemOrThrow();
   const { loadRecordIndexStates } = useLoadRecordIndexStates();
-  const setRecordIndexViewType = useSetRecoilState(recordIndexViewTypeState);
+  const setRecordIndexViewType = useSetAtomState(recordIndexViewTypeState);
 
-  const [updateOneCoreView] = useUpdateCoreViewMutation();
-  const { refreshCoreViewsByObjectMetadataId } =
-    useRefreshCoreViewsByObjectMetadataId();
+  const store = useStore();
+
+  const [updateOneView] = useMutation(UpdateViewDocument);
 
   const getViewGroupsToCreateAtViewUpdate = useMemo(() => {
     return ({
@@ -52,12 +53,14 @@ export const useUpdateCurrentView = () => {
         if (newMainGroupByFieldMetadataId !== null) {
           viewGroupsToCreate =
             objectMetadataItem.fields
-              ?.find((field) => field.id === newMainGroupByFieldMetadataId)
+              ?.find(
+                (field: { id: string }) =>
+                  field.id === newMainGroupByFieldMetadataId,
+              )
               ?.options?.map(
-                (option, index) =>
+                (option: { value: string }, index: number) =>
                   ({
                     id: v4(),
-                    __typename: 'ViewGroup',
                     fieldValue: option.value,
                     isVisible: true,
                     position: index,
@@ -66,11 +69,11 @@ export const useUpdateCurrentView = () => {
 
           if (
             objectMetadataItem.fields.find(
-              (field) => field.id === newMainGroupByFieldMetadataId,
+              (field: { id: string }) =>
+                field.id === newMainGroupByFieldMetadataId,
             )?.isNullable === true
           ) {
             viewGroupsToCreate.push({
-              __typename: 'ViewGroup',
               id: v4(),
               fieldValue: '',
               position: viewGroupsToCreate.length,
@@ -84,77 +87,68 @@ export const useUpdateCurrentView = () => {
     };
   }, [objectMetadataItem.fields]);
 
-  const updateCurrentView = useRecoilCallback(
-    ({ snapshot }) =>
-      async (view: Partial<GraphQLView> & { type?: ViewType }) => {
-        if (!canPersistChanges) {
-          return;
-        }
+  const updateCurrentView = useCallback(
+    async (view: Partial<GraphQLView> & { type?: ViewType }) => {
+      if (!canPersistChanges) {
+        return;
+      }
 
-        const currentViewId = snapshot
-          .getLoadable(currentViewIdCallbackState)
-          .getValue();
+      const currentViewId = store.get(currentViewIdCallbackState);
 
-        const currentView = snapshot
-          .getLoadable(
-            coreViewFromViewIdFamilySelector({
-              viewId: currentViewId ?? '',
-            }),
-          )
-          .getValue();
+      const currentView = store.get(
+        viewFromViewIdFamilySelector.selectorFamily({
+          viewId: currentViewId ?? '',
+        }),
+      );
 
-        if (!isDefined(currentView)) {
-          return;
-        }
+      if (!isDefined(currentView)) {
+        return;
+      }
 
-        if (isDefined(currentViewId)) {
-          const input = convertUpdateViewInputToCore(view);
+      if (isDefined(currentViewId)) {
+        const input = convertUpdateViewInputToGql(view);
 
-          await updateOneCoreView({
-            variables: {
-              id: currentViewId,
-              input,
-            },
+        await updateOneView({
+          variables: {
+            id: currentViewId,
+            input,
+          },
+        });
+
+        if (
+          input.mainGroupByFieldMetadataId !== undefined &&
+          currentView.mainGroupByFieldMetadataId !==
+            input.mainGroupByFieldMetadataId
+        ) {
+          const { viewGroupsToCreate } = getViewGroupsToCreateAtViewUpdate({
+            existingView: currentView,
+            newMainGroupByFieldMetadataId: input.mainGroupByFieldMetadataId,
           });
 
-          if (
-            input.mainGroupByFieldMetadataId !== undefined &&
-            currentView.mainGroupByFieldMetadataId !==
-              input.mainGroupByFieldMetadataId
-          ) {
-            const { viewGroupsToCreate } = getViewGroupsToCreateAtViewUpdate({
-              existingView: currentView,
-              newMainGroupByFieldMetadataId: input.mainGroupByFieldMetadataId,
-            });
-
-            loadRecordIndexStates(
-              {
-                ...currentView,
-                mainGroupByFieldMetadataId: input.mainGroupByFieldMetadataId,
-                viewGroups: viewGroupsToCreate ?? [],
-              },
-              objectMetadataItem,
-            );
-          }
-
-          if (isDefined(view.type)) {
-            setRecordIndexViewType(view.type);
-          }
-
-          await refreshCoreViewsByObjectMetadataId(
-            currentView.objectMetadataId,
+          loadRecordIndexStates(
+            {
+              ...currentView,
+              mainGroupByFieldMetadataId: input.mainGroupByFieldMetadataId,
+              viewGroups: viewGroupsToCreate ?? [],
+            },
+            objectMetadataItem,
           );
         }
-      },
+
+        if (isDefined(view.type)) {
+          setRecordIndexViewType(view.type);
+        }
+      }
+    },
     [
       canPersistChanges,
       currentViewIdCallbackState,
       getViewGroupsToCreateAtViewUpdate,
       loadRecordIndexStates,
       objectMetadataItem,
-      refreshCoreViewsByObjectMetadataId,
       setRecordIndexViewType,
-      updateOneCoreView,
+      store,
+      updateOneView,
     ],
   );
 

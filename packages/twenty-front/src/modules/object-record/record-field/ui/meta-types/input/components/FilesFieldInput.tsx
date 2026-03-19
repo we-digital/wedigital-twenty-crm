@@ -12,10 +12,11 @@ import { type FieldFilesValue } from '@/object-record/record-field/ui/types/Fiel
 import { filesSchema } from '@/object-record/record-field/ui/types/guards/isFieldFilesValue';
 import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
 import { filePreviewState } from '@/ui/field/display/states/filePreviewState';
-import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { useSetAtomState } from '@/ui/utilities/state/jotai/hooks/useSetAtomState';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
 import { useLingui } from '@lingui/react/macro';
 import { useCallback, useContext, useMemo, useState } from 'react';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { MULTI_ITEM_FIELD_DEFAULT_MAX_VALUES } from 'twenty-shared/constants';
 import { isDefined } from 'twenty-shared/utils';
 import { FieldMetadataType } from '~/generated-metadata/graphql';
@@ -27,8 +28,8 @@ export const FilesFieldInput = () => {
   const { t } = useLingui();
   const [isUploading, setIsUploading] = useState(false);
   const { enqueueErrorSnackBar } = useSnackBar();
-  const setFilePreview = useSetRecoilState(filePreviewState);
-  const isAttachmentPreviewEnabled = useRecoilValue(
+  const setFilePreview = useSetAtomState(filePreviewState);
+  const isAttachmentPreviewEnabled = useAtomStateValue(
     isAttachmentPreviewEnabledState,
   );
 
@@ -121,12 +122,12 @@ export const FilesFieldInput = () => {
     fieldDefinition,
   ]);
 
-  const setIsFieldInError = useSetRecoilComponentState(
+  const setRecordFieldInputIsFieldInError = useSetAtomComponentState(
     recordFieldInputIsFieldInErrorComponentState,
   );
 
   const handleError = (hasError: boolean, values: FieldFilesValue[]) => {
-    setIsFieldInError(hasError && values.length === 0);
+    setRecordFieldInputIsFieldInError(hasError && values.length === 0);
   };
 
   const handleClickOutside = (

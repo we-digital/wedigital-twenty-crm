@@ -1,10 +1,10 @@
-import { useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
 
 import { triggerUpdateRecordOptimisticEffect } from '@/apollo/optimistic-effect/utils/triggerUpdateRecordOptimisticEffect';
 import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
-import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
+import { CoreObjectNameSingular } from 'twenty-shared/types';
 import { getRecordFromCache } from '@/object-record/cache/utils/getRecordFromCache';
 import { modifyRecordFromCache } from '@/object-record/cache/utils/modifyRecordFromCache';
 import { useObjectPermissions } from '@/object-record/hooks/useObjectPermissions';
@@ -64,15 +64,18 @@ export const useActivateWorkflowVersion = () => {
           },
         });
 
-        const cacheSnapshot = apolloCoreClient.cache.extract();
+        const cacheSnapshot = apolloCoreClient.cache.extract() as Record<
+          string,
+          Record<string, unknown>
+        >;
 
-        const allWorkflowVersions: Array<WorkflowVersion> = Object.values(
-          cacheSnapshot,
+        const allWorkflowVersions = (
+          Object.values(cacheSnapshot) as Array<Record<string, unknown>>
         ).filter(
           (item) =>
             item.__typename === 'WorkflowVersion' &&
             item.workflowId === workflowId,
-        );
+        ) as Array<WorkflowVersion>;
 
         const previousActiveWorkflowVersions = allWorkflowVersions.filter(
           (version) =>

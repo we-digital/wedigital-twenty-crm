@@ -1,18 +1,12 @@
-import { createState } from 'twenty-ui/utilities';
-import { type AuthTokenPair } from '~/generated/graphql';
-import { cookieStorageEffect } from '~/utils/recoil/cookieStorageEffect';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
+import { type AuthTokenPair } from '~/generated-metadata/graphql';
 
-export const tokenPairState = createState<AuthTokenPair | null>({
+export const tokenPairState = createAtomState<AuthTokenPair | null>({
   key: 'tokenPairState',
   defaultValue: null,
-  effects: [
-    cookieStorageEffect(
-      'tokenPair',
-      {},
-      {
-        validateInitFn: (payload: AuthTokenPair) =>
-          Boolean(payload['accessOrWorkspaceAgnosticToken']),
-      },
-    ),
-  ],
+  useCookieStorage: {
+    cookieKey: 'tokenPair',
+    validateInitFn: (payload: AuthTokenPair) =>
+      Boolean(payload['accessOrWorkspaceAgnosticToken']),
+  },
 });

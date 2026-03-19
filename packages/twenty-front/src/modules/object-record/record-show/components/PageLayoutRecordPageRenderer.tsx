@@ -1,19 +1,20 @@
-import { RecordShowRightDrawerActionMenu } from '@/action-menu/components/RecordShowRightDrawerActionMenu';
-import { RecordShowRightDrawerOpenRecordButton } from '@/action-menu/components/RecordShowRightDrawerOpenRecordButton';
+import { RecordPageSidePanelCommandMenu } from '@/command-menu-item/components/RecordPageSidePanelCommandMenu';
+import { RecordShowSidePanelOpenRecordButton } from '@/command-menu-item/components/RecordShowSidePanelOpenRecordButton';
 import { InformationBannerDeletedRecord } from '@/information-banner/components/deleted-record/InformationBannerDeletedRecord';
-import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
+import { CoreObjectNameSingular } from 'twenty-shared/types';
 import { RecordShowContainerContextStoreTargetedRecordsEffect } from '@/object-record/record-show/components/RecordShowContainerContextStoreTargetedRecordsEffect';
 import { RecordShowEffect } from '@/object-record/record-show/components/RecordShowEffect';
 import { recordStoreFamilySelector } from '@/object-record/record-store/states/selectors/recordStoreFamilySelector';
 import { PageLayoutRenderer } from '@/page-layout/components/PageLayoutRenderer';
-import { useRecordPageLayoutId } from '@/page-layout/hooks/useRecordPageLayoutId';
+import { usePageLayoutIdForRecord } from '@/page-layout/hooks/usePageLayoutIdForRecord';
 import { LayoutRenderingProvider } from '@/ui/layout/contexts/LayoutRenderingContext';
 import { type TargetRecordIdentifier } from '@/ui/layout/contexts/TargetRecordIdentifier';
-import { RightDrawerFooter } from '@/ui/layout/right-drawer/components/RightDrawerFooter';
-import styled from '@emotion/styled';
-import { useRecoilValue } from 'recoil';
+import { SidePanelFooter } from '@/ui/layout/side-panel/components/SidePanelFooter';
+import { styled } from '@linaria/react';
+import { useAtomFamilySelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilySelectorValue';
 import { isDefined } from 'twenty-shared/utils';
-import { PageLayoutType } from '~/generated/graphql';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
+import { PageLayoutType } from '~/generated-metadata/graphql';
 
 const StyledShowPageBannerContainer = styled.div`
   z-index: 1;
@@ -24,33 +25,32 @@ const StyledShowPageRightContainer = styled.div`
   flex-direction: column;
   height: 100%;
   justify-content: start;
-  width: 100%;
   overflow: auto;
+  width: 100%;
 `;
 
-const StyledContentContainer = styled.div<{ isInRightDrawer: boolean }>`
+const StyledContentContainer = styled.div<{ isInSidePanel: boolean }>`
+  background: ${themeCssVariables.background.primary};
   flex: 1;
   overflow-y: auto;
-  background: ${({ theme }) => theme.background.primary};
-  padding-bottom: ${({ theme, isInRightDrawer }) =>
-    isInRightDrawer ? theme.spacing(16) : 0};
 `;
 
 export const PageLayoutRecordPageRenderer = ({
   targetRecordIdentifier,
-  isInRightDrawer,
+  isInSidePanel,
 }: {
   targetRecordIdentifier: TargetRecordIdentifier;
-  isInRightDrawer: boolean;
+  isInSidePanel: boolean;
 }) => {
-  const recordDeletedAt = useRecoilValue<string | null>(
-    recordStoreFamilySelector({
+  const recordDeletedAt = useAtomFamilySelectorValue(
+    recordStoreFamilySelector,
+    {
       recordId: targetRecordIdentifier.id,
       fieldName: 'deletedAt',
-    }),
-  );
+    },
+  ) as string | null;
 
-  const { pageLayoutId } = useRecordPageLayoutId({
+  const { pageLayoutId } = usePageLayoutIdForRecord({
     id: targetRecordIdentifier.id,
     targetObjectNameSingular: targetRecordIdentifier.targetObjectNameSingular,
   });
@@ -76,7 +76,7 @@ export const PageLayoutRecordPageRenderer = ({
       )}
 
       <StyledShowPageRightContainer>
-        <StyledContentContainer isInRightDrawer={isInRightDrawer}>
+        <StyledContentContainer isInSidePanel={isInSidePanel}>
           <LayoutRenderingProvider
             value={{
               targetRecordIdentifier: {
@@ -89,7 +89,7 @@ export const PageLayoutRecordPageRenderer = ({
                 CoreObjectNameSingular.Dashboard
                   ? PageLayoutType.DASHBOARD
                   : PageLayoutType.RECORD_PAGE,
-              isInRightDrawer,
+              isInSidePanel,
             }}
           >
             {isDefined(pageLayoutId) && (
@@ -98,11 +98,11 @@ export const PageLayoutRecordPageRenderer = ({
           </LayoutRenderingProvider>
         </StyledContentContainer>
 
-        {isInRightDrawer && (
-          <RightDrawerFooter
+        {isInSidePanel && (
+          <SidePanelFooter
             actions={[
-              <RecordShowRightDrawerActionMenu />,
-              <RecordShowRightDrawerOpenRecordButton
+              <RecordPageSidePanelCommandMenu />,
+              <RecordShowSidePanelOpenRecordButton
                 objectNameSingular={
                   targetRecordIdentifier.targetObjectNameSingular
                 }

@@ -15,14 +15,15 @@ import { RecordFieldComponentInstanceContext } from '@/object-record/record-fiel
 import { useRecordIndexContextOrThrow } from '@/object-record/record-index/contexts/RecordIndexContext';
 import { RecordInlineCell } from '@/object-record/record-inline-cell/components/RecordInlineCell';
 import { getRecordFieldInputInstanceId } from '@/object-record/utils/getRecordFieldInputId';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
-import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
+import { useAtomComponentSelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentSelectorValue';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
 import { useContext } from 'react';
 
 export const RecordBoardCardBody = () => {
   const { recordId, isRecordReadOnly } = useContext(RecordBoardCardContext);
 
-  const { updateOneRecord, objectPermissions } = useContext(RecordBoardContext);
+  const { updateOneRecord, objectPermissions, objectMetadataItem } =
+    useContext(RecordBoardContext);
 
   const {
     labelIdentifierFieldMetadataItem,
@@ -40,7 +41,7 @@ export const RecordBoardCardBody = () => {
     return [updateEntity, { loading: false }];
   };
 
-  const visibleRecordFields = useRecoilComponentValue(
+  const visibleRecordFields = useAtomComponentSelectorValue(
     visibleRecordFieldsComponentSelector,
   );
 
@@ -49,7 +50,7 @@ export const RecordBoardCardBody = () => {
       recordField.fieldMetadataItemId !== labelIdentifierFieldMetadataItem?.id,
   );
 
-  const setRecordBoardCardHoverPosition = useSetRecoilComponentState(
+  const setRecordBoardCardHoverPosition = useSetAtomComponentState(
     recordBoardCardHoverPositionComponentState,
   );
 
@@ -72,12 +73,15 @@ export const RecordBoardCardBody = () => {
                 isLabelIdentifier: false,
                 isRecordFieldReadOnly: isRecordFieldReadOnly({
                   isRecordReadOnly,
+                  isSystemObject: objectMetadataItem.isSystem,
                   objectPermissions,
                   fieldMetadataItem: {
                     id: recordField.fieldMetadataItemId,
                     isUIReadOnly:
                       correspondingFieldDefinition.metadata.isUIReadOnly ??
                       false,
+                    isCustom:
+                      correspondingFieldDefinition.metadata.isCustom ?? false,
                   },
                 }),
                 fieldDefinition: correspondingFieldDefinition,

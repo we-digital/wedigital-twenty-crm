@@ -1,14 +1,15 @@
+import { useMutation } from '@apollo/client/react';
+import {
+  type MessageChannelVisibility,
+  type CalendarChannelVisibility,
+} from '~/generated/graphql';
 import { useCallback } from 'react';
 import { type AppPath, ConnectedAccountProvider } from 'twenty-shared/types';
 
 import { useRedirect } from '@/domain-manager/hooks/useRedirect';
 import { CustomError } from 'twenty-shared/utils';
 import { REACT_APP_SERVER_BASE_URL } from '~/config';
-import {
-  type CalendarChannelVisibility,
-  type MessageChannelVisibility,
-  useGenerateTransientTokenMutation,
-} from '~/generated-metadata/graphql';
+import { GenerateTransientTokenDocument } from '~/generated-metadata/graphql';
 
 const getProviderUrl = (provider: ConnectedAccountProvider) => {
   switch (provider) {
@@ -25,7 +26,7 @@ const getProviderUrl = (provider: ConnectedAccountProvider) => {
 };
 
 export const useTriggerApisOAuth = () => {
-  const [generateTransientToken] = useGenerateTransientTokenMutation();
+  const [generateTransientToken] = useMutation(GenerateTransientTokenDocument);
   const { redirect } = useRedirect();
 
   const triggerApisOAuth = useCallback(

@@ -28,6 +28,8 @@ npx jest path/to/test.test.ts --config=packages/PROJECT/jest.config.mjs
 npx nx test twenty-front      # Frontend unit tests
 npx nx test twenty-server     # Backend unit tests
 npx nx run twenty-server:test:integration:with-db-reset  # Integration tests with DB reset
+# To run an indivual test or a pattern of tests, use the following command:
+cd packages/{workspace} && npx jest "pattern or filename"
 
 # Storybook
 npx nx storybook:build twenty-front
@@ -88,7 +90,7 @@ npx nx run twenty-front:graphql:generate --configuration=metadata
 ## Architecture Overview
 
 ### Tech Stack
-- **Frontend**: React 18, TypeScript, Recoil (state management), Emotion (styling), Vite
+- **Frontend**: React 18, TypeScript, Jotai (state management), Linaria (styling), Vite
 - **Backend**: NestJS, TypeORM, PostgreSQL, Redis, GraphQL (with GraphQL Yoga)
 - **Monorepo**: Nx workspace managed with Yarn 4
 
@@ -136,7 +138,7 @@ packages/
 - Multi-line comments use multiple `//` lines, not `/** */`
 
 ### State Management
-- **Recoil** for global state: atoms for primitive state, selectors for derived state, atom families for dynamic collections
+- **Jotai** for global state: atoms for primitive state, selectors for derived state, atom families for dynamic collections
 - Component-specific state with React hooks (`useState`, `useReducer` for complex logic)
 - GraphQL cache managed by Apollo Client
 - Use functional state updates: `setState(prev => prev + 1)`
@@ -173,7 +175,7 @@ IMPORTANT: Use Context7 for code generation, setup or configuration steps, or li
 5. Run `graphql:generate` after any GraphQL schema changes
 
 ### Code Style Notes
-- Use **Emotion** for styling with styled-components pattern
+- Use **Linaria** for styling with zero-runtime CSS-in-JS (styled-components pattern)
 - Follow **Nx** workspace conventions for imports
 - Use **Lingui** for internationalization
 - Apply security first, then formatting (sanitize before format)
@@ -186,13 +188,22 @@ IMPORTANT: Use Context7 for code generation, setup or configuration steps, or li
 - Descriptive test names: "should [behavior] when [condition]"
 - Clear mocks between tests with `jest.clearAllMocks()`
 
-## CI Environment (GitHub Actions)
+## Dev Environment Setup
 
-When running in CI, the dev environment is **not** pre-configured. Dependencies are installed but builds, env files, and databases are not set up.
+All dev environments (Claude Code web, Cursor, local) use one script:
 
-- **Before running tests, builds, lint, type checks, or DB operations**, run: `bash packages/twenty-utils/setup-dev-env.sh`
+```bash
+bash packages/twenty-utils/setup-dev-env.sh
+```
+
+This handles everything: starts Postgres + Redis (auto-detects local services vs Docker), creates databases, and copies `.env` files. Idempotent — safe to run multiple times.
+
+- `--docker` — force Docker mode (uses `packages/twenty-docker/docker-compose.dev.yml`)
+- `--down` — stop services
+- `--reset` — wipe data and restart fresh
 - **Skip the setup script** for tasks that only read code — architecture questions, code review, documentation, etc.
-- The script is idempotent and safe to run multiple times.
+
+**Note:** CI workflows (GitHub Actions) manage services via Actions service containers and run setup steps individually — they don't use this script.
 
 ## Important Files
 - `nx.json` - Nx workspace configuration with task definitions

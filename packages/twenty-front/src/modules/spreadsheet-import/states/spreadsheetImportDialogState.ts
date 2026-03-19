@@ -1,5 +1,5 @@
-import { createState } from 'twenty-ui/utilities';
 import { type SpreadsheetImportDialogOptions } from '@/spreadsheet-import/types';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
 export type SpreadsheetImportDialogState = {
   isOpen: boolean;
@@ -8,7 +8,7 @@ export type SpreadsheetImportDialogState = {
 };
 
 export const spreadsheetImportDialogState =
-  createState<SpreadsheetImportDialogState>({
+  createAtomState<SpreadsheetImportDialogState>({
     key: 'spreadsheetImportDialogState',
     defaultValue: {
       isOpen: false,

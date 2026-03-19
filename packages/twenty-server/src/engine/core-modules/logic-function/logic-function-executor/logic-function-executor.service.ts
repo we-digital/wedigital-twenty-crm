@@ -1,34 +1,34 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 import {
   DEFAULT_API_KEY_NAME,
   DEFAULT_API_URL_NAME,
+  DEFAULT_APP_ACCESS_TOKEN_NAME,
 } from 'twenty-shared/application';
 import { isDefined } from 'twenty-shared/utils';
 
 import {
-  LogicFunctionDriver,
   type LogicFunctionExecuteResult,
+  type LogicFunctionTranspileParams,
+  type LogicFunctionTranspileResult,
 } from 'src/engine/core-modules/logic-function/logic-function-drivers/interfaces/logic-function-driver.interface';
 
+import { FlatApplication } from 'src/engine/core-modules/application/types/flat-application.type';
+import type { FlatApplicationVariable } from 'src/engine/core-modules/application/application-variable/types/flat-application-variable.type';
 import { AuditService } from 'src/engine/core-modules/audit/services/audit.service';
 import { LOGIC_FUNCTION_EXECUTED_EVENT } from 'src/engine/core-modules/audit/utils/events/workspace-event/logic-function/logic-function-executed';
 import { ApplicationTokenService } from 'src/engine/core-modules/auth/token/services/application-token.service';
+import { LogicFunctionDriverFactory } from 'src/engine/core-modules/logic-function/logic-function-drivers/logic-function-driver.factory';
 import { buildEnvVar } from 'src/engine/core-modules/logic-function/logic-function-executor/utils/build-env-var';
-import { LOGIC_FUNCTION_DRIVER } from 'src/engine/core-modules/logic-function/logic-function-drivers/constants/logic-function-driver.constants';
 import { SecretEncryptionService } from 'src/engine/core-modules/secret-encryption/secret-encryption.service';
 import { ThrottlerService } from 'src/engine/core-modules/throttler/throttler.service';
 import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
 import { findFlatEntityByIdInFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-id-in-flat-entity-maps.util';
+import { FlatLogicFunction } from 'src/engine/metadata-modules/logic-function/types/flat-logic-function.type';
 import { SubscriptionChannel } from 'src/engine/subscriptions/enums/subscription-channel.enum';
 import { SubscriptionService } from 'src/engine/subscriptions/subscription.service';
 import { WorkspaceCacheService } from 'src/engine/workspace-cache/services/workspace-cache.service';
 import { cleanServerUrl } from 'src/utils/clean-server-url';
-import type { FlatApplicationVariable } from 'src/engine/core-modules/applicationVariable/types/flat-application-variable.type';
-import { FlatLogicFunction } from 'src/engine/metadata-modules/logic-function/types/flat-logic-function.type';
-import { FlatApplication } from 'src/engine/core-modules/application/types/flat-application.type';
-
-const MIN_TOKEN_EXPIRATION_IN_SECONDS = 5;
 
 export class LogicFunctionExecutionException extends Error {
   constructor(
@@ -48,8 +48,7 @@ export enum LogicFunctionExecutionExceptionCode {
 @Injectable()
 export class LogicFunctionExecutorService {
   constructor(
-    @Inject(LOGIC_FUNCTION_DRIVER)
-    private driver: LogicFunctionDriver,
+    private readonly logicFunctionDriverFactory: LogicFunctionDriverFactory,
     private readonly throttlerService: ThrottlerService,
     private readonly twentyConfigService: TwentyConfigService,
     private readonly workspaceCacheService: WorkspaceCacheService,
@@ -80,19 +79,18 @@ export class LogicFunctionExecutorService {
       workspaceId,
       flatApplication,
       flatApplicationVariables,
-      flatLogicFunction,
+      _flatLogicFunction: flatLogicFunction,
     });
 
-    const resultLogicFunction = await this.callWithTimeout({
-      callback: () =>
-        this.driver.execute({
-          flatLogicFunction,
-          flatApplication,
-          applicationUniversalIdentifier: flatApplication.universalIdentifier,
-          payload,
-          env: envVariables,
-        }),
-      timeoutMs: flatLogicFunction.timeoutSeconds * 1000,
+    const driver = this.logicFunctionDriverFactory.getCurrentDriver();
+
+    const resultLogicFunction = await driver.execute({
+      flatLogicFunction,
+      flatApplication,
+      applicationUniversalIdentifier: flatApplication.universalIdentifier,
+      payload,
+      env: envVariables,
+      timeoutMs: flatLogicFunction.timeoutSeconds * 1_000,
     });
 
     await this.handleExecutionResult({
@@ -103,6 +101,14 @@ export class LogicFunctionExecutorService {
     });
 
     return resultLogicFunction;
+  }
+
+  async transpile(
+    params: LogicFunctionTranspileParams,
+  ): Promise<LogicFunctionTranspileResult> {
+    const driver = this.logicFunctionDriverFactory.getCurrentDriver();
+
+    return driver.transpile(params);
   }
 
   private async throttleExecution(workspaceId: string) {
@@ -119,21 +125,6 @@ export class LogicFunctionExecutorService {
         LogicFunctionExecutionExceptionCode.RATE_LIMIT_EXCEEDED,
       );
     }
-  }
-
-  private async callWithTimeout<T>({
-    callback,
-    timeoutMs,
-  }: {
-    callback: () => Promise<T>;
-    timeoutMs: number;
-  }): Promise<T> {
-    return Promise.race([
-      callback(),
-      new Promise<T>((_, reject) =>
-        setTimeout(() => reject(new Error('Execution timed out')), timeoutMs),
-      ),
-    ]);
   }
 
   private async getFlatEntitiesOrThrow({
@@ -188,29 +179,27 @@ export class LogicFunctionExecutorService {
   private async getExecutionEnvVariables({
     workspaceId,
     flatApplication,
-    flatLogicFunction,
+    _flatLogicFunction,
     flatApplicationVariables,
   }: {
     workspaceId: string;
     flatApplication: FlatApplication;
-    flatLogicFunction: FlatLogicFunction;
+    _flatLogicFunction: FlatLogicFunction;
     flatApplicationVariables: FlatApplicationVariable[];
   }) {
     const applicationAccessToken =
-      await this.applicationTokenService.generateApplicationToken({
+      await this.applicationTokenService.generateApplicationAccessToken({
         workspaceId,
         applicationId: flatApplication.id,
-        expiresInSeconds: Math.max(
-          flatLogicFunction.timeoutSeconds,
-          MIN_TOKEN_EXPIRATION_IN_SECONDS,
-        ),
       });
 
     const baseUrl = cleanServerUrl(this.twentyConfigService.get('SERVER_URL'));
 
     return {
       [DEFAULT_API_URL_NAME]: baseUrl ?? '',
+      [DEFAULT_APP_ACCESS_TOKEN_NAME]: applicationAccessToken.token,
       [DEFAULT_API_KEY_NAME]: applicationAccessToken.token,
+      APPLICATION_ID: flatApplication.id,
       ...buildEnvVar(flatApplicationVariables, this.secretEncryptionService),
     };
   }
@@ -227,7 +216,7 @@ export class LogicFunctionExecutorService {
     flatApplication: FlatApplication;
   }) {
     if (this.twentyConfigService.get('LOGIC_FUNCTION_LOGS_ENABLED')) {
-      /* eslint-disable no-console */
+      /* oxlint-disable no-console */
       console.log(result.logs);
     }
 

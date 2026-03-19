@@ -27,6 +27,7 @@ export enum AppTokenType {
   PasswordResetToken = 'PASSWORD_RESET_TOKEN',
   InvitationToken = 'INVITATION_TOKEN',
   EmailVerificationToken = 'EMAIL_VERIFICATION_TOKEN',
+  EnterpriseValidityToken = 'ENTERPRISE_VALIDITY_TOKEN',
 }
 
 @Entity({ name: 'appToken', schema: 'core' })
@@ -89,5 +90,12 @@ export class AppTokenEntity {
   }
 
   @Column({ nullable: true, type: 'jsonb' })
-  context: { email: string } | null;
+  context: {
+    email?: string;
+    roleId?: string;
+    redirectUri?: string;
+    clientId?: string;
+    codeChallenge?: string;
+    scope?: string;
+  } | null;
 }

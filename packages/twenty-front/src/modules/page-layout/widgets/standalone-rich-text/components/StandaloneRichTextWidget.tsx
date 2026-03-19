@@ -2,33 +2,34 @@ import { useRef } from 'react';
 
 import { type Attachment } from '@/activities/files/types/Attachment';
 import { getActivityTargetObjectFieldIdName } from '@/activities/utils/getActivityTargetObjectFieldIdName';
-import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
+import { CoreObjectNameSingular } from 'twenty-shared/types';
 import { useFindManyRecords } from '@/object-record/hooks/useFindManyRecords';
-import { isPageLayoutInEditModeComponentState } from '@/page-layout/states/isPageLayoutInEditModeComponentState';
+import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
 import { pageLayoutEditingWidgetIdComponentState } from '@/page-layout/states/pageLayoutEditingWidgetIdComponentState';
 import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
 import { StandaloneRichTextEditorContent } from '@/page-layout/widgets/standalone-rich-text/components/StandaloneRichTextEditorContent';
 import { useLayoutRenderingContext } from '@/ui/layout/contexts/LayoutRenderingContext';
 import { ScrollWrapper } from '@/ui/utilities/scroll/components/ScrollWrapper';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { useIsFeatureEnabled } from '@/workspace/hooks/useIsFeatureEnabled';
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
 import { isDefined } from 'twenty-shared/utils';
 import {
   FeatureFlagKey,
   PageLayoutType,
   type StandaloneRichTextConfiguration,
-} from '~/generated/graphql';
+} from '~/generated-metadata/graphql';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 const StyledContainer = styled.div<{ isPageLayoutInEditMode?: boolean }>`
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   height: 100%;
-  width: 100%;
   overflow: hidden;
-  padding-left: ${({ theme, isPageLayoutInEditMode }) =>
-    isPageLayoutInEditMode ? theme.spacing(5) : 0};
+  padding-left: ${({ isPageLayoutInEditMode }) =>
+    isPageLayoutInEditMode ? themeCssVariables.spacing[5] : 0};
+  width: 100%;
 `;
 
 type StandaloneRichTextWidgetProps = {
@@ -39,11 +40,9 @@ export const StandaloneRichTextWidget = ({
   widget,
 }: StandaloneRichTextWidgetProps) => {
   const containerElementRef = useRef<HTMLDivElement>(null);
-  const isPageLayoutInEditMode = useRecoilComponentValue(
-    isPageLayoutInEditModeComponentState,
-  );
+  const isPageLayoutInEditMode = useIsPageLayoutInEditMode();
 
-  const editingWidgetId = useRecoilComponentValue(
+  const pageLayoutEditingWidgetId = useAtomComponentStateValue(
     pageLayoutEditingWidgetIdComponentState,
   );
 
@@ -73,7 +72,7 @@ export const StandaloneRichTextWidget = ({
     skip: !isDefined(dashboardId),
   });
 
-  const isThisWidgetBeingEdited = editingWidgetId === widget.id;
+  const isThisWidgetBeingEdited = pageLayoutEditingWidgetId === widget.id;
   const isEditable = isPageLayoutInEditMode && isThisWidgetBeingEdited;
 
   if (!isDefined(dashboardId)) {
@@ -91,7 +90,6 @@ export const StandaloneRichTextWidget = ({
         <StandaloneRichTextEditorContent
           key={isEditable ? 'editing' : 'readonly'}
           widget={widget}
-          dashboardId={dashboardId}
           currentBody={currentBody}
           attachments={attachments}
           isEditable={isEditable}

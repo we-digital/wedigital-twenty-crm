@@ -10,6 +10,7 @@
 .nx/installation
 .nx/cache
 .nx/workspace-data
+.nx/nxw.js
 
 .pnp.*
 .yarn/*
@@ -27,7 +28,7 @@ coverage
 dist
 storybook-static
 *.tsbuildinfo
-.eslintcache
+.oxlintcache
 .nyc_output
 test-results/
 dump.rdb
@@ -49,3 +50,4 @@ dump.rdb
 mcp.json
 /.junie/
 TRANSLATION_QA_REPORT.md
+.playwright-mcp/

@@ -1,4 +1,4 @@
-import { getOperationName } from '@apollo/client/utilities';
+import { getOperationName } from '~/utils/getOperationName';
 import { type Meta, type StoryObj } from '@storybook/react-vite';
 import { HttpResponse, graphql } from 'msw';
 import { within } from 'storybook/test';
@@ -27,7 +27,7 @@ const buildHandlers = (hasPassword: boolean) => [
       HttpResponse.json({
         data: {
           validatePasswordResetToken: {
-            __typename: 'ValidatePasswordResetTokenOutput',
+            __typename: 'ValidatePasswordResetToken',
             id: mockedOnboardingUsersData.id,
             email: mockedOnboardingUsersData.email,
             hasPassword,

@@ -1,5 +1,5 @@
-import { createState } from 'twenty-ui/utilities';
-export const isMicrosoftCalendarEnabledState = createState<boolean>({
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
+export const isMicrosoftCalendarEnabledState = createAtomState<boolean>({
   key: 'isMicrosoftCalendarEnabled',
   defaultValue: false,
 });

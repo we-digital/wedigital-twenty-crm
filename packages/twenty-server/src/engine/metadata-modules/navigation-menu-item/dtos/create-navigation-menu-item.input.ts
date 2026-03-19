@@ -1,11 +1,23 @@
-import { Field, InputType, Int } from '@nestjs/graphql';
+import { Field, InputType } from '@nestjs/graphql';
 
-import { IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 import { UUIDScalarType } from 'src/engine/api/graphql/workspace-schema-builder/graphql-types/scalars';
+import { NavigationMenuItemType } from 'src/engine/metadata-modules/navigation-menu-item/enums/navigation-menu-item-type.enum';
 
 @InputType()
 export class CreateNavigationMenuItemInput {
+  @IsUUID()
+  @IsOptional()
+  @Field(() => UUIDScalarType, { nullable: true })
+  id?: string;
+
   @IsUUID()
   @IsOptional()
   @Field(() => UUIDScalarType, { nullable: true })
@@ -26,19 +38,37 @@ export class CreateNavigationMenuItemInput {
   @Field(() => UUIDScalarType, { nullable: true })
   viewId?: string | null;
 
+  @IsEnum(NavigationMenuItemType)
+  @Field(() => NavigationMenuItemType)
+  type: NavigationMenuItemType;
+
   @IsOptional()
   @IsString()
   @Field(() => String, { nullable: true })
   name?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @Field(() => String, { nullable: true })
+  link?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @Field(() => String, { nullable: true })
+  icon?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @Field(() => String, { nullable: true })
+  color?: string | null;
 
   @IsUUID()
   @IsOptional()
   @Field(() => UUIDScalarType, { nullable: true })
   folderId?: string;
 
-  @IsInt()
-  @Min(0)
+  @IsNumber()
   @IsOptional()
-  @Field(() => Int, { nullable: true })
+  @Field({ nullable: true })
   position?: number;
 }

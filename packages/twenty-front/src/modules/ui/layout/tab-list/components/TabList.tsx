@@ -1,13 +1,14 @@
 import { useCloseDropdown } from '@/ui/layout/dropdown/hooks/useCloseDropdown';
+import { TabListHiddenMeasurements } from '@/ui/layout/tab-list/components/TabListHiddenMeasurements';
 import { TAB_LIST_GAP } from '@/ui/layout/tab-list/constants/TabListGap';
+import { TAB_LIST_HEIGHT } from '@/ui/layout/tab-list/constants/TabListHeight';
+import { useTabListMeasurements } from '@/ui/layout/tab-list/hooks/useTabListMeasurements';
 import { activeTabIdComponentState } from '@/ui/layout/tab-list/states/activeTabIdComponentState';
 import { TabListComponentInstanceContext } from '@/ui/layout/tab-list/states/contexts/TabListComponentInstanceContext';
 import { type TabListProps } from '@/ui/layout/tab-list/types/TabListProps';
 import { NodeDimension } from '@/ui/utilities/dimensions/components/NodeDimension';
-import { TabListHiddenMeasurements } from '@/ui/layout/tab-list/components/TabListHiddenMeasurements';
-import { useTabListMeasurements } from '@/ui/layout/tab-list/hooks/useTabListMeasurements';
-import { useRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentState';
-import styled from '@emotion/styled';
+import { useAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentState';
+import { styled } from '@linaria/react';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TabButton } from 'twenty-ui/input';
@@ -17,35 +18,30 @@ import { TabListFromUrlOptionalEffect } from './TabListFromUrlOptionalEffect';
 const StyledContainer = styled.div`
   box-sizing: border-box;
   display: flex;
-  height: ${({ theme }) => theme.spacing(10)};
+  height: ${TAB_LIST_HEIGHT};
   position: relative;
   user-select: none;
   width: 100%;
+`;
 
-  &::after {
-    background-color: ${({ theme }) => theme.border.color.light};
-    bottom: 0;
-    content: '';
-    height: 1px;
-    left: 0;
-    position: absolute;
-    right: 0;
-  }
+const StyledDropdownContainer = styled.div`
+  align-items: center;
+  display: flex;
 `;
 
 const StyledTabContainer = styled.div`
   display: flex;
   gap: ${TAB_LIST_GAP}px;
-  position: relative;
-  overflow: hidden;
   max-width: 100%;
+  overflow: hidden;
+  position: relative;
 `;
 
 export const TabList = ({
   tabs,
   loading,
   behaveAsLinks = true,
-  isInRightDrawer,
+  isInSidePanel,
   className,
   componentInstanceId,
   onChangeTab,
@@ -53,7 +49,7 @@ export const TabList = ({
   const visibleTabs = tabs.filter((tab) => !tab.hide);
   const navigate = useNavigate();
 
-  const [activeTabId, setActiveTabId] = useRecoilComponentState(
+  const [activeTabId, setActiveTabId] = useAtomComponentState(
     activeTabIdComponentState,
     componentInstanceId,
   );
@@ -117,7 +113,7 @@ export const TabList = ({
     >
       <>
         <TabListFromUrlOptionalEffect
-          isInRightDrawer={!!isInRightDrawer}
+          isInSidePanel={!!isInSidePanel}
           tabListIds={tabs.map((tab) => tab.id)}
         />
 
@@ -155,20 +151,22 @@ export const TabList = ({
             </StyledTabContainer>
 
             {hasHiddenTabs && (
-              <TabListDropdown
-                dropdownId={dropdownId}
-                onClose={() => {
-                  closeDropdown(dropdownId);
-                }}
-                overflow={{
-                  hiddenTabsCount,
-                  isActiveTabHidden,
-                }}
-                hiddenTabs={hiddenTabs}
-                activeTabId={activeTabId || ''}
-                onTabSelect={handleTabSelectFromDropdown}
-                loading={loading}
-              />
+              <StyledDropdownContainer>
+                <TabListDropdown
+                  dropdownId={dropdownId}
+                  onClose={() => {
+                    closeDropdown(dropdownId);
+                  }}
+                  overflow={{
+                    hiddenTabsCount,
+                    isActiveTabHidden,
+                  }}
+                  hiddenTabs={hiddenTabs}
+                  activeTabId={activeTabId || ''}
+                  onTabSelect={handleTabSelectFromDropdown}
+                  loading={loading}
+                />
+              </StyledDropdownContainer>
             )}
           </StyledContainer>
         </NodeDimension>

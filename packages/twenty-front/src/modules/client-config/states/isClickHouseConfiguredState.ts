@@ -1,6 +1,6 @@
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const isClickHouseConfiguredState = createState<boolean>({
+export const isClickHouseConfiguredState = createAtomState<boolean>({
   key: 'isClickHouseConfigured',
   defaultValue: false,
 });

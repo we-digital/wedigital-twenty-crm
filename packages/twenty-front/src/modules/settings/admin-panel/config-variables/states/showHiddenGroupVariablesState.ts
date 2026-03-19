@@ -1,6 +1,6 @@
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const showHiddenGroupVariablesState = createState<boolean>({
+export const showHiddenGroupVariablesState = createAtomState<boolean>({
   key: 'showHiddenGroupVariablesState',
   defaultValue: false,
 });

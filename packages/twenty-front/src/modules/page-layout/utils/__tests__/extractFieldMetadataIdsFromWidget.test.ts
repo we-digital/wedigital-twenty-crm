@@ -2,8 +2,8 @@ import { extractFieldMetadataIdsFromWidget } from '@/page-layout/utils/extractFi
 import {
   type PageLayoutWidget,
   WidgetType,
+  type WidgetConfiguration,
 } from '~/generated-metadata/graphql';
-import { type WidgetConfiguration } from '~/generated/graphql';
 import {
   TEST_AGGREGATE_CHART_CONFIGURATION,
   TEST_BAR_CHART_CONFIGURATION,
@@ -28,6 +28,7 @@ const createMockWidget = (
   objectMetadataId: null,
   gridPosition: { row: 0, column: 0, rowSpan: 1, columnSpan: 1 },
   pageLayoutTabId: 'tab-1',
+  isOverridden: false,
   createdAt: '2024-01-01',
   updatedAt: '2024-01-01',
   ...overrides,

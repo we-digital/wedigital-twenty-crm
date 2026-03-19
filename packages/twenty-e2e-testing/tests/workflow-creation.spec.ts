@@ -7,6 +7,9 @@ test('Create workflow', async ({ page }) => {
 
   await page.goto(process.env.LINK);
 
+  const workflowsFolder = page.getByRole('button', { name: 'Workflows' });
+  await workflowsFolder.click();
+
   const workflowsLink = page.getByRole('link', { name: 'Workflows' });
   await workflowsLink.click();
 
@@ -31,10 +34,7 @@ test('Create workflow', async ({ page }) => {
 
   const recordName = page.getByTestId('top-bar-title').getByPlaceholder('Name');
   await expect(recordName).toBeVisible();
-  await recordName.click();
-
-  const nameInput = page.getByTestId('top-bar-title').getByRole('textbox');
-  await nameInput.fill(NEW_WORKFLOW_NAME);
+  await recordName.fill(NEW_WORKFLOW_NAME);
 
   const workflowDiagramContainer = page.locator('.react-flow__renderer');
   await workflowDiagramContainer.click();

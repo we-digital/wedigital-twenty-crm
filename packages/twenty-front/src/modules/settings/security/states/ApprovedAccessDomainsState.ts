@@ -1,7 +1,7 @@
-import { type ApprovedAccessDomain } from '~/generated/graphql';
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
+import { type ApprovedAccessDomain } from '~/generated-metadata/graphql';
 
-export const approvedAccessDomainsState = createState<
+export const approvedAccessDomainsState = createAtomState<
   Omit<ApprovedAccessDomain, '__typename'>[]
 >({
   key: 'ApprovedAccessDomainsState',

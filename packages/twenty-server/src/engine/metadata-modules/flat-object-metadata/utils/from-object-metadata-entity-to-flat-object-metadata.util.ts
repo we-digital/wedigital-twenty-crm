@@ -43,12 +43,13 @@ export const fromObjectMetadataEntityToFlatObjectMetadata = ({
         objectMetadataEntity.labelIdentifierFieldMetadataId,
       ) ?? null;
 
-    if (!isDefined(labelIdentifierFieldMetadataUniversalIdentifier)) {
-      throw new FlatEntityMapsException(
-        `Label identifier field metadata with id ${objectMetadataEntity.labelIdentifierFieldMetadataId} not found when building flat object metadata for object ${objectMetadataEntity.id}`,
-        FlatEntityMapsExceptionCode.ENTITY_NOT_FOUND,
-      );
-    }
+    // TODO uncomment once https://github.com/twentyhq/core-team-issues/issues/2172 has been resolved
+    // if (!isDefined(labelIdentifierFieldMetadataUniversalIdentifier)) {
+    //   throw new FlatEntityMapsException(
+    //     `Label identifier field metadata with id ${objectMetadataEntity.labelIdentifierFieldMetadataId} not found when building flat object metadata for object ${objectMetadataEntity.id}`,
+    //     FlatEntityMapsExceptionCode.ENTITY_NOT_FOUND,
+    //   );
+    // }
   }
 
   let imageIdentifierFieldMetadataUniversalIdentifier: string | null = null;
@@ -59,12 +60,13 @@ export const fromObjectMetadataEntityToFlatObjectMetadata = ({
         objectMetadataEntity.imageIdentifierFieldMetadataId,
       ) ?? null;
 
-    if (!isDefined(imageIdentifierFieldMetadataUniversalIdentifier)) {
-      throw new FlatEntityMapsException(
-        `Image identifier field metadata with id ${objectMetadataEntity.imageIdentifierFieldMetadataId} not found when building flat object metadata for object ${objectMetadataEntity.id}`,
-        FlatEntityMapsExceptionCode.ENTITY_NOT_FOUND,
-      );
-    }
+    // TODO uncomment once https://github.com/twentyhq/core-team-issues/issues/2172 has been resolved
+    // if (!isDefined(imageIdentifierFieldMetadataUniversalIdentifier)) {
+    //   throw new FlatEntityMapsException(
+    //     `Image identifier field metadata with id ${objectMetadataEntity.imageIdentifierFieldMetadataId} not found when building flat object metadata for object ${objectMetadataEntity.id}`,
+    //     FlatEntityMapsExceptionCode.ENTITY_NOT_FOUND,
+    //   );
+    // }
   }
 
   return {
@@ -76,6 +78,9 @@ export const fromObjectMetadataEntityToFlatObjectMetadata = ({
     viewIds: objectMetadataEntity.views.map(({ id }) => id),
     indexMetadataIds: objectMetadataEntity.indexMetadatas.map(({ id }) => id),
     fieldIds: objectMetadataEntity.fields.map(({ id }) => id),
+    objectPermissionIds: objectMetadataEntity.objectPermissions.map(
+      ({ id }) => id,
+    ),
     applicationUniversalIdentifier,
     labelIdentifierFieldMetadataUniversalIdentifier,
     imageIdentifierFieldMetadataUniversalIdentifier,
@@ -88,5 +93,9 @@ export const fromObjectMetadataEntityToFlatObjectMetadata = ({
     viewUniversalIdentifiers: objectMetadataEntity.views.map(
       ({ universalIdentifier }) => universalIdentifier,
     ),
+    objectPermissionUniversalIdentifiers:
+      objectMetadataEntity.objectPermissions.map(
+        ({ universalIdentifier }) => universalIdentifier,
+      ),
   };
 };

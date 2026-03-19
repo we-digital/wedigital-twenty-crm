@@ -4,8 +4,8 @@ export const ON_EVENT_SUBSCRIPTION = gql`
   subscription OnEventSubscription($eventStreamId: String!) {
     onEventSubscription(eventStreamId: $eventStreamId) {
       eventStreamId
-      eventWithQueryIdsList {
-        event {
+      objectRecordEventsWithQueryIds {
+        objectRecordEvent {
           action
           objectNameSingular
           recordId
@@ -19,6 +19,18 @@ export const ON_EVENT_SUBSCRIPTION = gql`
           }
         }
         queryIds
+      }
+      metadataEvents {
+        type
+        metadataName
+        recordId
+        updatedCollectionHash
+        properties {
+          updatedFields
+          before
+          after
+          diff
+        }
       }
     }
   }

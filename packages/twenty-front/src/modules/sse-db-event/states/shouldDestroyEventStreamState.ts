@@ -1,6 +1,6 @@
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-export const shouldDestroyEventStreamState = createState<boolean>({
+export const shouldDestroyEventStreamState = createAtomState<boolean>({
   key: 'shouldDestroyEventStreamState',
   defaultValue: false,
 });

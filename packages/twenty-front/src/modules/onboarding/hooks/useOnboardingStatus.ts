@@ -1,11 +1,10 @@
-import { useRecoilValue } from 'recoil';
-
-import { useIsLogged } from '@/auth/hooks/useIsLogged';
+import { useHasAccessTokenPair } from '@/auth/hooks/useHasAccessTokenPair';
 import { currentUserState } from '@/auth/states/currentUserState';
-import { type OnboardingStatus } from '~/generated/graphql';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { type OnboardingStatus } from '~/generated-metadata/graphql';
 
 export const useOnboardingStatus = (): OnboardingStatus | null | undefined => {
-  const currentUser = useRecoilValue(currentUserState);
-  const isLoggedIn = useIsLogged();
-  return isLoggedIn ? currentUser?.onboardingStatus : undefined;
+  const currentUser = useAtomStateValue(currentUserState);
+  const hasAccessTokenPair = useHasAccessTokenPair();
+  return hasAccessTokenPair ? currentUser?.onboardingStatus : undefined;
 };

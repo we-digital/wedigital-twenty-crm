@@ -6,20 +6,18 @@ import { useProcessTreadmillScrollTop } from '@/object-record/record-table/virtu
 import { useTriggerFetchPages } from '@/object-record/record-table/virtualization/hooks/useTriggerFetchPages';
 import { useTriggerInitialRecordTableDataLoad } from '@/object-record/record-table/virtualization/hooks/useTriggerInitialRecordTableDataLoad';
 import { useScrollWrapperHTMLElement } from '@/ui/utilities/scroll/hooks/useScrollWrapperHTMLElement';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentSelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentSelectorValue';
 import { isNonEmptyString } from '@sniptt/guards';
+import { useStore } from 'jotai';
 import { useEffect, useState } from 'react';
-import { useRecoilState } from 'recoil';
 
 export const RecordTableNoRecordGroupScrollToPreviousRecordEffect = () => {
+  const store = useStore();
+
   const { getScrollWrapperElement } = useScrollWrapperHTMLElement();
 
-  const allRecordIds = useRecoilComponentValue(
+  const allRecordIds = useAtomComponentSelectorValue(
     recordIndexAllRecordIdsComponentSelector,
-  );
-
-  const [lastShowPageRecordId, setLastShowPageRecordId] = useRecoilState(
-    lastShowPageRecordIdState,
   );
 
   const [hasInitializedScroll, setHasInitializedScroll] = useState(false);
@@ -34,8 +32,16 @@ export const RecordTableNoRecordGroupScrollToPreviousRecordEffect = () => {
   const { triggerFetchPagesWithoutDebounce } = useTriggerFetchPages();
 
   useEffect(() => {
+    // Read directly from the Jotai store to avoid stale values from useAtom's
+    // internal useReducer, which can desync under high-frequency store updates.
+    const lastShowPageRecordId = store.get(lastShowPageRecordIdState.atom);
+
+    if (!isNonEmptyString(lastShowPageRecordId)) {
+      return;
+    }
+
     const run = async () => {
-      setLastShowPageRecordId(null);
+      store.set(lastShowPageRecordIdState.atom, null);
 
       const recordPosition = allRecordIds.findIndex(
         (recordId) => recordId === lastShowPageRecordId,
@@ -76,15 +82,12 @@ export const RecordTableNoRecordGroupScrollToPreviousRecordEffect = () => {
       await triggerFetchPagesWithoutDebounce();
     };
 
-    if (isNonEmptyString(lastShowPageRecordId)) {
-      run();
-    }
+    run();
   }, [
+    store,
     hasInitializedScroll,
-    lastShowPageRecordId,
     scrollTableToPosition,
     allRecordIds,
-    setLastShowPageRecordId,
     triggerInitialRecordTableDataLoad,
     processTreadmillScrollTop,
     getScrollWrapperElement,

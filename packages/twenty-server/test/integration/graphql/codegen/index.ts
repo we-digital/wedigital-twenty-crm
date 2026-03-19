@@ -2,6 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as process from 'process';
 
+import { pascalToKebab } from 'twenty-shared/utils';
+
 import { INTROSPECTION_QUERY } from './introspection-query';
 import {
   type Field,
@@ -33,10 +35,6 @@ const fetchGraphQLSchema = async (): Promise<IntrospectionResponse> => {
   return response.json();
 };
 
-const toKebabCase = (name: string): string => {
-  return name.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-};
-
 const unwrapType = (typeInfo: TypeRef): any => {
   while (typeInfo.ofType) {
     typeInfo = typeInfo.ofType;
@@ -58,7 +56,7 @@ const generateTestContent = (
     .map((f) => f.name);
 
   if (fieldNames.length === 0) {
-    // eslint-disable-next-line no-console
+    // oxlint-disable-next-line no-console
     console.log(`Skipping ${queryName}: No usable fields found.`);
 
     return null;
@@ -124,7 +122,7 @@ const writeTestFile = (
 ): string => {
   if (!content) return 'skipped';
 
-  const fileName = `${toKebabCase(queryName)}.integration-spec.ts`;
+  const fileName = `${pascalToKebab(queryName)}.integration-spec.ts`;
   const filePath = path.join(TEST_OUTPUT_DIR, fileName);
 
   if (fs.existsSync(filePath) && !force) {
@@ -149,7 +147,7 @@ const generateTests = async (force = false) => {
   let totalCount = 0;
 
   if (!queryType?.fields) {
-    // eslint-disable-next-line no-console
+    // oxlint-disable-next-line no-console
     console.log('No query fields found.');
 
     return;
@@ -202,10 +200,10 @@ const generateTests = async (force = false) => {
     }
   }
 
-  // eslint-disable-next-line no-console
+  // oxlint-disable-next-line no-console
   console.log(`Number of tests created: ${createdCount}/${totalCount}`);
   if (force) {
-    // eslint-disable-next-line no-console
+    // oxlint-disable-next-line no-console
     console.log(`Number of tests updated: ${updatedCount}/${totalCount}`);
   }
 };
