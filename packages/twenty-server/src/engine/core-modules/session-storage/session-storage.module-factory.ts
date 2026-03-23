@@ -57,6 +57,7 @@ export const getSessionStorageOptions = (
 
       const redisClient = createClient({
         url: connectionString,
+        pingInterval: 60_000,
         socket: {
           reconnectStrategy: (retries) => Math.min(retries * 500, 5000),
         },
