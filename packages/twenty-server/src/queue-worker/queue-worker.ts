@@ -20,6 +20,28 @@ async function bootstrap() {
 
     // Inject our logger
     app.useLogger(loggerService ?? false);
+
+    process.on('uncaughtException', (err) => {
+      loggerService?.error(
+        `Uncaught exception: ${err.message}`,
+        err.stack ?? err.name,
+      );
+
+      if (shouldCaptureException(err)) {
+        exceptionHandlerService?.captureExceptions([err]);
+      }
+    });
+
+    process.on('unhandledRejection', (reason) => {
+      loggerService?.error(
+        `Unhandled rejection: ${reason}`,
+        'UnhandledRejection',
+      );
+
+      if (shouldCaptureException(reason)) {
+        exceptionHandlerService?.captureExceptions([reason as Error]);
+      }
+    });
   } catch (err) {
     loggerService?.error(err?.message, err?.name);
 
