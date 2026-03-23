@@ -1,4 +1,4 @@
-import { Injectable, type OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
 
 import IORedis from 'ioredis';
 import { isDefined } from 'twenty-shared/utils';
@@ -8,11 +8,18 @@ import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twent
 
 @Injectable()
 export class RedisClientService implements OnModuleDestroy {
+  private readonly logger = new Logger(RedisClientService.name);
   private redisClient: IORedis | null = null;
   private redisQueueClient: IORedis | null = null;
   private redisPubSubClient: RedisPubSub | null = null;
 
   constructor(private readonly twentyConfigService: TwentyConfigService) {}
+
+  private attachErrorHandler(client: IORedis, label: string) {
+    client.on('error', (err) => {
+      this.logger.error(`Redis ${label} error: ${err.message}`);
+    });
+  }
 
   getQueueClient() {
     if (!this.redisQueueClient) {
@@ -27,6 +34,7 @@ export class RedisClientService implements OnModuleDestroy {
       this.redisQueueClient = new IORedis(redisQueueUrl, {
         maxRetriesPerRequest: null,
       });
+      this.attachErrorHandler(this.redisQueueClient, 'queue');
     }
 
     return this.redisQueueClient;
@@ -43,6 +51,7 @@ export class RedisClientService implements OnModuleDestroy {
       this.redisClient = new IORedis(redisUrl, {
         maxRetriesPerRequest: null,
       });
+      this.attachErrorHandler(this.redisClient, 'general');
     }
 
     return this.redisClient;
