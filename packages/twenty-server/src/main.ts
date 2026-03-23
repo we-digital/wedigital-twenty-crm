@@ -14,6 +14,8 @@ import { setPgDateTypeParser } from 'src/database/pg/set-pg-date-type-parser';
 import { LoggerService } from 'src/engine/core-modules/logger/logger.service';
 import { getSessionStorageOptions } from 'src/engine/core-modules/session-storage/session-storage.module-factory';
 import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
+import { ExceptionHandlerService } from 'src/engine/core-modules/exception-handler/exception-handler.service';
+import { shouldCaptureException } from 'src/engine/utils/global-exception-handler.util';
 import { UnhandledExceptionFilter } from 'src/filters/unhandled-exception.filter';
 
 import { AppModule } from './app.module';
@@ -42,6 +44,23 @@ const bootstrap = async () => {
   });
   const logger = app.get(LoggerService);
   const twentyConfigService = app.get(TwentyConfigService);
+  const exceptionHandlerService = app.get(ExceptionHandlerService);
+
+  process.on('uncaughtException', (err) => {
+    logger.error(`Uncaught exception: ${err.message}`, err.stack ?? err.name);
+
+    if (shouldCaptureException(err)) {
+      exceptionHandlerService.captureExceptions([err]);
+    }
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    logger.error(`Unhandled rejection: ${reason}`, 'UnhandledRejection');
+
+    if (shouldCaptureException(reason)) {
+      exceptionHandlerService.captureExceptions([reason as Error]);
+    }
+  });
 
   app.use(session(getSessionStorageOptions(twentyConfigService)));
 
