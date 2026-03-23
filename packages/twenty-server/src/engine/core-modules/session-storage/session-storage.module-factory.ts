@@ -57,10 +57,17 @@ export const getSessionStorageOptions = (
 
       const redisClient = createClient({
         url: connectionString,
+        socket: {
+          reconnectStrategy: (retries) => Math.min(retries * 500, 5000),
+        },
+      });
+
+      redisClient.on('error', (err) => {
+        console.error(`Redis session client error: ${err.message}`);
       });
 
       redisClient.connect().catch((err) => {
-        throw new Error(`Redis connection failed: ${err}`);
+        console.error(`Redis session connection failed: ${err.message}`);
       });
 
       return {
