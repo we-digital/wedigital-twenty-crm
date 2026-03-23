@@ -33,6 +33,7 @@ export class RedisClientService implements OnModuleDestroy {
 
       this.redisQueueClient = new IORedis(redisQueueUrl, {
         maxRetriesPerRequest: null,
+        keepAlive: 60_000,
       });
       this.attachErrorHandler(this.redisQueueClient, 'queue');
     }
@@ -50,6 +51,7 @@ export class RedisClientService implements OnModuleDestroy {
 
       this.redisClient = new IORedis(redisUrl, {
         maxRetriesPerRequest: null,
+        keepAlive: 60_000,
       });
       this.attachErrorHandler(this.redisClient, 'general');
     }
