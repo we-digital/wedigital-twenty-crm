@@ -1,4 +1,5 @@
 import { currentUserState } from '@/auth/states/currentUserState';
+import { tokenPairState } from '@/auth/states/tokenPairState';
 import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
 import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
 import { PageLayoutWidgetNoDataDisplay } from '@/page-layout/widgets/components/PageLayoutWidgetNoDataDisplay';
@@ -69,6 +70,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
   const isPageLayoutInEditMode = useIsPageLayoutInEditMode();
 
   const currentUser = useAtomStateValue(currentUserState);
+  const tokenPair = useAtomStateValue(tokenPairState);
 
   const configuration = widget.configuration;
 
@@ -90,13 +92,27 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
       return;
     }
 
-    event.currentTarget.contentWindow?.postMessage(
+    const iframeWindow = event.currentTarget.contentWindow;
+
+    iframeWindow?.postMessage(
       {
         type: 'twenty:user-context',
         payload: { userContext: currentUser },
       },
       targetOrigin,
     );
+
+    // Send JWT token so the widget backend can validate the caller identity.
+    // The widget listens for WIDGET_AUTH and attaches the token as
+    // Authorization: Bearer <token> on every API request.
+    const accessToken =
+      tokenPair?.accessOrWorkspaceAgnosticToken?.token;
+    if (isDefined(accessToken)) {
+      iframeWindow?.postMessage(
+        { type: 'WIDGET_AUTH', token: accessToken, source: 'twenty' },
+        targetOrigin,
+      );
+    }
   };
 
   const handleIframeError = () => {
