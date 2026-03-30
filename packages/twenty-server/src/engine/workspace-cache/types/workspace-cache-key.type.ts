@@ -4,6 +4,7 @@ import {
 } from 'twenty-shared/types';
 import { type EntityMetadata } from 'typeorm';
 
+import { type ResolverNameMapEntry } from 'src/engine/api/graphql/direct-execution/utils/build-resolver-name-map.util';
 import { type ApplicationVariableCacheMaps } from 'src/engine/core-modules/application/application-variable/types/application-variable-cache-maps.type';
 import { type FlatApplicationCacheMaps } from 'src/engine/core-modules/application/types/flat-application-cache-maps.type';
 import { type FlatWorkspaceMemberMaps } from 'src/engine/core-modules/user/types/flat-workspace-member-maps.type';
@@ -34,6 +35,7 @@ export const WORKSPACE_CACHE_KEYS_V2 = {
   flatRoleTargetMaps: 'flat-maps:role-target',
   flatPermissionFlagMaps: 'flat-maps:permission-flag',
   flatObjectPermissionMaps: 'flat-maps:object-permission',
+  flatFieldPermissionMaps: 'flat-maps:field-permission',
   ORMEntityMetadatas: 'orm:entity-metadatas',
   flatAgentMaps: 'flat-maps:agent',
   flatSkillMaps: 'flat-maps:skill',
@@ -51,6 +53,7 @@ export const WORKSPACE_CACHE_KEYS_V2 = {
   flatWebhookMaps: 'flat-maps:webhook',
   flatWorkspaceMemberMaps: 'flat-maps:workspace-member',
   applicationVariableMaps: 'cache:application-variable',
+  graphQLResolverNameMap: 'direct-execution:graphql-resolver-name-map',
 } as const satisfies Record<WorkspaceCacheKeyName, string>;
 
 export type AdditionalCacheDataMaps = {
@@ -65,6 +68,7 @@ export type AdditionalCacheDataMaps = {
   flatRowLevelPermissionPredicateGroupMaps: FlatRowLevelPermissionPredicateGroupMaps;
   flatWorkspaceMemberMaps: FlatWorkspaceMemberMaps;
   applicationVariableMaps: ApplicationVariableCacheMaps;
+  graphQLResolverNameMap: Record<string, ResolverNameMapEntry>;
 };
 
 export type WorkspaceCacheDataMap = AllFlatEntityMaps<true> &
