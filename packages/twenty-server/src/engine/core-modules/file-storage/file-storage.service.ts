@@ -208,8 +208,13 @@ export class FileStorageService {
     });
     const driver = this.fileStorageDriverFactory.getCurrentDriver();
 
+    const application = await this.applicationRepository.findOneOrFail({
+      where: { id: file.applicationId, workspaceId },
+      select: ['universalIdentifier'],
+    });
+
     await driver.delete({
-      folderPath: `${file.workspaceId}/${file.applicationId}`,
+      folderPath: `${file.workspaceId}/${application.universalIdentifier}`,
       filename: file.path,
     });
 
