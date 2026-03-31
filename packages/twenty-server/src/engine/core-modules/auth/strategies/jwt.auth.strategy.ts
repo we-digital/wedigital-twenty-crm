@@ -123,21 +123,6 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy, 'jwt') {
     let user: AuthContextUser | null = null;
     let context: AuthContext = {};
 
-    const workspace = await this.workspaceRepository.findOneBy({
-      id: payload.workspaceId,
-    });
-
-    if (!isDefined(workspace)) {
-      throw new AuthException(
-        'Workspace not found',
-        AuthExceptionCode.WORKSPACE_NOT_FOUND,
-      );
-    }
-
-    if (payload.isImpersonating === true) {
-      context.impersonationContext = await this.validateImpersonation(payload);
-    }
-
     const userId = payload.sub ?? payload.userId;
 
     if (!userId) {
@@ -154,10 +139,25 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy, 'jwt') {
       );
     }
 
-    const userContext = await this.resolveUserContext({
-      userId,
-      userWorkspaceId: payload.userWorkspaceId,
-    });
+    // Run workspace fetch and user context fetch in parallel to reduce DB round-trips
+    const [workspace, userContext] = await Promise.all([
+      this.workspaceRepository.findOneBy({ id: payload.workspaceId }),
+      this.resolveUserContext({
+        userId,
+        userWorkspaceId: payload.userWorkspaceId,
+      }),
+    ]);
+
+    if (!isDefined(workspace)) {
+      throw new AuthException(
+        'Workspace not found',
+        AuthExceptionCode.WORKSPACE_NOT_FOUND,
+      );
+    }
+
+    if (payload.isImpersonating === true) {
+      context.impersonationContext = await this.validateImpersonation(payload);
+    }
 
     assertIsDefinedOrThrow(
       userContext,
@@ -226,20 +226,18 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy, 'jwt') {
     user: AuthContextUser;
     userWorkspace: UserWorkspaceEntity;
   } | null> {
-    const user = await this.userRepository.findOne({
-      where: { id: params.userId },
-      select: [...AUTH_CONTEXT_USER_SELECT_FIELDS],
-    });
+    // Fetch user and userWorkspace in parallel — they are independent queries
+    const [user, userWorkspace] = await Promise.all([
+      this.userRepository.findOne({
+        where: { id: params.userId },
+        select: [...AUTH_CONTEXT_USER_SELECT_FIELDS],
+      }),
+      this.userWorkspaceRepository.findOne({
+        where: { id: params.userWorkspaceId },
+      }),
+    ]);
 
-    if (!isDefined(user)) {
-      return null;
-    }
-
-    const userWorkspace = await this.userWorkspaceRepository.findOne({
-      where: { id: params.userWorkspaceId },
-    });
-
-    if (!isDefined(userWorkspace)) {
+    if (!isDefined(user) || !isDefined(userWorkspace)) {
       return null;
     }
 
