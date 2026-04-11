@@ -98,7 +98,11 @@ export class MetricsService {
     counter.add(1, attributes);
 
     if (shouldStoreInCache && eventId) {
-      this.metricsCacheService.updateCounter(key, [eventId]);
+      await this.metricsCacheService.updateCounter(key, [eventId]);
+    }
+
+    if (isDefined(debugLog)) {
+      this.logger.debug(debugLog);
     }
 
     if (isDefined(debugLog)) {
@@ -122,7 +126,7 @@ export class MetricsService {
     counter.add(eventIds.length, attributes);
 
     if (shouldStoreInCache) {
-      this.metricsCacheService.updateCounter(key, eventIds);
+      await this.metricsCacheService.updateCounter(key, eventIds);
     }
   }
 

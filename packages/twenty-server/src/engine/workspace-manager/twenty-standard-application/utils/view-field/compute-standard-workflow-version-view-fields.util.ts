@@ -123,7 +123,103 @@ export const computeStandardWorkflowVersionViewFields = (
           position: 0,
           isVisible: true,
           size: 150,
-          viewFieldGroupName: 'other',
+          viewFieldGroupName: 'system',
+        },
+      }),
+    workflowVersionRecordPageFieldsSteps: createStandardViewFieldFlatMetadata({
+      ...args,
+      objectName: 'workflowVersion',
+      context: {
+        viewName: 'workflowVersionRecordPageFields',
+        viewFieldName: 'steps',
+        fieldName: 'steps',
+        position: 7,
+        isVisible: false,
+        size: 150,
+        viewFieldGroupName: 'general',
+      },
+    }),
+    workflowVersionRecordPageFieldsCreatedBy:
+      createStandardViewFieldFlatMetadata({
+        ...args,
+        objectName: 'workflowVersion',
+        context: {
+          viewName: 'workflowVersionRecordPageFields',
+          viewFieldName: 'createdBy',
+          fieldName: 'createdBy',
+          position: 1,
+          isVisible: false,
+          size: 150,
+          viewFieldGroupName: 'system',
+        },
+      }),
+    workflowVersionRecordPageFieldsUpdatedAt:
+      createStandardViewFieldFlatMetadata({
+        ...args,
+        objectName: 'workflowVersion',
+        context: {
+          viewName: 'workflowVersionRecordPageFields',
+          viewFieldName: 'updatedAt',
+          fieldName: 'updatedAt',
+          position: 2,
+          isVisible: false,
+          size: 150,
+          viewFieldGroupName: 'system',
+        },
+      }),
+    workflowVersionRecordPageFieldsUpdatedBy:
+      createStandardViewFieldFlatMetadata({
+        ...args,
+        objectName: 'workflowVersion',
+        context: {
+          viewName: 'workflowVersionRecordPageFields',
+          viewFieldName: 'updatedBy',
+          fieldName: 'updatedBy',
+          position: 3,
+          isVisible: false,
+          size: 150,
+          viewFieldGroupName: 'system',
+        },
+      }),
+    workflowVersionRecordPageFieldsRuns: createStandardViewFieldFlatMetadata({
+      ...args,
+      objectName: 'workflowVersion',
+      context: {
+        viewName: 'workflowVersionRecordPageFields',
+        viewFieldName: 'runs',
+        fieldName: 'runs',
+        position: 4,
+        isVisible: false,
+        size: 150,
+        viewFieldGroupName: 'general',
+      },
+    }),
+    workflowVersionRecordPageFieldsFavorites:
+      createStandardViewFieldFlatMetadata({
+        ...args,
+        objectName: 'workflowVersion',
+        context: {
+          viewName: 'workflowVersionRecordPageFields',
+          viewFieldName: 'favorites',
+          fieldName: 'favorites',
+          position: 5,
+          isVisible: false,
+          size: 150,
+          viewFieldGroupName: 'general',
+        },
+      }),
+    workflowVersionRecordPageFieldsTimelineActivities:
+      createStandardViewFieldFlatMetadata({
+        ...args,
+        objectName: 'workflowVersion',
+        context: {
+          viewName: 'workflowVersionRecordPageFields',
+          viewFieldName: 'timelineActivities',
+          fieldName: 'timelineActivities',
+          position: 6,
+          isVisible: false,
+          size: 150,
+          viewFieldGroupName: 'general',
         },
       }),
     workflowVersionRecordPageFieldsSteps: createStandardViewFieldFlatMetadata({
