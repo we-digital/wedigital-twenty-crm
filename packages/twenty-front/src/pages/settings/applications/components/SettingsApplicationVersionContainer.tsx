@@ -1,4 +1,6 @@
-import { SettingsAdminTableCard } from '@/settings/admin-panel/components/SettingsAdminTableCard';
+import { styled } from '@linaria/react';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
+import { SettingsTableCard } from '@/settings/components/SettingsTableCard';
 import { SettingsAdminVersionDisplay } from '@/settings/admin-panel/components/SettingsAdminVersionDisplay';
 import { useUpgradeApplication } from '@/marketplace/hooks/useUpgradeApplication';
 import { t } from '@lingui/core/macro';
@@ -10,6 +12,12 @@ import {
   type Application,
 } from '~/generated-metadata/graphql';
 import { isNewerSemver } from '~/pages/settings/applications/utils/isNewerSemver';
+
+const StyledContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${themeCssVariables.spacing[4]};
+`;
 
 export const SettingsApplicationVersionContainer = ({
   application,
@@ -81,8 +89,8 @@ export const SettingsApplicationVersionContainer = ({
   ];
 
   return (
-    <>
-      <SettingsAdminTableCard
+    <StyledContainer>
+      <SettingsTableCard
         rounded
         items={versionItems}
         gridAutoColumns="3fr 8fr"
@@ -101,6 +109,6 @@ export const SettingsApplicationVersionContainer = ({
           disabled={isUpgrading}
         />
       )}
-    </>
+    </StyledContainer>
   );
 };

@@ -38,8 +38,11 @@ async function bootstrap() {
         'UnhandledRejection',
       );
 
-      if (shouldCaptureException(reason)) {
-        exceptionHandlerService?.captureExceptions([reason as Error]);
+      const error =
+        reason instanceof Error ? reason : new Error(String(reason));
+
+      if (shouldCaptureException(error)) {
+        exceptionHandlerService?.captureExceptions([error]);
       }
     });
   } catch (err) {

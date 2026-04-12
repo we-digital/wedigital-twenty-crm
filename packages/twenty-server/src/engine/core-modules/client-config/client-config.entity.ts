@@ -1,4 +1,9 @@
-import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
+import {
+  Field,
+  GraphQLISODateTime,
+  ObjectType,
+  registerEnumType,
+} from '@nestjs/graphql';
 
 import { type AiSdkPackage } from 'twenty-shared/ai';
 import { FeatureFlagKey } from 'twenty-shared/types';
@@ -51,11 +56,11 @@ export class ClientAIModelConfig {
   @Field(() => String, { nullable: true })
   sdkPackage: AiSdkPackage | null;
 
-  @Field(() => Number)
-  inputCostPerMillionTokensInCredits: number;
+  @Field(() => Number, { nullable: true })
+  inputCostPerMillionTokens?: number;
 
-  @Field(() => Number)
-  outputCostPerMillionTokensInCredits: number;
+  @Field(() => Number, { nullable: true })
+  outputCostPerMillionTokens?: number;
 
   @Field(() => NativeModelCapabilities, { nullable: true })
   nativeCapabilities?: NativeModelCapabilities;
@@ -68,6 +73,15 @@ export class ClientAIModelConfig {
 
   @Field(() => String, { nullable: true })
   providerName?: string;
+
+  @Field(() => String, { nullable: true })
+  providerLabel?: string;
+
+  @Field(() => Number, { nullable: true })
+  contextWindowTokens?: number;
+
+  @Field(() => Number, { nullable: true })
+  maxOutputTokens?: number;
 
   @Field(() => String, { nullable: true })
   dataResidency?: string;
@@ -213,6 +227,18 @@ export class PublicFeatureFlag {
 }
 
 @ObjectType()
+export class ClientConfigMaintenanceMode {
+  @Field(() => GraphQLISODateTime)
+  startAt: Date;
+
+  @Field(() => GraphQLISODateTime)
+  endAt: Date;
+
+  @Field(() => String, { nullable: true })
+  link?: string;
+}
+
+@ObjectType()
 export class ClientConfig {
   @Field(() => String, { nullable: true })
   appVersion?: string;
@@ -294,4 +320,10 @@ export class ClientConfig {
 
   @Field(() => Boolean)
   isClickHouseConfigured: boolean;
+
+  @Field(() => Boolean)
+  isWorkspaceSchemaDDLLocked: boolean;
+
+  @Field(() => ClientConfigMaintenanceMode, { nullable: true })
+  maintenance?: ClientConfigMaintenanceMode;
 }
