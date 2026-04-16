@@ -66,41 +66,40 @@ export class KeyValuePairService<
     },
     queryRunner?: QueryRunner,
   ) {
-    const normalizedUserId = userId ?? null;
-    const normalizedWorkspaceId = workspaceId ?? null;
-    const hasNullUserAndWorkspace =
-      normalizedUserId === null && normalizedWorkspaceId === null;
-    const keyValuePairRepository = queryRunner
-      ? queryRunner.manager.getRepository(KeyValuePairEntity)
-      : this.keyValuePairRepository;
-
     const upsertData = {
-      userId: normalizedUserId,
-      workspaceId: normalizedWorkspaceId,
+      userId,
+      workspaceId,
       key,
       value,
       type,
     };
 
-    const conflictPaths: string[] = ['key'];
-    let indexPredicate: string | undefined;
+    const conflictPaths = Object.keys(upsertData).filter(
+      (key) =>
+        ['userId', 'workspaceId', 'key'].includes(key) &&
+        // @ts-expect-error legacy noImplicitAny
+        upsertData[key] !== undefined,
+    );
 
-    if (hasNullUserAndWorkspace) {
-      indexPredicate = '"userId" IS NULL AND "workspaceId" IS NULL';
-    } else if (normalizedUserId === null) {
-      conflictPaths.push('workspaceId');
-      indexPredicate = '"userId" IS NULL';
-    } else if (normalizedWorkspaceId === null) {
-      conflictPaths.push('userId');
-      indexPredicate = '"workspaceId" IS NULL';
+    const indexPredicate = !userId
+      ? '"userId" is NULL'
+      : !workspaceId
+        ? '"workspaceId" is NULL'
+        : undefined;
+
+    if (queryRunner) {
+      await queryRunner.manager
+        .getRepository(KeyValuePairEntity)
+        .upsert(upsertData, {
+          conflictPaths,
+          indexPredicate,
+        });
     } else {
-      conflictPaths.push('userId', 'workspaceId');
+      await this.keyValuePairRepository.upsert(upsertData, {
+        conflictPaths,
+        indexPredicate,
+      });
     }
-
-    await keyValuePairRepository.upsert(upsertData, {
-      conflictPaths,
-      indexPredicate,
-    });
   }
 
   async delete(

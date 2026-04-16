@@ -10,7 +10,6 @@ import { AgentMessagePartEntity } from 'src/engine/metadata-modules/ai/ai-agent-
 import {
   AgentMessageEntity,
   AgentMessageRole,
-  AgentMessageStatus,
 } from 'src/engine/metadata-modules/ai/ai-agent-execution/entities/agent-message.entity';
 import { AgentTurnEntity } from 'src/engine/metadata-modules/ai/ai-agent-execution/entities/agent-turn.entity';
 import { mapUIMessagePartsToDBParts } from 'src/engine/metadata-modules/ai/ai-agent-execution/utils/mapUIMessagePartsToDBParts';
@@ -19,22 +18,8 @@ import {
   AgentExceptionCode,
 } from 'src/engine/metadata-modules/ai/ai-agent/agent.exception';
 import { AgentChatThreadEntity } from 'src/engine/metadata-modules/ai/ai-chat/entities/agent-chat-thread.entity';
-import { WorkspaceEventBroadcaster } from 'src/engine/subscriptions/workspace-event-broadcaster/workspace-event-broadcaster.service';
 
 import { AgentTitleGenerationService } from './agent-title-generation.service';
-
-const serializeThreadForBroadcast = (thread: AgentChatThreadEntity) => ({
-  id: thread.id,
-  title: thread.title,
-  totalInputTokens: thread.totalInputTokens,
-  totalOutputTokens: thread.totalOutputTokens,
-  contextWindowTokens: thread.contextWindowTokens,
-  conversationSize: thread.conversationSize,
-  totalInputCredits: thread.totalInputCredits,
-  totalOutputCredits: thread.totalOutputCredits,
-  createdAt: thread.createdAt.toISOString(),
-  updatedAt: thread.updatedAt.toISOString(),
-});
 
 @Injectable()
 export class AgentChatService {
@@ -48,37 +33,14 @@ export class AgentChatService {
     @InjectRepository(AgentMessagePartEntity)
     private readonly messagePartRepository: Repository<AgentMessagePartEntity>,
     private readonly titleGenerationService: AgentTitleGenerationService,
-    private readonly workspaceEventBroadcaster: WorkspaceEventBroadcaster,
   ) {}
 
-  async createThread({
-    userWorkspaceId,
-    workspaceId,
-  }: {
-    userWorkspaceId: string;
-    workspaceId: string;
-  }) {
+  async createThread(userWorkspaceId: string) {
     const thread = this.threadRepository.create({
       userWorkspaceId,
     });
 
-    const savedThread = await this.threadRepository.save(thread);
-
-    await this.workspaceEventBroadcaster.broadcast({
-      workspaceId,
-      events: [
-        {
-          type: 'created',
-          entityName: 'agentChatThread',
-          recordId: savedThread.id,
-          properties: {
-            after: serializeThreadForBroadcast(savedThread),
-          },
-        },
-      ],
-    });
-
-    return savedThread;
+    return this.threadRepository.save(thread);
   }
 
   async getThreadById(threadId: string, userWorkspaceId: string) {
@@ -104,14 +66,12 @@ export class AgentChatService {
     uiMessage,
     agentId,
     turnId,
-    id,
   }: {
     threadId: string;
     uiMessage: Omit<ExtendedUIMessage, 'id'>;
     uiMessageParts?: UIMessagePart<UIDataTypes, UITools>[];
     agentId?: string;
     turnId?: string;
-    id?: string;
   }) {
     let actualTurnId = turnId;
 
@@ -127,12 +87,10 @@ export class AgentChatService {
     }
 
     const message = this.messageRepository.create({
-      ...(id ? { id } : {}),
       threadId,
       turnId: actualTurnId,
       role: uiMessage.role as AgentMessageRole,
       agentId: agentId ?? null,
-      processedAt: new Date(),
     });
 
     const savedMessage = await this.messageRepository.save(message);
@@ -166,111 +124,18 @@ export class AgentChatService {
 
     return this.messageRepository.find({
       where: { threadId },
-      order: { processedAt: { direction: 'ASC', nulls: 'LAST' } },
+      order: { createdAt: 'ASC' },
       relations: ['parts', 'parts.file'],
     });
   }
 
-  async queueMessage({
-    threadId,
-    text,
-    id,
-  }: {
-    threadId: string;
-    text: string;
-    id?: string;
-  }): Promise<AgentMessageEntity> {
-    const message = this.messageRepository.create({
-      ...(id ? { id } : {}),
-      threadId,
-      turnId: null,
-      role: AgentMessageRole.USER,
-      agentId: null,
-      status: AgentMessageStatus.QUEUED,
-    });
-
-    const savedMessage = await this.messageRepository.save(message);
-
-    const part = this.messagePartRepository.create({
-      messageId: savedMessage.id,
-      orderIndex: 0,
-      type: 'text',
-      textContent: text,
-    });
-
-    await this.messagePartRepository.save(part);
-
-    return savedMessage;
-  }
-
-  async getQueuedMessages(threadId: string): Promise<AgentMessageEntity[]> {
-    return this.messageRepository.find({
-      where: {
-        threadId,
-        status: AgentMessageStatus.QUEUED,
-      },
-      order: { createdAt: 'ASC' },
-      relations: ['parts'],
-    });
-  }
-
-  async findQueuedMessage(
-    messageId: string,
-  ): Promise<AgentMessageEntity | null> {
-    return this.messageRepository.findOne({
-      where: { id: messageId, status: AgentMessageStatus.QUEUED },
-    });
-  }
-
-  async deleteQueuedMessage(messageId: string): Promise<boolean> {
-    const result = await this.messageRepository.delete({
-      id: messageId,
-      status: AgentMessageStatus.QUEUED,
-    });
-
-    return (result.affected ?? 0) > 0;
-  }
-
-  async promoteQueuedMessage(
-    messageId: string,
+  async generateTitleIfNeeded(
     threadId: string,
+    messageContent: string,
   ): Promise<string | null> {
-    const turn = this.turnRepository.create({
-      threadId,
-      agentId: null,
-    });
-
-    const savedTurn = await this.turnRepository.save(turn);
-
-    const result = await this.messageRepository.update(
-      { id: messageId, threadId, status: AgentMessageStatus.QUEUED },
-      {
-        status: AgentMessageStatus.SENT,
-        processedAt: new Date(),
-        turnId: savedTurn.id,
-      },
-    );
-
-    if ((result.affected ?? 0) === 0) {
-      await this.turnRepository.delete(savedTurn.id);
-
-      return null;
-    }
-
-    return savedTurn.id;
-  }
-
-  async generateTitleIfNeeded({
-    threadId,
-    messageContent,
-    workspaceId,
-  }: {
-    threadId: string;
-    messageContent: string;
-    workspaceId: string;
-  }): Promise<string | null> {
     const thread = await this.threadRepository.findOne({
       where: { id: threadId },
+      select: ['id', 'title'],
     });
 
     if (!thread || thread.title || !messageContent) {
@@ -281,21 +146,6 @@ export class AgentChatService {
       await this.titleGenerationService.generateThreadTitle(messageContent);
 
     await this.threadRepository.update(threadId, { title });
-
-    await this.workspaceEventBroadcaster.broadcast({
-      workspaceId,
-      events: [
-        {
-          type: 'updated',
-          entityName: 'agentChatThread',
-          recordId: threadId,
-          properties: {
-            updatedFields: ['title'],
-            after: serializeThreadForBroadcast({ ...thread, title }),
-          },
-        },
-      ],
-    });
 
     return title;
   }

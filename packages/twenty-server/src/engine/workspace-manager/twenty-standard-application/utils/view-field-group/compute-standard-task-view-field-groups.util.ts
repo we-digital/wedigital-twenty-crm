@@ -19,14 +19,25 @@ export const computeStandardTaskViewFieldGroups = (
         isVisible: true,
       },
     }),
-    taskRecordPageFieldsSystem: createStandardViewFieldGroupFlatMetadata({
+    taskRecordPageFieldsAdditional: createStandardViewFieldGroupFlatMetadata({
       ...args,
       objectName: 'task',
       context: {
         viewName: 'taskRecordPageFields',
-        viewFieldGroupName: 'system',
-        name: 'System',
+        viewFieldGroupName: 'additional',
+        name: 'Additional',
         position: 1,
+        isVisible: true,
+      },
+    }),
+    taskRecordPageFieldsOther: createStandardViewFieldGroupFlatMetadata({
+      ...args,
+      objectName: 'task',
+      context: {
+        viewName: 'taskRecordPageFields',
+        viewFieldGroupName: 'other',
+        name: 'Other',
+        position: 2,
         isVisible: true,
       },
     }),

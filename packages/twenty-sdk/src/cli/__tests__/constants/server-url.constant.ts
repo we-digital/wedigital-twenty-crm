@@ -1,7 +1,1 @@
-import { ConfigService } from '@/cli/utilities/config/config-service';
-
-export const getServerUrl = async (): Promise<string> => {
-  const config = await new ConfigService().getConfig();
-
-  return config.apiUrl;
-};
+export const SERVER_URL = process.env.TWENTY_API_URL ?? 'http://localhost:2020';

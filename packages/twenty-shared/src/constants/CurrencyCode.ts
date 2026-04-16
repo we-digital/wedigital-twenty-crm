@@ -28,7 +28,6 @@ export enum CurrencyCode {
   CDF = 'CDF',
   CHF = 'CHF',
   CLP = 'CLP',
-  CLF = 'CLF',
   CNY = 'CNY',
   COP = 'COP',
   CRC = 'CRC',

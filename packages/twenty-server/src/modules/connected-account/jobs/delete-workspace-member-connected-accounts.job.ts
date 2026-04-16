@@ -1,15 +1,9 @@
-import { InjectRepository } from '@nestjs/typeorm';
-
-import { type Repository } from 'typeorm';
-
 import { Process } from 'src/engine/core-modules/message-queue/decorators/process.decorator';
 import { Processor } from 'src/engine/core-modules/message-queue/decorators/processor.decorator';
 import { MessageQueue } from 'src/engine/core-modules/message-queue/message-queue.constants';
-import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
-import { ConnectedAccountEntity } from 'src/engine/metadata-modules/connected-account/entities/connected-account.entity';
+import { ConnectedAccountDataAccessService } from 'src/engine/metadata-modules/connected-account/data-access/services/connected-account-data-access.service';
 import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
 import { buildSystemAuthContext } from 'src/engine/twenty-orm/utils/build-system-auth-context.util';
-import { type WorkspaceMemberWorkspaceEntity } from 'src/modules/workspace-member/standard-objects/workspace-member.workspace-entity';
 
 export type DeleteWorkspaceMemberConnectedAccountsCleanupJobData = {
   workspaceId: string;
@@ -20,10 +14,7 @@ export type DeleteWorkspaceMemberConnectedAccountsCleanupJobData = {
 export class DeleteWorkspaceMemberConnectedAccountsCleanupJob {
   constructor(
     private readonly globalWorkspaceOrmManager: GlobalWorkspaceOrmManager,
-    @InjectRepository(ConnectedAccountEntity)
-    private readonly connectedAccountRepository: Repository<ConnectedAccountEntity>,
-    @InjectRepository(UserWorkspaceEntity)
-    private readonly userWorkspaceRepository: Repository<UserWorkspaceEntity>,
+    private readonly connectedAccountDataAccessService: ConnectedAccountDataAccessService,
   ) {}
 
   @Process(DeleteWorkspaceMemberConnectedAccountsCleanupJob.name)
@@ -35,31 +26,8 @@ export class DeleteWorkspaceMemberConnectedAccountsCleanupJob {
     const authContext = buildSystemAuthContext(workspaceId);
 
     await this.globalWorkspaceOrmManager.executeInWorkspaceContext(async () => {
-      const workspaceMemberRepo =
-        await this.globalWorkspaceOrmManager.getRepository<WorkspaceMemberWorkspaceEntity>(
-          workspaceId,
-          'workspaceMember',
-        );
-
-      const member = await workspaceMemberRepo.findOne({
-        where: { id: workspaceMemberId },
-      });
-
-      if (!member) {
-        return;
-      }
-
-      const userWorkspace = await this.userWorkspaceRepository.findOne({
-        where: { userId: member.userId, workspaceId },
-      });
-
-      if (!userWorkspace) {
-        return;
-      }
-
-      await this.connectedAccountRepository.delete({
-        userWorkspaceId: userWorkspace.id,
-        workspaceId,
+      await this.connectedAccountDataAccessService.delete(workspaceId, {
+        accountOwnerId: workspaceMemberId,
       });
     }, authContext);
   }

@@ -191,7 +191,6 @@ export const widgetTypeSchema = z.enum([
   WidgetType.GRAPH,
   WidgetType.IFRAME,
   WidgetType.STANDALONE_RICH_TEXT,
-  WidgetType.RECORD_TABLE,
 ]);
 
 // Graph configuration schema for AGGREGATE type (KPI numbers)
@@ -381,16 +380,6 @@ const pieChartConfigSchema = withManualSortRefinement(
   }),
 );
 
-// Record table configuration
-const recordTableConfigSchema = z.object({
-  configurationType: z.literal(WidgetConfigurationType.RECORD_TABLE),
-  viewId: z
-    .uuid()
-    .describe(
-      'UUID of the dedicated view created for this widget. Must be created with create_view before creating the widget. Never reuse a record index view.',
-    ),
-});
-
 // Iframe configuration
 const iframeConfigSchema = z.object({
   configurationType: z.literal(WidgetConfigurationType.IFRAME),
@@ -450,7 +439,6 @@ export const widgetConfigurationSchema = z
     pieChartConfigSchema,
     iframeConfigSchema,
     richTextConfigSchema,
-    recordTableConfigSchema,
   ])
   .optional()
   .describe('Widget configuration - structure depends on widget type');
@@ -463,7 +451,6 @@ export const widgetConfigurationSchemaWithoutDefaults = z
     pieChartConfigSchemaWithoutDefaults,
     iframeConfigSchema,
     richTextConfigSchema,
-    recordTableConfigSchema,
   ])
   .optional()
   .describe('Widget configuration - structure depends on widget type');

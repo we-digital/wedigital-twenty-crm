@@ -7,13 +7,16 @@ import { isLayoutCustomizationModeEnabledState } from '@/layout-customization/st
 import { useFilteredObjectMetadataItems } from '@/object-metadata/hooks/useFilteredObjectMetadataItems';
 import { RecordIndexPageHeaderIcon } from '@/object-record/record-index/components/RecordIndexPageHeaderIcon';
 import { useRecordIndexContextOrThrow } from '@/object-record/record-index/contexts/RecordIndexContext';
+import { PageHeaderToggleSidePanelButton } from '@/ui/layout/page-header/components/PageHeaderToggleSidePanelButton';
 import { PageHeader } from '@/ui/layout/page/components/PageHeader';
 import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { useIsFeatureEnabled } from '@/workspace/hooks/useIsFeatureEnabled';
 import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
 import { isDefined } from 'twenty-shared/utils';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
+import { FeatureFlagKey } from '~/generated-metadata/graphql';
 
 const StyledTitleWithSelectedRecords = styled.div`
   display: flex;
@@ -66,6 +69,9 @@ export const RecordIndexPageHeader = () => {
   const isLayoutCustomizationModeEnabled = useAtomStateValue(
     isLayoutCustomizationModeEnabledState,
   );
+  const isCommandMenuItemEnabled = useIsFeatureEnabled(
+    FeatureFlagKey.IS_COMMAND_MENU_ITEM_ENABLED,
+  );
 
   return (
     <PageHeader
@@ -77,8 +83,12 @@ export const RecordIndexPageHeader = () => {
       {isDefined(contextStoreCurrentViewId) && (
         <>
           <RecordIndexCommandMenu />
-          {!isLayoutCustomizationModeEnabled && (
-            <CommandMenuItemMoreActionsButton />
+          {isCommandMenuItemEnabled ? (
+            !isLayoutCustomizationModeEnabled && (
+              <CommandMenuItemMoreActionsButton />
+            )
+          ) : (
+            <PageHeaderToggleSidePanelButton />
           )}
         </>
       )}

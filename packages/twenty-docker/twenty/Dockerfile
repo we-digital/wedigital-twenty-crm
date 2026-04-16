@@ -16,7 +16,6 @@ COPY ./packages/twenty-server/patches /app/packages/twenty-server/patches
 COPY ./packages/twenty-ui/package.json /app/packages/twenty-ui/
 COPY ./packages/twenty-shared/package.json /app/packages/twenty-shared/
 COPY ./packages/twenty-front/package.json /app/packages/twenty-front/
-COPY ./packages/twenty-front-component-renderer/package.json /app/packages/twenty-front-component-renderer/
 COPY ./packages/twenty-sdk/package.json /app/packages/twenty-sdk/
 COPY ./packages/twenty-client-sdk/package.json /app/packages/twenty-client-sdk/
 
@@ -52,7 +51,6 @@ FROM common-deps AS twenty-front-build
 ARG REACT_APP_SERVER_BASE_URL
 
 COPY ./packages/twenty-front /app/packages/twenty-front
-COPY ./packages/twenty-front-component-renderer /app/packages/twenty-front-component-renderer
 COPY ./packages/twenty-ui /app/packages/twenty-ui
 COPY ./packages/twenty-shared /app/packages/twenty-shared
 COPY ./packages/twenty-sdk /app/packages/twenty-sdk
@@ -195,9 +193,9 @@ RUN find /app/packages/twenty-server/dist -name '*.js.map' -delete
 # s6 service definitions
 COPY packages/twenty-docker/twenty-app-dev/rootfs/ /
 
-RUN mkdir -p /data/postgres /data/redis /app/packages/twenty-server/.local-storage \
+RUN mkdir -p /data/postgres /data/redis /app/.local-storage \
  && chown -R postgres:postgres /data/postgres \
- && chown 1000:1000 /data/redis /app/packages/twenty-server/.local-storage
+ && chown 1000:1000 /data/redis /app/.local-storage
 
 ARG REACT_APP_SERVER_BASE_URL
 ARG APP_VERSION=0.0.0
@@ -211,14 +209,14 @@ ENV PG_DATABASE_URL=postgres://twenty:twenty@localhost:5432/default \
     REACT_APP_SERVER_BASE_URL=$REACT_APP_SERVER_BASE_URL \
     APP_VERSION=$APP_VERSION \
     NODE_ENV=development \
-    NODE_PORT=2020 \
+    NODE_PORT=3000 \
     DISABLE_DB_MIGRATIONS=true \
     DISABLE_CRON_JOBS_REGISTRATION=true \
     IS_BILLING_ENABLED=false \
     SIGN_IN_PREFILLED=true
 
-EXPOSE 2020
-VOLUME ["/data/postgres", "/app/packages/twenty-server/.local-storage"]
+EXPOSE 3000
+VOLUME ["/data/postgres", "/app/.local-storage"]
 
 LABEL org.opencontainers.image.source=https://github.com/twentyhq/twenty
 LABEL org.opencontainers.image.description="All-in-one Twenty image for local development and SDK usage. Includes PostgreSQL, Redis, server, and worker."

@@ -271,17 +271,6 @@ export class OrchestratorState {
       });
     }
 
-    for (const [filePath, syncableEntity] of entityTypeMap) {
-      if (!entities.has(filePath)) {
-        entities.set(filePath, {
-          name: filePath,
-          path: filePath,
-          type: syncableEntity,
-          status: 'pending',
-        });
-      }
-    }
-
     this.entities = entities;
   }
 

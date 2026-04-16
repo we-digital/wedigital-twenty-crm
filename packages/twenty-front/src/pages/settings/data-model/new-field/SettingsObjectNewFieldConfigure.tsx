@@ -1,4 +1,3 @@
-import { isDDLLockedState } from '@/client-config/states/isDDLLockedState';
 import { useFieldMetadataItem } from '@/object-metadata/hooks/useFieldMetadataItem';
 import { useFilteredObjectMetadataItems } from '@/object-metadata/hooks/useFilteredObjectMetadataItems';
 import { SaveAndCancelButtons } from '@/settings/components/SaveAndCancelButtons/SaveAndCancelButtons';
@@ -10,7 +9,6 @@ import { SettingsDataModelFieldSettingsFormCard } from '@/settings/data-model/fi
 import { settingsFieldFormSchema } from '@/settings/data-model/fields/forms/validation-schemas/settingsFieldFormSchema';
 import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
 import { SubMenuTopBarContainer } from '@/ui/layout/page/components/SubMenuTopBarContainer';
-import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLingui } from '@lingui/react/macro';
 import { useEffect, useState } from 'react';
@@ -21,7 +19,7 @@ import {
   type RelationCreationPayload,
   SettingsPath,
 } from 'twenty-shared/types';
-import { getSettingsPath, isDefined } from 'twenty-shared/utils';
+import { isDefined, getSettingsPath } from 'twenty-shared/utils';
 import { H2Title } from 'twenty-ui/display';
 import { Section } from 'twenty-ui/layout';
 import { type z } from 'zod';
@@ -90,13 +88,11 @@ export const SettingsObjectNewFieldConfigure = () => {
     }
   }, [activeObjectMetadataItem, navigateApp]);
 
-  const isDDLLocked = useAtomStateValue(isDDLLockedState);
-
   if (!isDefined(activeObjectMetadataItem)) return null;
 
   const { isValid, isSubmitting } = formConfig.formState;
 
-  const canSave = isValid && !isSubmitting && !isDDLLocked;
+  const canSave = isValid && !isSubmitting;
 
   const handleSave = async (
     formValues: SettingsDataModelNewFieldFormValues,

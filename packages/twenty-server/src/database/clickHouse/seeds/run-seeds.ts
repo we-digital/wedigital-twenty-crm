@@ -2,11 +2,7 @@
 import { createClient, ClickHouseLogLevel } from '@clickhouse/client';
 import { config } from 'dotenv';
 
-import {
-  objectEventFixtures,
-  usageEventFixtures,
-  workspaceEventFixtures,
-} from './fixtures';
+import { objectEventFixtures, workspaceEventFixtures } from './fixtures';
 
 config({
   path: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
@@ -35,14 +31,6 @@ async function seedEvents() {
     await client.insert({
       table: 'objectEvent',
       values: objectEventFixtures,
-      format: 'JSONEachRow',
-    });
-
-    console.log(`⚡ Seeding ${usageEventFixtures.length} usage events...`);
-
-    await client.insert({
-      table: 'usageEvent',
-      values: usageEventFixtures,
       format: 'JSONEachRow',
     });
 

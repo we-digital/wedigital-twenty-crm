@@ -5,7 +5,7 @@ import {
   mockFlatFieldMetadataMaps,
   mockFlatObjectMetadatas,
 } from 'src/engine/core-modules/__mocks__/mockFlatObjectMetadatas';
-import { FileUrlService } from 'src/engine/core-modules/file/file-url/file-url.service';
+import { FileService } from 'src/engine/core-modules/file/services/file.service';
 import { SearchService } from 'src/engine/core-modules/search/services/search.service';
 import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
 import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
@@ -18,7 +18,7 @@ describe('SearchService', () => {
       providers: [
         SearchService,
         { provide: GlobalWorkspaceOrmManager, useValue: {} },
-        { provide: FileUrlService, useValue: {} },
+        { provide: FileService, useValue: {} },
         { provide: TwentyConfigService, useValue: { get: () => false } },
       ],
     }).compile();
@@ -105,13 +105,13 @@ describe('SearchService', () => {
   });
 
   describe('getImageIdentifierColumn', () => {
-    it('should return `avatarFile` if the object metadata item is a person', () => {
+    it('should return null if the object metadata item does not have an image identifier', () => {
       const imageIdentifierColumn = service.getImageIdentifierColumn(
         mockFlatObjectMetadatas[0],
         mockFlatFieldMetadataMaps,
       );
 
-      expect(imageIdentifierColumn).toEqual('avatarFile');
+      expect(imageIdentifierColumn).toBeNull();
     });
     it('should return `domainNamePrimaryLinkUrl` column for a company object metadata item', () => {
       const imageIdentifierColumn = service.getImageIdentifierColumn(

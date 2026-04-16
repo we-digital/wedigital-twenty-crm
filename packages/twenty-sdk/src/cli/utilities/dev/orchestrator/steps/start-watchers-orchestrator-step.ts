@@ -32,7 +32,6 @@ export class StartWatchersOrchestratorStep {
   private notify: () => void;
   private onFileBuilt: (event: FileBuiltEvent) => void;
   private shouldSkipTypecheck: () => boolean;
-  private verbose: boolean;
 
   private manifestWatcher: ManifestWatcher | null = null;
   private logicFunctionsWatcher: EsbuildWatcher | null = null;
@@ -47,14 +46,12 @@ export class StartWatchersOrchestratorStep {
     notify: () => void;
     onFileBuilt: (event: FileBuiltEvent) => void;
     shouldSkipTypecheck: () => boolean;
-    verbose?: boolean;
   }) {
     this.state = options.state;
     this.scheduleSync = options.scheduleSync;
     this.notify = options.notify;
     this.onFileBuilt = options.onFileBuilt;
     this.shouldSkipTypecheck = options.shouldSkipTypecheck;
-    this.verbose = options.verbose ?? false;
   }
 
   async start(): Promise<void> {
@@ -64,7 +61,6 @@ export class StartWatchersOrchestratorStep {
     this.manifestWatcher = new ManifestWatcher({
       appPath: this.state.appPath,
       handleChangeDetected: this.handleChangeDetected.bind(this),
-      verbose: this.verbose,
     });
 
     await this.manifestWatcher.start();
@@ -137,12 +133,10 @@ export class StartWatchersOrchestratorStep {
   }
 
   private handleFileBuilt(event: FileBuiltEvent): void {
-    if (this.verbose) {
-      this.state.addEvent({
-        message: `Successfully built ${event.builtPath}`,
-        status: 'success',
-      });
-    }
+    this.state.addEvent({
+      message: `Successfully built ${event.builtPath}`,
+      status: 'success',
+    });
 
     this.state.steps.uploadFiles.output.builtFileInfos.set(event.builtPath, {
       checksum: event.checksum,

@@ -40,14 +40,11 @@ export class FindManyResolverFactory
 
       try {
         const {
-          results: {
-            records,
-            aggregatedValues,
-            totalCount,
-            pageInfo,
-            selectedFieldsResult,
-          },
-          args: processedArgs,
+          records,
+          aggregatedValues,
+          totalCount,
+          pageInfo,
+          selectedFieldsResult,
         } = await this.commonFindManyQueryRunnerService.execute(
           { ...args, selectedFields },
           resolverContext,
@@ -67,7 +64,7 @@ export class FindManyResolverFactory
           objectName: resolverContext.flatObjectMetadata.nameSingular,
           take: args.first ?? args.last ?? QUERY_MAX_RECORDS,
           totalCount,
-          order: processedArgs.orderBy,
+          order: args.orderBy,
           hasNextPage: pageInfo.hasNextPage,
           hasPreviousPage: pageInfo.hasPreviousPage,
         });

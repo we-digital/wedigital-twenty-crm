@@ -4,7 +4,6 @@ import { pageLayoutDraftComponentState } from '@/page-layout/states/pageLayoutDr
 import { pageLayoutEditingWidgetIdComponentState } from '@/page-layout/states/pageLayoutEditingWidgetIdComponentState';
 import { removeWidgetFromTab } from '@/page-layout/utils/removeWidgetFromTab';
 import { removeWidgetLayoutFromTab } from '@/page-layout/utils/removeWidgetLayoutFromTab';
-import { useDeleteViewForFieldsWidget } from '@/page-layout/widgets/fields/hooks/useDeleteViewForFieldsWidget';
 import { useDeleteViewForRecordTableWidget } from '@/page-layout/widgets/record-table/hooks/useDeleteViewForRecordTableWidget';
 import { useSidePanelMenu } from '@/side-panel/hooks/useSidePanelMenu';
 import { useAvailableComponentInstanceIdOrThrow } from '@/ui/utilities/state/component-state/hooks/useAvailableComponentInstanceIdOrThrow';
@@ -37,8 +36,6 @@ export const useDeletePageLayoutWidget = (pageLayoutIdFromProps?: string) => {
 
   const { closeSidePanelMenu } = useSidePanelMenu();
 
-  const { deleteViewForFieldsWidget } = useDeleteViewForFieldsWidget();
-
   const { deleteViewForRecordTableWidget } =
     useDeleteViewForRecordTableWidget();
 
@@ -70,17 +67,6 @@ export const useDeletePageLayoutWidget = (pageLayoutIdFromProps?: string) => {
         );
       }
 
-      if (
-        isDefined(widgetToDelete) &&
-        widgetToDelete.type === WidgetType.FIELDS &&
-        'viewId' in widgetToDelete.configuration &&
-        isDefined(widgetToDelete.configuration.viewId)
-      ) {
-        deleteViewForFieldsWidget(
-          widgetToDelete.configuration.viewId as string,
-        );
-      }
-
       const tabId = tabWithWidget?.id;
 
       if (isDefined(tabId)) {
@@ -107,7 +93,6 @@ export const useDeletePageLayoutWidget = (pageLayoutIdFromProps?: string) => {
     },
     [
       closeSidePanelMenu,
-      deleteViewForFieldsWidget,
       deleteViewForRecordTableWidget,
       pageLayoutCurrentLayoutsState,
       pageLayoutDraftState,

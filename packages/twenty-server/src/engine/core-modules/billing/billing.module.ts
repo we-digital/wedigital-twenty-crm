@@ -3,7 +3,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { WorkspaceIteratorModule } from 'src/database/commands/command-runners/workspace-iterator.module';
 import { BillingGaugeService } from 'src/engine/core-modules/billing/billing-gauge.service';
 import { BillingResolver } from 'src/engine/core-modules/billing/billing.resolver';
 import { BillingSyncCustomerDataCommand } from 'src/engine/core-modules/billing/commands/billing-sync-customer-data.command';
@@ -69,7 +68,6 @@ import { PermissionsModule } from 'src/engine/metadata-modules/permissions/permi
     DataSourceModule,
     MetricsModule,
     EnterpriseModule,
-    WorkspaceIteratorModule,
   ],
   providers: [
     BillingSubscriptionService,

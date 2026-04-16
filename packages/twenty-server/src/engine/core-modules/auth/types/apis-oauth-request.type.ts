@@ -1,9 +1,7 @@
 import { type Request } from 'express';
 
-import {
-  type CalendarChannelVisibility,
-  type MessageChannelVisibility,
-} from 'twenty-shared/types';
+import { type CalendarChannelVisibility } from 'src/modules/calendar/common/standard-objects/calendar-channel.workspace-entity';
+import { type MessageChannelVisibility } from 'src/modules/messaging/common/standard-objects/message-channel.workspace-entity';
 
 export type APIsOAuthRequest = Omit<
   Request,

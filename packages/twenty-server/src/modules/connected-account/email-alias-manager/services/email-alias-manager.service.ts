@@ -1,15 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 
 import { ConnectedAccountProvider } from 'twenty-shared/types';
 import { assertUnreachable } from 'twenty-shared/utils';
-import { Repository } from 'typeorm';
 
-import { ConnectedAccountEntity } from 'src/engine/metadata-modules/connected-account/entities/connected-account.entity';
+import { ConnectedAccountDataAccessService } from 'src/engine/metadata-modules/connected-account/data-access/services/connected-account-data-access.service';
 import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
 import { buildSystemAuthContext } from 'src/engine/twenty-orm/utils/build-system-auth-context.util';
 import { GoogleEmailAliasManagerService } from 'src/modules/connected-account/email-alias-manager/drivers/google/services/google-email-alias-manager.service';
 import { MicrosoftEmailAliasManagerService } from 'src/modules/connected-account/email-alias-manager/drivers/microsoft/services/microsoft-email-alias-manager.service';
+import { type ConnectedAccountWorkspaceEntity } from 'src/modules/connected-account/standard-objects/connected-account.workspace-entity';
 
 @Injectable()
 export class EmailAliasManagerService {
@@ -17,14 +16,13 @@ export class EmailAliasManagerService {
     private readonly googleEmailAliasManagerService: GoogleEmailAliasManagerService,
     private readonly microsoftEmailAliasManagerService: MicrosoftEmailAliasManagerService,
     private readonly globalWorkspaceOrmManager: GlobalWorkspaceOrmManager,
-    @InjectRepository(ConnectedAccountEntity)
-    private readonly connectedAccountRepository: Repository<ConnectedAccountEntity>,
+    private readonly connectedAccountDataAccessService: ConnectedAccountDataAccessService,
   ) {}
 
   public async refreshHandleAliases(
-    connectedAccount: ConnectedAccountEntity,
+    connectedAccount: ConnectedAccountWorkspaceEntity,
     workspaceId: string,
-  ): Promise<string[]> {
+  ) {
     let handleAliases: string[];
 
     switch (connectedAccount.provider) {
@@ -55,14 +53,13 @@ export class EmailAliasManagerService {
     const authContext = buildSystemAuthContext(workspaceId);
 
     await this.globalWorkspaceOrmManager.executeInWorkspaceContext(async () => {
-      await this.connectedAccountRepository.update(
-        { id: connectedAccount.id, workspaceId },
+      await this.connectedAccountDataAccessService.update(
+        workspaceId,
+        { id: connectedAccount.id },
         {
-          handleAliases,
+          handleAliases: handleAliases.join(','), // TODO: modify handleAliases to be of fieldmetadatatype array
         },
       );
     }, authContext);
-
-    return handleAliases;
   }
 }

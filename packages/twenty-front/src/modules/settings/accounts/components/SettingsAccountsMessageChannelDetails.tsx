@@ -1,7 +1,14 @@
 import { styled } from '@linaria/react';
 
-import { type MessageChannel } from '@/accounts/types/MessageChannel';
+import {
+  type MessageChannel,
+  type MessageChannelContactAutoCreationPolicy,
+  type MessageFolderImportPolicy,
+} from '@/accounts/types/MessageChannel';
+import { CoreObjectNameSingular, FeatureFlagKey } from 'twenty-shared/types';
+import { useUpdateOneRecord } from '@/object-record/hooks/useUpdateOneRecord';
 import { UPDATE_MESSAGE_CHANNEL } from '@/settings/accounts/graphql/mutations/updateMessageChannel';
+import { useFeatureFlagsMap } from '@/workspace/hooks/useFeatureFlagsMap';
 import { useMutation } from '@apollo/client/react';
 import { SettingsAccountsMessageAutoCreationCard } from '@/settings/accounts/components/SettingsAccountsMessageAutoCreationCard';
 import { SettingsAccountsMessageFolderCard } from '@/settings/accounts/components/SettingsAccountsMessageFolderCard';
@@ -12,10 +19,6 @@ import { H2Title, IconBriefcase, IconUsers } from 'twenty-ui/display';
 import { Card, Section } from 'twenty-ui/layout';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 import { type MessageChannelVisibility } from '~/generated/graphql';
-import {
-  type MessageChannelContactAutoCreationPolicy,
-  type MessageFolderImportPolicy,
-} from 'twenty-shared/types';
 
 type SettingsAccountsMessageChannelDetailsProps = {
   messageChannel: Pick<
@@ -26,6 +29,7 @@ type SettingsAccountsMessageChannelDetailsProps = {
     | 'excludeNonProfessionalEmails'
     | 'excludeGroupEmails'
     | 'isSyncEnabled'
+    | 'messageFolders'
     | 'messageFolderImportPolicy'
   >;
 };
@@ -39,12 +43,25 @@ const StyledDetailsContainer = styled.div`
 export const SettingsAccountsMessageChannelDetails = ({
   messageChannel,
 }: SettingsAccountsMessageChannelDetailsProps) => {
+  const featureFlagsMap = useFeatureFlagsMap();
+  const isMigrated =
+    featureFlagsMap[FeatureFlagKey.IS_CONNECTED_ACCOUNT_MIGRATED] ?? false;
+
+  const { updateOneRecord } = useUpdateOneRecord();
   const [updateMetadataChannel] = useMutation(UPDATE_MESSAGE_CHANNEL);
 
   const updateChannel = (update: Record<string, unknown>) => {
-    updateMetadataChannel({
-      variables: { input: { id: messageChannel.id, update } },
-    });
+    if (isMigrated) {
+      updateMetadataChannel({
+        variables: { input: { id: messageChannel.id, update } },
+      });
+    } else {
+      updateOneRecord({
+        objectNameSingular: CoreObjectNameSingular.MessageChannel,
+        idToUpdate: messageChannel.id,
+        updateOneRecordInput: update,
+      });
+    }
   };
 
   const handleVisibilityChange = (value: MessageChannelVisibility) => {

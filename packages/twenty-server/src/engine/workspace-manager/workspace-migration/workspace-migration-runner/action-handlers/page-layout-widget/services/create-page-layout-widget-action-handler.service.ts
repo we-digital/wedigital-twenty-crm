@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 
-import { isDefined } from 'twenty-shared/utils';
 import { v4 } from 'uuid';
 
 import { WorkspaceMigrationRunnerActionHandler } from 'src/engine/workspace-manager/workspace-migration/workspace-migration-runner/interfaces/workspace-migration-runner-action-handler-service.interface';
@@ -12,7 +11,6 @@ import {
   UniversalCreatePageLayoutWidgetAction,
 } from 'src/engine/workspace-manager/workspace-migration/workspace-migration-builder/builders/page-layout-widget/types/workspace-migration-page-layout-widget-action.type';
 import { fromUniversalConfigurationToFlatPageLayoutWidgetConfiguration } from 'src/engine/workspace-manager/workspace-migration/workspace-migration-runner/action-handlers/page-layout-widget/services/utils/from-universal-configuration-to-flat-page-layout-widget-configuration.util';
-import { fromUniversalOverridesToPageLayoutWidgetOverrides } from 'src/engine/workspace-manager/workspace-migration/workspace-migration-runner/action-handlers/page-layout-widget/services/utils/from-universal-overrides-to-page-layout-widget-overrides.util';
 import {
   WorkspaceMigrationActionRunnerArgs,
   WorkspaceMigrationActionRunnerContext,
@@ -49,13 +47,6 @@ export class CreatePageLayoutWidgetActionHandlerService extends WorkspaceMigrati
         flatViewFieldGroupMaps: allFlatEntityMaps.flatViewFieldGroupMaps,
       });
 
-    const overrides = isDefined(action.flatEntity.universalOverrides)
-      ? fromUniversalOverridesToPageLayoutWidgetOverrides({
-          universalOverrides: action.flatEntity.universalOverrides,
-          flatPageLayoutTabMaps: allFlatEntityMaps.flatPageLayoutTabMaps,
-        })
-      : null;
-
     const emptyUniversalForeignKeyAggregators =
       getUniversalFlatEntityEmptyForeignKeyAggregators({
         metadataName: 'pageLayoutWidget',
@@ -66,7 +57,6 @@ export class CreatePageLayoutWidgetActionHandlerService extends WorkspaceMigrati
       flatEntity: {
         ...action.flatEntity,
         configuration,
-        overrides,
         pageLayoutTabId,
         objectMetadataId,
         applicationId: flatApplication.id,

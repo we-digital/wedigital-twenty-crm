@@ -35,10 +35,12 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:18
+        image: twentycrm/twenty-postgres-spilo
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          PGUSER_SUPERUSER: postgres
+          PGPASSWORD_SUPERUSER: postgres
+          ALLOW_NOSSL: 'true'
+          SPILO_PROVIDER: 'local'
         ports:
           - 5432:5432
         options: >-
@@ -75,8 +77,6 @@ jobs:
         run: |
           echo "Attempting to merge main into current branch..."
 
-          git config user.email "ci@twenty.com"
-          git config user.name "CI"
           git fetch origin main
 
           CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
@@ -90,8 +90,8 @@ jobs:
             echo "❌ Merge failed due to conflicts"
             echo "⚠️ Falling back to comparing current branch against main without merge"
 
-            # Abort the failed merge (may not exist if merge never started)
-            git merge --abort 2>/dev/null || true
+            # Abort the failed merge
+            git merge --abort
 
             echo "merged=false" >> $GITHUB_OUTPUT
             echo "BRANCH_STATE=conflicts" >> $GITHUB_ENV
@@ -251,14 +251,6 @@ jobs:
             rm -f /tmp/current-server.pid
           fi
 
-      - name: Flush Redis between server runs
-        run: |
-          # Clear all Redis caches to prevent stale data from the current branch
-          # server contaminating the main branch server. Both servers share the
-          # same Redis instance, and CoreEntityCacheService/WorkspaceCacheService
-          # persist cached entities across process restarts.
-          redis-cli -h localhost -p 6379 FLUSHALL || echo "::warning::Failed to flush Redis"
-
       - name: Checkout main branch
         run: |
           git stash
@@ -401,30 +393,12 @@ jobs:
           # Clean up temp directory
           rm -rf /tmp/current-branch-files
 
-      - name: Validate downloaded schema files
-        id: validate-schemas
-        run: |
-          valid=true
-
-          for file in main-schema-introspection.json current-schema-introspection.json \
-                      main-metadata-schema-introspection.json current-metadata-schema-introspection.json \
-                      main-rest-api.json current-rest-api.json \
-                      main-rest-metadata-api.json current-rest-metadata-api.json; do
-            if [ ! -f "$file" ] || ! jq empty "$file" 2>/dev/null; then
-              echo "::warning::Invalid or missing schema file: $file"
-              valid=false
-            fi
-          done
-
-          echo "valid=$valid" >> $GITHUB_OUTPUT
-
       - name: Install OpenAPI Diff Tool
         run: |
           # Using the Java-based OpenAPITools/openapi-diff via Docker
           echo "Using OpenAPITools/openapi-diff via Docker"
 
       - name: Generate GraphQL Schema Diff Reports
-        if: steps.validate-schemas.outputs.valid == 'true'
         run: |
           echo "=== INSTALLING GRAPHQL INSPECTOR CLI ==="
           npm install -g @graphql-inspector/cli
@@ -435,6 +409,7 @@ jobs:
           echo "Checking GraphQL schema for changes..."
           if graphql-inspector diff main-schema-introspection.json current-schema-introspection.json >/dev/null 2>&1; then
             echo "✅ No changes in GraphQL schema"
+            # Don't create a diff file for no changes
           else
             echo "⚠️ Changes detected in GraphQL schema, generating report..."
             echo "# GraphQL Schema Changes" > graphql-schema-diff.md
@@ -452,6 +427,7 @@ jobs:
           echo "Checking GraphQL metadata schema for changes..."
           if graphql-inspector diff main-metadata-schema-introspection.json current-metadata-schema-introspection.json >/dev/null 2>&1; then
             echo "✅ No changes in GraphQL metadata schema"
+            # Don't create a diff file for no changes
           else
             echo "⚠️ Changes detected in GraphQL metadata schema, generating report..."
             echo "# GraphQL Metadata Schema Changes" > graphql-metadata-diff.md
@@ -470,7 +446,6 @@ jobs:
           ls -la *-diff.md 2>/dev/null || echo "No diff files generated (no changes detected)"
 
       - name: Check REST API Breaking Changes
-        if: steps.validate-schemas.outputs.valid == 'true'
         run: |
           echo "=== CHECKING REST API FOR BREAKING CHANGES ==="
 
@@ -539,7 +514,6 @@ jobs:
           fi
 
       - name: Check REST Metadata API Breaking Changes
-        if: steps.validate-schemas.outputs.valid == 'true'
         run: |
           echo "=== CHECKING REST METADATA API FOR BREAKING CHANGES ==="
 

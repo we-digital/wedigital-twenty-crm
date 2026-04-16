@@ -5,7 +5,6 @@ import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
 import {
   Banner,
-  type BannerColor,
   type BannerVariant,
   type IconComponent,
   IconX,
@@ -33,8 +32,7 @@ const StyledContent = styled.div<{ hasCloseButton: boolean }>`
 
 export const InformationBanner = ({
   message,
-  color = 'blue',
-  variant = 'primary',
+  variant = 'default',
   buttonTitle,
   buttonIcon,
   buttonOnClick,
@@ -43,7 +41,6 @@ export const InformationBanner = ({
   componentInstanceId,
 }: {
   message: string;
-  color?: BannerColor;
   variant?: BannerVariant;
   buttonTitle?: string;
   buttonIcon?: IconComponent;
@@ -57,9 +54,6 @@ export const InformationBanner = ({
     componentInstanceId,
   );
 
-  const isPrimary = variant === 'primary';
-  const buttonAccent = color === 'danger' ? 'danger' : 'blue';
-
   return (
     <InformationBannerComponentInstanceContext.Provider
       value={{
@@ -67,41 +61,30 @@ export const InformationBanner = ({
       }}
     >
       {informationBannerIsOpen && (
-        <Banner color={color} variant={variant}>
+        <Banner variant={variant}>
           <StyledContent hasCloseButton={!!onClose}>
             <StyledText>{message}</StyledText>
             {buttonTitle && buttonOnClick && (
               <Button
                 variant="secondary"
-                accent={buttonAccent}
                 title={buttonTitle}
                 Icon={buttonIcon}
                 size="small"
-                inverted={isPrimary}
+                inverted
                 onClick={buttonOnClick}
                 disabled={isButtonDisabled}
               />
             )}
           </StyledContent>
-          {onClose &&
-            (isPrimary ? (
-              <StyledInvertedIconButton
-                Icon={IconX}
-                size="small"
-                variant="tertiary"
-                onClick={onClose}
-                ariaLabel={t`Close banner`}
-              />
-            ) : (
-              <IconButton
-                Icon={IconX}
-                size="small"
-                variant="tertiary"
-                accent={buttonAccent}
-                onClick={onClose}
-                ariaLabel={t`Close banner`}
-              />
-            ))}
+          {onClose && (
+            <StyledInvertedIconButton
+              Icon={IconX}
+              size="small"
+              variant="tertiary"
+              onClick={onClose}
+              ariaLabel={t`Close banner`}
+            />
+          )}
         </Banner>
       )}
     </InformationBannerComponentInstanceContext.Provider>

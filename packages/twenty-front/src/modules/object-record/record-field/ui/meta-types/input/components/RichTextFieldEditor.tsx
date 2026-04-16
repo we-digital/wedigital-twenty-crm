@@ -23,6 +23,7 @@ import { usePushFocusItemToFocusStack } from '@/ui/utilities/focus/hooks/usePush
 import { useRemoveFocusItemFromFocusStackById } from '@/ui/utilities/focus/hooks/useRemoveFocusItemFromFocusStackById';
 import { FocusComponentType } from '@/ui/utilities/focus/types/FocusComponentType';
 import { useHotkeysOnFocusedElement } from '@/ui/utilities/hotkey/hooks/useHotkeysOnFocusedElement';
+import { useIsFeatureEnabled } from '@/workspace/hooks/useIsFeatureEnabled';
 import { t } from '@lingui/core/macro';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
@@ -31,6 +32,7 @@ import '@blocknote/react/style.css';
 import { Key } from 'ts-key-enum';
 import { isDefined } from 'twenty-shared/utils';
 import { useDebouncedCallback } from 'use-debounce';
+import { FeatureFlagKey } from '~/generated-metadata/graphql';
 
 type RichTextFieldEditorProps = {
   recordId: string;
@@ -80,8 +82,13 @@ export const RichTextFieldEditor = ({
 
   const focusId = `${recordId}-${fieldName}`;
 
+  const isAttachmentMigrated = useIsFeatureEnabled(
+    FeatureFlagKey.IS_ATTACHMENT_MIGRATED,
+  );
+
   const attachmentTargetFieldIdName = getActivityTargetObjectFieldIdName({
     nameSingular: objectNameSingular,
+    isMorphRelation: isAttachmentMigrated,
   });
 
   const { records: attachments } = useFindManyRecords<Attachment>({

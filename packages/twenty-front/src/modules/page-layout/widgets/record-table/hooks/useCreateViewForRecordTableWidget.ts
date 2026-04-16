@@ -1,15 +1,12 @@
 import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { filterFieldsForRecordTableViewCreation } from '@/page-layout/widgets/record-table/utils/filterFieldsForRecordTableViewCreation';
 import { sortFieldsByRelevanceForRecordTableWidget } from '@/page-layout/widgets/record-table/utils/sortFieldsByRelevanceForRecordTableWidget';
-import { useUpdatePageLayoutWidget } from '@/page-layout/hooks/useUpdatePageLayoutWidget';
+import { useUpdateCurrentWidgetConfig } from '@/side-panel/pages/page-layout/hooks/useUpdateCurrentWidgetConfig';
 import { usePerformViewAPIPersist } from '@/views/hooks/internal/usePerformViewAPIPersist';
 import { usePerformViewFieldAPIPersist } from '@/views/hooks/internal/usePerformViewFieldAPIPersist';
 import { useCallback } from 'react';
 import { v4 } from 'uuid';
-import {
-  WidgetConfigurationType,
-  ViewType,
-} from '~/generated-metadata/graphql';
+import { ViewType } from '~/generated-metadata/graphql';
 
 const DEFAULT_VIEW_FIELD_SIZE = 180;
 const INITIAL_VISIBLE_FIELDS_COUNT_IN_WIDGET = 6;
@@ -17,13 +14,11 @@ const INITIAL_VISIBLE_FIELDS_COUNT_IN_WIDGET = 6;
 export const useCreateViewForRecordTableWidget = (pageLayoutId: string) => {
   const { performViewAPICreate } = usePerformViewAPIPersist();
   const { performViewFieldAPICreate } = usePerformViewFieldAPIPersist();
-  const { updatePageLayoutWidget } = useUpdatePageLayoutWidget(pageLayoutId);
+  const { updateCurrentWidgetConfig } =
+    useUpdateCurrentWidgetConfig(pageLayoutId);
 
   const createViewForRecordTableWidget = useCallback(
-    async (
-      widgetId: string,
-      objectMetadataItem: EnrichedObjectMetadataItem,
-    ) => {
+    async (objectMetadataItem: EnrichedObjectMetadataItem) => {
       const newViewId = v4();
 
       const viewResult = await performViewAPICreate(
@@ -65,9 +60,8 @@ export const useCreateViewForRecordTableWidget = (pageLayoutId: string) => {
       try {
         await performViewFieldAPICreate({ inputs: viewFieldInputs });
 
-        updatePageLayoutWidget(widgetId, {
-          configuration: {
-            configurationType: WidgetConfigurationType.RECORD_TABLE,
+        updateCurrentWidgetConfig({
+          configToUpdate: {
             viewId: newViewId,
           },
         });
@@ -78,7 +72,11 @@ export const useCreateViewForRecordTableWidget = (pageLayoutId: string) => {
         );
       }
     },
-    [performViewAPICreate, performViewFieldAPICreate, updatePageLayoutWidget],
+    [
+      performViewAPICreate,
+      performViewFieldAPICreate,
+      updateCurrentWidgetConfig,
+    ],
   );
 
   return { createViewForRecordTableWidget };

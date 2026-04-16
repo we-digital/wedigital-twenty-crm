@@ -8,41 +8,40 @@ export const computeStandardOpportunityViewFieldGroups = (
   args: Omit<CreateStandardViewFieldGroupArgs<'opportunity'>, 'context'>,
 ): Record<string, FlatViewFieldGroup> => {
   return {
-    opportunityRecordPageFieldsDeal: createStandardViewFieldGroupFlatMetadata({
-      ...args,
-      objectName: 'opportunity',
-      context: {
-        viewName: 'opportunityRecordPageFields',
-        viewFieldGroupName: 'deal',
-        name: 'Deal',
-        position: 0,
-        isVisible: true,
-      },
-    }),
-    opportunityRecordPageFieldsRelations:
+    opportunityRecordPageFieldsGeneral:
       createStandardViewFieldGroupFlatMetadata({
         ...args,
         objectName: 'opportunity',
         context: {
           viewName: 'opportunityRecordPageFields',
-          viewFieldGroupName: 'relations',
-          name: 'Relations',
-          position: 1,
+          viewFieldGroupName: 'general',
+          name: 'General',
+          position: 0,
           isVisible: true,
         },
       }),
-    opportunityRecordPageFieldsSystem: createStandardViewFieldGroupFlatMetadata(
-      {
+    opportunityRecordPageFieldsAdditional:
+      createStandardViewFieldGroupFlatMetadata({
         ...args,
         objectName: 'opportunity',
         context: {
           viewName: 'opportunityRecordPageFields',
-          viewFieldGroupName: 'system',
-          name: 'System',
-          position: 2,
+          viewFieldGroupName: 'additional',
+          name: 'Additional',
+          position: 1,
           isVisible: true,
         },
+      }),
+    opportunityRecordPageFieldsOther: createStandardViewFieldGroupFlatMetadata({
+      ...args,
+      objectName: 'opportunity',
+      context: {
+        viewName: 'opportunityRecordPageFields',
+        viewFieldGroupName: 'other',
+        name: 'Other',
+        position: 2,
+        isVisible: true,
       },
-    ),
+    }),
   };
 };

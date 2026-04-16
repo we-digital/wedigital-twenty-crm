@@ -1,14 +1,12 @@
 import { COMMAND_MENU_DROPDOWN_CLICK_OUTSIDE_ID } from '@/command-menu-item/constants/CommandMenuDropdownClickOutsideId';
-import { useSelectFirstRecordForEditMode } from '@/command-menu-item/server-items/edit/hooks/useSelectFirstRecordForEditMode';
-import { MAIN_CONTEXT_STORE_INSTANCE_ID } from '@/context-store/constants/MainContextStoreInstanceId';
-import { mainContextStoreHasSelectedRecordsSelector } from '@/context-store/states/selectors/mainContextStoreHasSelectedRecordsSelector';
-import { useResetRecordIndexSelection } from '@/object-record/record-index/hooks/useResetRecordIndexSelection';
+import { commandMenuItemEditSelectionModeState } from '@/command-menu-item/server-items/edit/states/commandMenuItemEditSelectionModeState';
 import { Dropdown } from '@/ui/layout/dropdown/components/Dropdown';
 import { DropdownContent } from '@/ui/layout/dropdown/components/DropdownContent';
 import { DropdownMenuItemsContainer } from '@/ui/layout/dropdown/components/DropdownMenuItemsContainer';
 import { GenericDropdownContentWidth } from '@/ui/layout/dropdown/constants/GenericDropdownContentWidth';
 import { useCloseDropdown } from '@/ui/layout/dropdown/hooks/useCloseDropdown';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { useSetAtomState } from '@/ui/utilities/state/jotai/hooks/useSetAtomState';
 import { styled } from '@linaria/react';
 import { useLingui } from '@lingui/react/macro';
 import {
@@ -21,16 +19,15 @@ import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 const DROPDOWN_ID = 'command-menu-edit-record-selection-dropdown';
 
-const StyledClickableArea = styled.div<{ disabled?: boolean }>`
+const StyledClickableArea = styled.div`
   align-items: center;
   background-color: ${themeCssVariables.background.transparent.lighter};
   border: 1px solid ${themeCssVariables.border.color.medium};
   border-radius: ${themeCssVariables.border.radius.sm};
-  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
+  cursor: pointer;
   display: flex;
   gap: ${themeCssVariables.spacing[1]};
   height: 24px;
-  opacity: ${({ disabled }) => (disabled ? '0.5' : '1')};
   padding-left: ${themeCssVariables.spacing[2]};
   padding-right: ${themeCssVariables.spacing[1]};
 `;
@@ -47,34 +44,21 @@ const StyledDropdownMenuContainer = styled.div`
   width: 100%;
 `;
 
-type CommandMenuItemEditRecordSelectionDropdownProps = {
-  isRecordPage?: boolean;
-};
-
-export const CommandMenuItemEditRecordSelectionDropdown = ({
-  isRecordPage = false,
-}: CommandMenuItemEditRecordSelectionDropdownProps) => {
+export const CommandMenuItemEditRecordSelectionDropdown = () => {
   const { t } = useLingui();
   const { closeDropdown } = useCloseDropdown();
 
-  const mainContextStoreHasSelectedRecords = useAtomStateValue(
-    mainContextStoreHasSelectedRecordsSelector,
+  const commandMenuItemEditSelectionMode = useAtomStateValue(
+    commandMenuItemEditSelectionModeState,
+  );
+  const setCommandMenuItemEditSelectionMode = useSetAtomState(
+    commandMenuItemEditSelectionModeState,
   );
 
-  const { selectFirstRecordForEditMode } = useSelectFirstRecordForEditMode();
-  const { resetRecordIndexSelection } = useResetRecordIndexSelection(
-    MAIN_CONTEXT_STORE_INSTANCE_ID,
-  );
-
-  const isNoneSelected = !mainContextStoreHasSelectedRecords;
+  const isNoneSelected = commandMenuItemEditSelectionMode === 'none';
 
   const handleSelectMode = (mode: 'none' | 'selection') => {
-    if (mode === 'selection' && isNoneSelected) {
-      selectFirstRecordForEditMode();
-    } else if (mode === 'none') {
-      resetRecordIndexSelection();
-    }
-
+    setCommandMenuItemEditSelectionMode(mode);
     closeDropdown(DROPDOWN_ID);
   };
 
@@ -86,10 +70,8 @@ export const CommandMenuItemEditRecordSelectionDropdown = ({
   return (
     <Dropdown
       dropdownId={DROPDOWN_ID}
-      disableClickForClickableComponent={isRecordPage}
       clickableComponent={
         <StyledClickableArea
-          disabled={isRecordPage}
           data-click-outside-id={COMMAND_MENU_DROPDOWN_CLICK_OUTSIDE_ID}
         >
           <TriggerIcon size={16} />

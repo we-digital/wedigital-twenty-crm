@@ -14,6 +14,7 @@ type TestRegistration = {
   id: string;
   universalIdentifier: string;
   name: string;
+  description: string | null;
   oAuthClientId: string;
   oAuthRedirectUris: string[];
   oAuthScopes: string[];
@@ -27,6 +28,7 @@ const insertRegistration = async (
   ds: DataSource,
   params: {
     name: string;
+    description?: string;
     clientSecretHash: string;
     redirectUris: string[];
     scopes: string[];
@@ -38,12 +40,13 @@ const insertRegistration = async (
 
   await ds.query(
     `INSERT INTO core."applicationRegistration"
-      (id, "universalIdentifier", name, "oAuthClientId", "oAuthClientSecretHash", "oAuthRedirectUris", "oAuthScopes", "workspaceId")
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      (id, "universalIdentifier", name, description, "oAuthClientId", "oAuthClientSecretHash", "oAuthRedirectUris", "oAuthScopes", "workspaceId")
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     [
       id,
       universalIdentifier,
       params.name,
+      params.description ?? null,
       oAuthClientId,
       params.clientSecretHash,
       params.redirectUris,
@@ -56,6 +59,7 @@ const insertRegistration = async (
     id,
     universalIdentifier,
     name: params.name,
+    description: params.description ?? null,
     oAuthClientId,
     oAuthRedirectUris: params.redirectUris,
     oAuthScopes: params.scopes,
@@ -165,6 +169,7 @@ describe('OAuth (integration)', () => {
 
     autoInstallRegistration = await insertRegistration(ds, {
       name: 'OAuth Auto-Install Test App',
+      description: 'App for testing OAuth auto-install',
       clientSecretHash: autoInstallSecretHash,
       redirectUris: ['https://example.com/callback'],
       scopes: ['api'],
@@ -578,6 +583,9 @@ describe('OAuth (integration)', () => {
       const autoCreatedApp = rows[0];
 
       expect(autoCreatedApp.name).toBe('OAuth Auto-Install Test App');
+      expect(autoCreatedApp.description).toBe(
+        'App for testing OAuth auto-install',
+      );
       expect(autoCreatedApp.sourcePath).toBe('oauth-install');
       expect(autoCreatedApp.universalIdentifier).toBe(
         autoInstallRegistration.universalIdentifier,

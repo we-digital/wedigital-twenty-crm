@@ -11,17 +11,20 @@ export const seedPageLayoutWidgets = async ({
   schemaName,
   workspaceId,
   objectMetadataItems,
-  applicationId,
+  isDashboardV2Enabled,
+  workspaceCustomApplicationId,
 }: {
   dataSource: DataSource;
   schemaName: string;
   workspaceId: string;
   objectMetadataItems: ObjectMetadataEntity[];
-  applicationId: string;
+  isDashboardV2Enabled: boolean;
+  workspaceCustomApplicationId: string;
 }) => {
   const widgetSeeds = getPageLayoutWidgetDataSeeds(
     workspaceId,
     objectMetadataItems,
+    isDashboardV2Enabled,
   );
 
   const pageLayoutWidgets = widgetSeeds.map((widget) => {
@@ -38,7 +41,7 @@ export const seedPageLayoutWidgets = async ({
       position: widget.position,
       configuration: widget.configuration,
       universalIdentifier: v4(),
-      applicationId,
+      applicationId: workspaceCustomApplicationId,
       overrides: widget.overrides ?? null,
     };
   });

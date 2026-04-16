@@ -147,6 +147,7 @@ const createPageLayoutWithWidget = (
       position: 0,
       pageLayoutId: PAGE_LAYOUT_TEST_INSTANCE_ID,
       widgets: [widget],
+      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -176,6 +177,7 @@ const createFieldsWidget = (viewId: string | null): PageLayoutWidget => ({
     configurationType: WidgetConfigurationType.FIELDS,
     viewId,
   },
+  isOverridden: false,
   createdAt: '2024-01-01T00:00:00Z',
   updatedAt: '2024-01-01T00:00:00Z',
   deletedAt: null,
@@ -215,6 +217,7 @@ const createViewField = (
   isVisible: true,
   size: 200,
   aggregateOperation: null,
+  isOverridden: false,
   viewId: FIELDS_VIEW_ID,
   ...(viewFieldGroupId !== undefined && { viewFieldGroupId }),
 });
@@ -230,6 +233,7 @@ const createViewFieldGroup = (
   name,
   position,
   isVisible,
+  isOverridden: false,
   viewId: FIELDS_VIEW_ID,
   viewFields,
 });

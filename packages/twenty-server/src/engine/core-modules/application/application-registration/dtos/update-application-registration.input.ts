@@ -21,6 +21,24 @@ export class UpdateApplicationRegistrationPayload {
   @IsOptional()
   name?: string;
 
+  @Field({ nullable: true })
+  @IsString()
+  @MaxLength(2000)
+  @IsOptional()
+  description?: string;
+
+  @Field({ nullable: true })
+  @IsString()
+  @MaxLength(2048)
+  @IsOptional()
+  logoUrl?: string;
+
+  @Field({ nullable: true })
+  @IsString()
+  @MaxLength(256)
+  @IsOptional()
+  author?: string;
+
   @Field(() => [String], { nullable: true })
   @IsArray()
   @ArrayMaxSize(20)
@@ -36,6 +54,18 @@ export class UpdateApplicationRegistrationPayload {
   @MaxLength(256, { each: true })
   @IsOptional()
   oAuthScopes?: string[];
+
+  @Field({ nullable: true })
+  @IsString()
+  @MaxLength(2048)
+  @IsOptional()
+  websiteUrl?: string;
+
+  @Field({ nullable: true })
+  @IsString()
+  @MaxLength(2048)
+  @IsOptional()
+  termsUrl?: string;
 
   @Field(() => Boolean, { nullable: true })
   @IsBoolean()

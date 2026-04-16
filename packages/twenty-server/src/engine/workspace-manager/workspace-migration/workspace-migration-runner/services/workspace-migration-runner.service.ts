@@ -6,7 +6,6 @@ import { isDefined } from 'twenty-shared/utils';
 import { DataSource } from 'typeorm';
 
 import { LoggerService } from 'src/engine/core-modules/logger/logger.service';
-import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
 import { WorkspaceManyOrAllFlatEntityMapsCacheService } from 'src/engine/metadata-modules/flat-entity/services/workspace-many-or-all-flat-entity-maps-cache.service';
 import { AllFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/types/all-flat-entity-maps.type';
 import { getMetadataFlatEntityMapsKey } from 'src/engine/metadata-modules/flat-entity/utils/get-metadata-flat-entity-maps-key.util';
@@ -36,7 +35,6 @@ export class WorkspaceMigrationRunnerService {
     private readonly workspaceCacheStorageService: WorkspaceCacheStorageService,
     private readonly workspaceCacheService: WorkspaceCacheService,
     private readonly logger: LoggerService,
-    private readonly twentyConfigService: TwentyConfigService,
   ) {}
 
   private getLegacyCacheInvalidationPromises({
@@ -87,15 +85,9 @@ export class WorkspaceMigrationRunnerService {
       flatMapsKeysSet.has('flatRoleMaps') ||
       flatMapsKeysSet.has('flatRoleTargetMaps');
 
-    const shouldInvalidateRolesPermissionsCache =
-      flatMapsKeysSet.has('flatObjectPermissionMaps') ||
-      flatMapsKeysSet.has('flatFieldPermissionMaps') ||
-      flatMapsKeysSet.has('flatPermissionFlagMaps');
-
     if (
       shouldIncrementMetadataGraphqlSchemaVersion ||
-      shouldInvalidateRoleMapCache ||
-      shouldInvalidateRolesPermissionsCache
+      shouldInvalidateRoleMapCache
     ) {
       asyncOperations.push(
         this.workspaceCacheService.invalidateAndRecompute(workspaceId, [
@@ -170,14 +162,6 @@ export class WorkspaceMigrationRunnerService {
     metadataEvents: MetadataEvent[];
     hasSchemaMetadataChanged: boolean;
   }> => {
-    if (this.twentyConfigService.get('WORKSPACE_SCHEMA_DDL_LOCKED')) {
-      throw new WorkspaceMigrationRunnerException({
-        message:
-          'Workspace schema DDL changes are locked. This is typically set during hot upgrades.',
-        code: WorkspaceMigrationRunnerExceptionCode.DDL_LOCKED,
-      });
-    }
-
     this.logger.time('Runner', 'Total execution');
     this.logger.time('Runner', 'Initial cache retrieval');
 

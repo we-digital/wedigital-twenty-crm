@@ -2,13 +2,15 @@ import { type StoreValue } from '@apollo/client';
 import { z } from 'zod';
 
 import { type RecordGqlConnection } from '@/object-record/graphql/types/RecordGqlConnection';
-import { capitalize, getConnectionTypename } from 'twenty-shared/utils';
+import { capitalize } from 'twenty-shared/utils';
 
 export const isObjectRecordConnection = (
   objectNameSingular: string,
   storeValue: StoreValue,
 ): storeValue is RecordGqlConnection => {
-  const objectConnectionTypeName = getConnectionTypename(objectNameSingular);
+  const objectConnectionTypeName = `${capitalize(
+    objectNameSingular,
+  )}Connection`;
   const objectEdgeTypeName = `${capitalize(objectNameSingular)}Edge`;
   const cachedObjectConnectionSchema = z.object({
     __typename: z.literal(objectConnectionTypeName),

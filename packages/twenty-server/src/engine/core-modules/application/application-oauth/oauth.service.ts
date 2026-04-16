@@ -586,6 +586,7 @@ export class OAuthService {
     return this.applicationService.create({
       universalIdentifier: applicationRegistration.universalIdentifier,
       name: applicationRegistration.name,
+      description: applicationRegistration.description,
       version: '0.0.0',
       sourcePath: 'oauth-install',
       applicationRegistrationId: applicationRegistration.id,

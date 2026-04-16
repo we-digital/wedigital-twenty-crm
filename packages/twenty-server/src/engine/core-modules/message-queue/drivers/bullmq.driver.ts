@@ -151,7 +151,9 @@ export class BullMQDriver
     });
 
     this.workerMap[queueName].on('error', (error) => {
-      this.logger.error(`Worker error on queue ${queueName}: ${error.message}`);
+      this.logger.error(
+        `Worker error on queue ${queueName}: ${error.message}`,
+      );
     });
   }
 

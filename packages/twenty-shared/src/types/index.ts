@@ -186,7 +186,6 @@ export type {
   NotesConfiguration,
   FilesConfiguration,
   EmailsConfiguration,
-  EmailThreadConfiguration,
   CalendarConfiguration,
   WorkflowConfiguration,
   WorkflowVersionConfiguration,

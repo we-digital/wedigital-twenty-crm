@@ -1,6 +1,6 @@
 import { Body } from '@/design-system/components/Body/Body';
 import { Heading } from '@/design-system/components/Heading/Heading';
-import type { ProblemPointType } from '@/sections/Problem/types';
+import { ProblemPointType } from '@/sections/Problem/types';
 import { theme } from '@/theme';
 import { styled } from '@linaria/react';
 import React from 'react';
@@ -28,13 +28,8 @@ const StyledPoint = styled.div`
   row-gap: ${theme.spacing(2)};
 
   @media (min-width: ${theme.breakpoints.md}px) {
-    max-width: 380px;
-    width: 100%;
+    width: 380px;
   }
-`;
-
-const StyledBody = styled(Body)`
-  color: ${theme.colors.primary.text[80]};
 `;
 
 export type PointsProps = { points: ProblemPointType[] };
@@ -47,7 +42,7 @@ export function Points({ points }: PointsProps) {
           <StyledDivider />
           <StyledPoint>
             <Heading segments={point.heading} weight="medium" size="xs" />
-            <StyledBody body={point.body} size="sm" />
+            <Body body={point.body} size="sm" />
           </StyledPoint>
         </React.Fragment>
       ))}

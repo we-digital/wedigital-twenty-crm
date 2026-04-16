@@ -72,7 +72,6 @@ export const StyledTabContainer = styled.div<{
 export const StyledTabHover = styled.span<{
   contentSize?: 'sm' | 'md';
 }>`
-  box-sizing: border-box;
   display: flex;
   gap: ${themeCssVariables.spacing[1]};
   padding: ${({ contentSize }) =>

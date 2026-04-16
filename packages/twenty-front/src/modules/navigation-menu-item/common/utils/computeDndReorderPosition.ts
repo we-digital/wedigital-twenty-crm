@@ -18,11 +18,11 @@ export const computeDndReorderPosition = ({
     const listWithoutDragged = sortedList.filter(
       (item) => item.id !== draggableId,
     );
-    let adjustedIndex = destinationIndex;
-    if (sourceIndexInList < destinationIndex) {
-      adjustedIndex -= 1;
-    }
-    adjustedIndex = Math.min(adjustedIndex, listWithoutDragged.length);
+    const adjustedIndex =
+      sourceIndexInList < destinationIndex &&
+      destinationIndex <= listWithoutDragged.length
+        ? destinationIndex - 1
+        : destinationIndex;
     const prevItem = listWithoutDragged[adjustedIndex - 1];
     const nextItem = listWithoutDragged[adjustedIndex];
 

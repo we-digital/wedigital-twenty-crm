@@ -18,7 +18,7 @@ import {
 } from 'typeorm';
 
 import { UUIDScalarType } from 'src/engine/api/graphql/workspace-schema-builder/graphql-types/scalars';
-import { type Manifest } from 'twenty-shared/application';
+import { type MarketplaceDisplayData } from 'src/engine/core-modules/application/application-marketplace/types/marketplace-display-data.type';
 import { ApplicationRegistrationVariableEntity } from 'src/engine/core-modules/application/application-registration-variable/application-registration-variable.entity';
 import { ApplicationRegistrationSourceType } from 'src/engine/core-modules/application/application-registration/enums/application-registration-source-type.enum';
 import { FileEntity } from 'src/engine/core-modules/file/entities/file.entity';
@@ -61,6 +61,18 @@ export class ApplicationRegistrationEntity {
   @Field()
   @Column({ nullable: false, type: 'text' })
   name: string;
+
+  @Field(() => String, { nullable: true })
+  @Column({ nullable: true, type: 'text' })
+  description: string | null;
+
+  @Field(() => String, { nullable: true })
+  @Column({ nullable: true, type: 'text' })
+  logoUrl: string | null;
+
+  @Field(() => String, { nullable: true })
+  @Column({ nullable: true, type: 'text' })
+  author: string | null;
 
   @Field()
   @Column({ nullable: false, type: 'text' })
@@ -116,6 +128,14 @@ export class ApplicationRegistrationEntity {
   @Column({ nullable: true, type: 'text' })
   latestAvailableVersion: string | null;
 
+  @Field(() => String, { nullable: true })
+  @Column({ nullable: true, type: 'text' })
+  websiteUrl: string | null;
+
+  @Field(() => String, { nullable: true })
+  @Column({ nullable: true, type: 'text' })
+  termsUrl: string | null;
+
   @Field(() => Boolean)
   @Column({ type: 'boolean', default: false })
   isListed: boolean;
@@ -125,12 +145,7 @@ export class ApplicationRegistrationEntity {
   isFeatured: boolean;
 
   @Column({ type: 'jsonb', nullable: true })
-  manifest: Manifest | null;
-
-  @Field(() => String, { nullable: true })
-  get logoUrl(): string | null {
-    return this.manifest?.application?.logoUrl ?? null;
-  }
+  marketplaceDisplayData: MarketplaceDisplayData | null;
 
   @OneToMany(
     () => ApplicationRegistrationVariableEntity,

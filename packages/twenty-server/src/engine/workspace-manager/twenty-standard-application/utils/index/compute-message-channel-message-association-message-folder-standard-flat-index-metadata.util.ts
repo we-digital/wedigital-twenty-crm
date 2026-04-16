@@ -37,7 +37,7 @@ export const buildMessageChannelMessageAssociationMessageFolderStandardFlatIndex
       workspaceId,
       context: {
         indexName: 'messageFolderIdIndex',
-        relatedFieldNames: ['messageFolderId'],
+        relatedFieldNames: ['messageFolder'],
       },
       standardObjectMetadataRelatedEntityIds,
       dependencyFlatEntityMaps,
@@ -53,7 +53,7 @@ export const buildMessageChannelMessageAssociationMessageFolderStandardFlatIndex
             'messageChannelMessageAssociationIdMessageFolderIdUniqueIndex',
           relatedFieldNames: [
             'messageChannelMessageAssociation',
-            'messageFolderId',
+            'messageFolder',
           ],
           isUnique: true,
           indexWhereClause: '"deletedAt" IS NULL',

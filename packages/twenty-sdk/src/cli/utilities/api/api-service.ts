@@ -66,10 +66,6 @@ export class ApiService {
     return this.applicationApi.uninstallApplication(universalIdentifier);
   }
 
-  syncMarketplaceCatalog(): Promise<ApiResponse<boolean>> {
-    return this.applicationApi.syncMarketplaceCatalog();
-  }
-
   getSchema(options?: { authToken?: string }): Promise<ApiResponse<string>> {
     return this.schemaApi.getSchema(options);
   }

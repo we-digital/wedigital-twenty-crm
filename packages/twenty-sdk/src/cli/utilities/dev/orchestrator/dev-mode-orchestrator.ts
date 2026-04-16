@@ -20,7 +20,6 @@ import { OUTPUT_DIR, type Manifest } from 'twenty-shared/application';
 export type DevModeOrchestratorOptions = {
   state: OrchestratorState;
   debounceMs?: number;
-  verbose?: boolean;
 };
 
 export class DevModeOrchestrator {
@@ -31,7 +30,6 @@ export class DevModeOrchestrator {
 
   private apiService: ApiService;
   private clientService: ClientService;
-  private verbose: boolean;
   private skipTypecheck = true;
   private checkServerStep: CheckServerOrchestratorStep;
   private buildManifestStep: BuildManifestOrchestratorStep;
@@ -44,7 +42,6 @@ export class DevModeOrchestrator {
   constructor(options: DevModeOrchestratorOptions) {
     this.debounceMs = options.debounceMs ?? 200;
     this.state = options.state;
-    this.verbose = options.verbose ?? false;
 
     this.apiService = new ApiService({ disableInterceptors: true });
     const apiService = this.apiService;
@@ -62,10 +59,7 @@ export class DevModeOrchestrator {
       apiService,
       configService,
     });
-    this.uploadFilesStep = new UploadFilesOrchestratorStep({
-      ...stepDeps,
-      verbose: this.verbose,
-    });
+    this.uploadFilesStep = new UploadFilesOrchestratorStep(stepDeps);
     this.generateApiClientStep = new GenerateApiClientOrchestratorStep({
       ...stepDeps,
       clientService: this.clientService,
@@ -74,14 +68,12 @@ export class DevModeOrchestrator {
     this.syncApplicationStep = new SyncApplicationOrchestratorStep({
       ...stepDeps,
       apiService,
-      verbose: this.verbose,
     });
     this.startWatchersStep = new StartWatchersOrchestratorStep({
       ...stepDeps,
       scheduleSync: this.scheduleSync.bind(this),
       onFileBuilt: this.handleFileBuilt.bind(this),
       shouldSkipTypecheck: () => this.skipTypecheck,
-      verbose: this.verbose,
     });
   }
 
@@ -90,14 +82,6 @@ export class DevModeOrchestrator {
 
     await ensureDir(outputDir);
     await emptyDir(outputDir);
-
-    if (!this.verbose) {
-      this.state.addEvent({
-        message: 'Add --verbose to see fully detailed logs',
-        status: 'info',
-      });
-      this.state.notify();
-    }
 
     await this.startWatchersStep.start();
 
@@ -176,8 +160,6 @@ export class DevModeOrchestrator {
       return;
     }
 
-    this.state.steps.ensureValidTokens.status = 'done';
-
     const buildResult = await this.buildManifestStep.execute({
       appPath: this.state.appPath,
     });
@@ -207,10 +189,6 @@ export class DevModeOrchestrator {
       builtFileInfos: this.state.steps.uploadFiles.output.builtFileInfos,
       appPath: this.state.appPath,
     });
-
-    if (this.state.steps.syncApplication.status === 'error') {
-      return;
-    }
 
     if (objectsOrFieldsChanged) {
       await this.generateApiClientStep.execute({

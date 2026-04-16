@@ -27,7 +27,6 @@ export enum WidgetConfigurationType {
   WORKFLOW_RUN = 'WORKFLOW_RUN',
   FRONT_COMPONENT = 'FRONT_COMPONENT',
   RECORD_TABLE = 'RECORD_TABLE',
-  EMAIL_THREAD = 'EMAIL_THREAD',
 }
 export type AllGraphWidgetConfigurationType =
   | WidgetConfigurationType.AGGREGATE_CHART

@@ -64,10 +64,6 @@ import {
   rule as styledComponentsPrefixedWithStyled,
   RULE_NAME as styledComponentsPrefixedWithStyledName,
 } from './rules/styled-components-prefixed-with-styled';
-import {
-  rule as upgradeCommandFilename,
-  RULE_NAME as upgradeCommandFilenameName,
-} from './rules/upgrade-command-filename';
 
 export default definePlugin({
   meta: { name: 'twenty' },
@@ -89,6 +85,5 @@ export default definePlugin({
     [sortCssPropertiesAlphabeticallyName]: sortCssPropertiesAlphabetically,
     [styledComponentsPrefixedWithStyledName]:
       styledComponentsPrefixedWithStyled,
-    [upgradeCommandFilenameName]: upgradeCommandFilename,
   },
 });

@@ -1,14 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 
 import { isDefined } from 'twenty-shared/utils';
-import { In, Repository } from 'typeorm';
+import { In } from 'typeorm';
 
-import { type MessageChannelEntity } from 'src/engine/metadata-modules/message-channel/entities/message-channel.entity';
-import { MessageFolderEntity } from 'src/engine/metadata-modules/message-folder/entities/message-folder.entity';
+import { MessageFolderDataAccessService } from 'src/engine/metadata-modules/message-folder/data-access/services/message-folder-data-access.service';
 import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
 import { buildSystemAuthContext } from 'src/engine/twenty-orm/utils/build-system-auth-context.util';
-import { MessageFolderPendingSyncAction } from 'twenty-shared/types';
+import { type MessageChannelWorkspaceEntity } from 'src/modules/messaging/common/standard-objects/message-channel.workspace-entity';
+import {
+  MessageFolderPendingSyncAction,
+  MessageFolderWorkspaceEntity,
+} from 'src/modules/messaging/common/standard-objects/message-folder.workspace-entity';
 import { MessagingDeleteFolderMessagesService } from 'src/modules/messaging/message-import-manager/services/messaging-delete-folder-messages.service';
 
 @Injectable()
@@ -19,14 +21,13 @@ export class MessagingProcessFolderActionsService {
 
   constructor(
     private readonly globalWorkspaceOrmManager: GlobalWorkspaceOrmManager,
-    @InjectRepository(MessageFolderEntity)
-    private readonly messageFolderRepository: Repository<MessageFolderEntity>,
+    private readonly messageFolderDataAccessService: MessageFolderDataAccessService,
     private readonly messagingDeleteFolderMessagesService: MessagingDeleteFolderMessagesService,
   ) {}
 
   async processFolderActions(
-    messageChannel: MessageChannelEntity,
-    messageFolders: MessageFolderEntity[],
+    messageChannel: MessageChannelWorkspaceEntity,
+    messageFolders: MessageFolderWorkspaceEntity[],
     workspaceId: string,
   ): Promise<void> {
     const foldersWithPendingActions = messageFolders.filter(
@@ -92,8 +93,9 @@ export class MessagingProcessFolderActionsService {
       await this.globalWorkspaceOrmManager.executeInWorkspaceContext(
         async () => {
           if (processedFolderIds.length > 0) {
-            await this.messageFolderRepository.update(
-              { id: In(processedFolderIds), workspaceId },
+            await this.messageFolderDataAccessService.update(
+              workspaceId,
+              { id: In(processedFolderIds) },
               { pendingSyncAction: MessageFolderPendingSyncAction.NONE },
             );
 
@@ -103,9 +105,8 @@ export class MessagingProcessFolderActionsService {
           }
 
           if (folderIdsToDelete.length > 0) {
-            await this.messageFolderRepository.delete({
+            await this.messageFolderDataAccessService.delete(workspaceId, {
               id: In(folderIdsToDelete),
-              workspaceId,
             });
 
             this.logger.log(

@@ -1,6 +1,6 @@
 import { LinkButton } from '@/design-system/components';
 import { PlusIcon, RectangleFillIcon } from '@/icons';
-import type { FooterNavGroupType } from '@/sections/Footer/types';
+import { FOOTER_NAV_GROUPS } from '@/sections/Footer/constants/footer-nav-groups';
 import { theme } from '@/theme';
 import { NavigationMenu } from '@base-ui/react/navigation-menu';
 import { styled } from '@linaria/react';
@@ -123,14 +123,10 @@ const Actions = styled.div`
   }
 `;
 
-type NavProps = {
-  groups: FooterNavGroupType[];
-};
-
-export function Nav({ groups }: NavProps) {
+export function Nav() {
   return (
     <NavigationMenu.Root render={<FooterNav />}>
-      {groups.map((group, index) => (
+      {FOOTER_NAV_GROUPS.map((group, index) => (
         <React.Fragment key={group.id}>
           {index > 0 && (
             <NavDivider role="separator">
@@ -176,18 +172,22 @@ export function Nav({ groups }: NavProps) {
                 </NavigationMenu.Item>
               ))}
             </NavMenuList>
-            {group.ctas.length > 0 && (
+            {group.showActions && (
               <Actions>
-                {group.ctas.map((cta) => (
-                  <LinkButton
-                    key={`${cta.label}-${cta.href}`}
-                    color={cta.color}
-                    href={cta.href}
-                    label={cta.label}
-                    type={cta.type}
-                    variant={cta.variant}
-                  />
-                ))}
+                <LinkButton
+                  color="secondary"
+                  href="https://app.twenty.com/welcome"
+                  label="Talk to us"
+                  type="anchor"
+                  variant="contained"
+                />
+                <LinkButton
+                  color="secondary"
+                  href="https://app.twenty.com/welcome"
+                  label="Get started"
+                  type="anchor"
+                  variant="outlined"
+                />
               </Actions>
             )}
           </NavGroup>

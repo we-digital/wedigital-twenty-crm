@@ -1,61 +1,59 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { generateId } from 'ai';
+import { createUIMessageStream, pipeUIMessageStreamToResponse } from 'ai';
+import { type Response } from 'express';
+import {
+  type CodeExecutionData,
+  type ExtendedUIMessage,
+} from 'twenty-shared/ai';
 import { type Repository } from 'typeorm';
 
-import { InjectMessageQueue } from 'src/engine/core-modules/message-queue/decorators/message-queue.decorator';
-import { MessageQueue } from 'src/engine/core-modules/message-queue/message-queue.constants';
-import { MessageQueueService } from 'src/engine/core-modules/message-queue/services/message-queue.service';
 import { type WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
-import {
-  AgentMessageRole,
-  AgentMessageStatus,
-} from 'src/engine/metadata-modules/ai/ai-agent-execution/entities/agent-message.entity';
-import { mapDBPartsToUIMessageParts } from 'src/engine/metadata-modules/ai/ai-agent-execution/utils/mapDBPartsToUIMessageParts';
+import { AgentMessageRole } from 'src/engine/metadata-modules/ai/ai-agent-execution/entities/agent-message.entity';
 import {
   AgentException,
   AgentExceptionCode,
 } from 'src/engine/metadata-modules/ai/ai-agent/agent.exception';
 import { type BrowsingContextType } from 'src/engine/metadata-modules/ai/ai-agent/types/browsingContext.type';
+import { computeCostBreakdown } from 'src/engine/metadata-modules/ai/ai-billing/utils/compute-cost-breakdown.util';
+import { convertDollarsToBillingCredits } from 'src/engine/metadata-modules/ai/ai-billing/utils/convert-dollars-to-billing-credits.util';
+import { extractCacheCreationTokens } from 'src/engine/metadata-modules/ai/ai-billing/utils/extract-cache-creation-tokens.util';
+import { toDisplayCredits } from 'src/engine/core-modules/usage/utils/to-display-credits.util';
+import { type AIModelConfig } from 'src/engine/metadata-modules/ai/ai-models/types/ai-model-config.type';
 import { AgentChatThreadEntity } from 'src/engine/metadata-modules/ai/ai-chat/entities/agent-chat-thread.entity';
-import { STREAM_AGENT_CHAT_JOB_NAME } from 'src/engine/metadata-modules/ai/ai-chat/jobs/stream-agent-chat-job-name.constant';
-import { type StreamAgentChatJobData } from 'src/engine/metadata-modules/ai/ai-chat/jobs/stream-agent-chat-job.types';
-import { AgentChatEventPublisherService } from 'src/engine/metadata-modules/ai/ai-chat/services/agent-chat-event-publisher.service';
-import { AgentChatService } from 'src/engine/metadata-modules/ai/ai-chat/services/agent-chat.service';
+
+import { AgentChatService } from './agent-chat.service';
+import { ChatExecutionService } from './chat-execution.service';
 
 export type StreamAgentChatOptions = {
   threadId: string;
   userWorkspaceId: string;
   workspace: WorkspaceEntity;
-  text: string;
+  response: Response;
+  messages: ExtendedUIMessage[];
   browsingContext: BrowsingContextType | null;
   modelId?: string;
-  messageId?: string;
 };
 
 @Injectable()
 export class AgentChatStreamingService {
-  private readonly logger = new Logger(AgentChatStreamingService.name);
-
   constructor(
     @InjectRepository(AgentChatThreadEntity)
     private readonly threadRepository: Repository<AgentChatThreadEntity>,
-    @InjectMessageQueue(MessageQueue.aiStreamQueue)
-    private readonly messageQueueService: MessageQueueService,
     private readonly agentChatService: AgentChatService,
-    private readonly eventPublisherService: AgentChatEventPublisherService,
+    private readonly chatExecutionService: ChatExecutionService,
   ) {}
 
   async streamAgentChat({
     threadId,
     userWorkspaceId,
     workspace,
-    text,
+    messages,
     browsingContext,
+    response,
     modelId,
-    messageId,
-  }: StreamAgentChatOptions): Promise<{ streamId: string; messageId: string }> {
+  }: StreamAgentChatOptions) {
     const thread = await this.threadRepository.findOne({
       where: {
         id: threadId,
@@ -70,134 +68,215 @@ export class AgentChatStreamingService {
       );
     }
 
-    const savedUserMessage = await this.agentChatService.addMessage({
-      threadId,
-      id: messageId,
+    // Fire user-message save without awaiting to avoid delaying time-to-first-letter.
+    // The promise is awaited inside onFinish where we need the turnId.
+    const lastUserMessage = messages[messages.length - 1];
+    const lastUserText =
+      lastUserMessage?.parts.find((part) => part.type === 'text')?.text ?? '';
+
+    const userMessagePromise = this.agentChatService.addMessage({
+      threadId: thread.id,
       uiMessage: {
         role: AgentMessageRole.USER,
-        parts: [{ type: 'text' as const, text }],
+        parts:
+          lastUserMessage?.parts.filter(
+            (part) => part.type === 'text' || part.type === 'file',
+          ) ?? [],
       },
     });
 
-    const previousMessages = await this.loadMessagesFromDB(
-      threadId,
-      userWorkspaceId,
-    );
+    // Prevent unhandled rejection if onFinish never runs (e.g. stream
+    // setup error or empty response early-return). The real error still
+    // surfaces when awaited in onFinish.
+    userMessagePromise.catch(() => {});
 
-    const streamId = generateId();
+    // Title generation runs in parallel with AI streaming so it's
+    // typically ready by the time onFinish fires
+    const titlePromise = thread.title
+      ? Promise.resolve(null)
+      : this.agentChatService
+          .generateTitleIfNeeded(thread.id, lastUserText)
+          .catch(() => null);
 
-    await this.messageQueueService.add<StreamAgentChatJobData>(
-      STREAM_AGENT_CHAT_JOB_NAME,
-      {
-        threadId: thread.id,
-        streamId,
-        userWorkspaceId,
-        workspaceId: workspace.id,
-        messages: previousMessages,
-        browsingContext,
-        modelId,
-        lastUserMessageText: text,
-        lastUserMessageParts: [{ type: 'text', text }],
-        hasTitle: !!thread.title,
-        conversationSizeTokens: thread.conversationSize,
-        existingTurnId: savedUserMessage.turnId ?? undefined,
-      },
-    );
+    try {
+      const uiStream = createUIMessageStream<ExtendedUIMessage>({
+        execute: async ({ writer }) => {
+          const onCodeExecutionUpdate = (data: CodeExecutionData) => {
+            writer.write({
+              type: 'data-code-execution' as const,
+              id: `code-execution-${data.executionId}`,
+              data,
+            });
+          };
 
-    await this.threadRepository.update(thread.id, {
-      activeStreamId: streamId,
-    });
+          const { stream, modelConfig } =
+            await this.chatExecutionService.streamChat({
+              workspace,
+              userWorkspaceId,
+              messages,
+              browsingContext,
+              onCodeExecutionUpdate,
+              modelId,
+            });
 
-    return { streamId, messageId: savedUserMessage.id };
-  }
+          let streamUsage = {
+            inputTokens: 0,
+            outputTokens: 0,
+            inputCredits: 0,
+            outputCredits: 0,
+          };
+          let lastStepConversationSize = 0;
+          let totalCacheCreationTokens = 0;
 
-  async flushNextQueuedMessage(
-    threadId: string,
-    userWorkspaceId: string,
-    workspaceId: string,
-    hasTitle: boolean,
-  ): Promise<void> {
-    const queuedMessages =
-      await this.agentChatService.getQueuedMessages(threadId);
+          writer.merge(
+            stream.toUIMessageStream({
+              onError: (error) => {
+                return error instanceof Error ? error.message : String(error);
+              },
+              sendStart: false,
+              messageMetadata: ({ part }) => {
+                if (part.type === 'finish-step') {
+                  const stepInput = part.usage?.inputTokens ?? 0;
+                  const stepCached =
+                    part.usage?.inputTokenDetails?.cacheReadTokens ?? 0;
+                  const stepCacheCreation = extractCacheCreationTokens(
+                    (
+                      part as {
+                        providerMetadata?: Record<
+                          string,
+                          Record<string, unknown> | undefined
+                        >;
+                      }
+                    ).providerMetadata,
+                  );
 
-    const nextQueued = queuedMessages[0];
+                  totalCacheCreationTokens += stepCacheCreation;
+                  lastStepConversationSize =
+                    stepInput + stepCached + stepCacheCreation;
+                }
 
-    if (!nextQueued) {
-      return;
+                if (part.type === 'finish') {
+                  const { inputCredits, outputCredits, tokenCounts } =
+                    computeStreamCosts(
+                      modelConfig,
+                      part.totalUsage,
+                      totalCacheCreationTokens,
+                    );
+
+                  streamUsage = {
+                    inputTokens: tokenCounts.totalInputTokens,
+                    outputTokens: tokenCounts.outputTokens,
+                    inputCredits,
+                    outputCredits,
+                  };
+
+                  return {
+                    createdAt: new Date().toISOString(),
+                    usage: {
+                      inputTokens: tokenCounts.totalInputTokens,
+                      outputTokens: tokenCounts.outputTokens,
+                      cachedInputTokens: tokenCounts.cachedInputTokens,
+                      inputCredits: toDisplayCredits(inputCredits),
+                      outputCredits: toDisplayCredits(outputCredits),
+                      conversationSize: lastStepConversationSize,
+                    },
+                    model: {
+                      contextWindowTokens: modelConfig.contextWindowTokens,
+                    },
+                  };
+                }
+
+                return undefined;
+              },
+              onFinish: async ({ responseMessage }) => {
+                if (responseMessage.parts.length === 0) {
+                  return;
+                }
+
+                const userMessage = await userMessagePromise;
+
+                await this.agentChatService.addMessage({
+                  threadId: thread.id,
+                  uiMessage: responseMessage,
+                  turnId: userMessage.turnId,
+                });
+
+                await this.threadRepository.update(thread.id, {
+                  totalInputTokens: () =>
+                    `"totalInputTokens" + ${streamUsage.inputTokens}`,
+                  totalOutputTokens: () =>
+                    `"totalOutputTokens" + ${streamUsage.outputTokens}`,
+                  totalInputCredits: () =>
+                    `"totalInputCredits" + ${streamUsage.inputCredits}`,
+                  totalOutputCredits: () =>
+                    `"totalOutputCredits" + ${streamUsage.outputCredits}`,
+                  contextWindowTokens: modelConfig.contextWindowTokens,
+                  conversationSize: lastStepConversationSize,
+                });
+
+                const generatedTitle = await titlePromise;
+
+                if (generatedTitle) {
+                  writer.write({
+                    type: 'data-thread-title' as const,
+                    id: `thread-title-${thread.id}`,
+                    data: { title: generatedTitle },
+                  });
+                }
+              },
+              sendReasoning: true,
+            }),
+          );
+        },
+      });
+
+      pipeUIMessageStreamToResponse({
+        stream: uiStream,
+        response,
+        // Consume the stream independently so onFinish fires even if
+        // the client disconnects (e.g., page refresh mid-stream)
+        consumeSseStream: ({ stream }) => {
+          stream.pipeTo(new WritableStream()).catch(() => {});
+        },
+      });
+    } catch (error) {
+      response.end();
+      throw error;
     }
-
-    const textPart = nextQueued.parts?.find((part) => part.type === 'text');
-    const messageText = textPart?.textContent ?? '';
-
-    if (messageText === '') {
-      await this.agentChatService.deleteQueuedMessage(nextQueued.id);
-
-      return;
-    }
-
-    const turnId = await this.agentChatService.promoteQueuedMessage(
-      nextQueued.id,
-      threadId,
-    );
-
-    if (turnId === null) {
-      return;
-    }
-
-    await this.eventPublisherService.publish({
-      threadId,
-      workspaceId,
-      event: { type: 'queue-updated' },
-    });
-
-    await this.eventPublisherService.publish({
-      threadId,
-      workspaceId,
-      event: { type: 'message-persisted', messageId: nextQueued.id },
-    });
-
-    const [uiMessages, thread] = await Promise.all([
-      this.loadMessagesFromDB(threadId, userWorkspaceId),
-      this.threadRepository.findOneByOrFail({ id: threadId }),
-    ]);
-
-    const streamId = generateId();
-
-    await this.messageQueueService.add<StreamAgentChatJobData>(
-      STREAM_AGENT_CHAT_JOB_NAME,
-      {
-        threadId,
-        streamId,
-        userWorkspaceId,
-        workspaceId,
-        messages: uiMessages,
-        browsingContext: null,
-        lastUserMessageText: messageText,
-        lastUserMessageParts: [{ type: 'text', text: messageText }],
-        hasTitle,
-        conversationSizeTokens: thread.conversationSize,
-        existingTurnId: turnId,
-      },
-    );
-
-    await this.threadRepository.update(threadId, {
-      activeStreamId: streamId,
-    });
   }
+}
 
-  private async loadMessagesFromDB(threadId: string, userWorkspaceId: string) {
-    const allMessages = await this.agentChatService.getMessagesForThread(
-      threadId,
-      userWorkspaceId,
-    );
+function computeStreamCosts(
+  modelConfig: AIModelConfig,
+  totalUsage:
+    | {
+        inputTokens?: number;
+        outputTokens?: number;
+        inputTokenDetails?: { cacheReadTokens?: number };
+        outputTokenDetails?: { reasoningTokens?: number };
+      }
+    | undefined,
+  cacheCreationTokens: number,
+) {
+  const breakdown = computeCostBreakdown(modelConfig, {
+    inputTokens: totalUsage?.inputTokens,
+    outputTokens: totalUsage?.outputTokens,
+    cachedInputTokens: totalUsage?.inputTokenDetails?.cacheReadTokens,
+    reasoningTokens: totalUsage?.outputTokenDetails?.reasoningTokens,
+    cacheCreationTokens,
+  });
 
-    return allMessages
-      .filter((message) => message.status !== AgentMessageStatus.QUEUED)
-      .map((message) => ({
-        id: message.id,
-        role: message.role as 'user' | 'assistant' | 'system',
-        parts: mapDBPartsToUIMessageParts(message.parts ?? []),
-        createdAt: message.createdAt,
-      }));
-  }
+  return {
+    inputCredits: Math.round(
+      convertDollarsToBillingCredits(breakdown.inputCostInDollars),
+    ),
+    outputCredits: Math.round(
+      convertDollarsToBillingCredits(breakdown.outputCostInDollars),
+    ),
+    tokenCounts: {
+      totalInputTokens: breakdown.tokenCounts.totalInputTokens,
+      outputTokens: totalUsage?.outputTokens ?? 0,
+      cachedInputTokens: breakdown.tokenCounts.cachedInputTokens,
+    },
+  };
 }

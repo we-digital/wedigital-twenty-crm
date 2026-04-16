@@ -33,6 +33,7 @@ export const DevUiSyncStatusIndicator = ({
   return (
     <Text color={config.color}>
       {icon} {label}
+      {state.pipeline.error && `: ${state.pipeline.error}`}
     </Text>
   );
 };

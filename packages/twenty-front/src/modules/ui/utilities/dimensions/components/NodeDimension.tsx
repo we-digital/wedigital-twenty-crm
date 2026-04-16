@@ -3,13 +3,11 @@ import { type ReactNode, useRef } from 'react';
 
 type NodeDimensionProps = {
   children: ReactNode;
-  className?: string;
   onDimensionChange: (dimensions: { width: number; height: number }) => void;
 };
 
 export const NodeDimension = ({
   children,
-  className,
   onDimensionChange,
 }: NodeDimensionProps) => {
   const elementRef = useRef<HTMLDivElement>(null);
@@ -20,9 +18,7 @@ export const NodeDimension = ({
         elementRef={elementRef}
         onDimensionChange={onDimensionChange}
       />
-      <div ref={elementRef} className={className}>
-        {children}
-      </div>
+      <div ref={elementRef}>{children}</div>
     </>
   );
 };

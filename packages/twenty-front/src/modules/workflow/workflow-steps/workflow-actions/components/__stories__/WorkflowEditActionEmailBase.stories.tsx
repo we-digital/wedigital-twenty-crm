@@ -53,7 +53,8 @@ const CONFIGURED_SEND_EMAIL_ACTION: WorkflowSendEmailAction = {
   valid: true,
   settings: {
     input: {
-      connectedAccountId: mockedConnectedAccountRecords[0].id as string,
+      connectedAccountId: mockedConnectedAccountRecords[0]
+        .accountOwnerId as string,
       recipients: {
         to: 'test@twenty.com',
         cc: '',

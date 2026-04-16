@@ -361,7 +361,6 @@ export const fromUniversalConfigurationToFlatPageLayoutWidgetConfiguration = ({
     case WidgetConfigurationType.WORKFLOW_RUN:
     case WidgetConfigurationType.IFRAME:
     case WidgetConfigurationType.STANDALONE_RICH_TEXT:
-    case WidgetConfigurationType.EMAIL_THREAD:
       return universalConfiguration;
   }
 };

@@ -11,7 +11,6 @@ import { MarketplaceService } from 'src/engine/core-modules/application/applicat
 import { FeatureFlagModule } from 'src/engine/core-modules/feature-flag/feature-flag.module';
 import { TwentyConfigModule } from 'src/engine/core-modules/twenty-config/twenty-config.module';
 import { PermissionsModule } from 'src/engine/metadata-modules/permissions/permissions.module';
-import { MarketplaceCatalogSyncCommand } from 'src/engine/core-modules/application/application-marketplace/crons/commands/marketplace-catalog-sync.command';
 
 @Module({
   imports: [
@@ -27,7 +26,6 @@ import { MarketplaceCatalogSyncCommand } from 'src/engine/core-modules/applicati
     MarketplaceQueryService,
     MarketplaceCatalogSyncCronJob,
     MarketplaceCatalogSyncCronCommand,
-    MarketplaceCatalogSyncCommand,
     MarketplaceResolver,
   ],
   exports: [

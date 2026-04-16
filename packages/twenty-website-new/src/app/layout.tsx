@@ -1,13 +1,11 @@
-import { FOOTER_DATA } from '@/app/_constants/footer';
-import { fetchCommunityStats } from '@/lib/community/fetch-community-stats';
-import { mergeSocialLinkLabels } from '@/lib/community/merge-social-link-labels';
 import { Footer } from '@/sections/Footer/components';
+import { Menu } from '@/sections/Menu/components';
 import { theme } from '@/theme';
 import { cssVariables } from '@/theme/css-variables';
 import { css } from '@linaria/core';
 import { styled } from '@linaria/react';
 import type { Metadata } from 'next';
-import { Aleo, Azeret_Mono, Host_Grotesk, VT323 } from 'next/font/google';
+import { Aleo, Azeret_Mono, Host_Grotesk } from 'next/font/google';
 
 const hostGrotesk = Host_Grotesk({
   subsets: ['latin'],
@@ -27,13 +25,6 @@ const azeretMono = Azeret_Mono({
   subsets: ['latin'],
   weight: ['300', '500'],
   variable: '--font-mono',
-  display: 'swap',
-});
-
-const vt323 = VT323({
-  subsets: ['latin'],
-  weight: '400',
-  variable: '--font-retro',
   display: 'swap',
 });
 
@@ -70,28 +61,27 @@ export const metadata: Metadata = {
   description: 'Modular, scalable open source CRM for modern teams.',
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const stats = await fetchCommunityStats();
-  const footerSocialLinks = mergeSocialLinkLabels(
-    FOOTER_DATA.socialLinks,
-    stats,
-  );
-
   return (
     <html lang="en">
       <body
-        className={`${cssVariables} ${hostGrotesk.variable} ${aleo.variable} ${azeretMono.variable} ${vt323.variable}`}
+        className={`${cssVariables} ${hostGrotesk.variable} ${aleo.variable} ${azeretMono.variable}`}
       >
+        <Menu.Root>
+          <Menu.Logo />
+          <Menu.Nav />
+          <Menu.Social />
+          <Menu.Cta />
+        </Menu.Root>
         <StyledMain>{children}</StyledMain>
-        <Footer.Root illustration={FOOTER_DATA.illustration}>
+        <Footer.Root>
           <Footer.Logo />
-          <Footer.Nav groups={FOOTER_DATA.navGroups} />
-          <Footer.Bottom
-            copyright={FOOTER_DATA.bottom.copyright}
-            links={footerSocialLinks}
-          />
+          <Footer.Nav />
+          <Footer.Bottom>
+            <Footer.Social />
+          </Footer.Bottom>
         </Footer.Root>
       </body>
     </html>

@@ -17,7 +17,6 @@ type GetWorkspaceSidebarOrphanItemsInDisplayOrderArgs = {
   objectPermissionsByObjectMetadataId: Parameters<
     typeof getObjectPermissionsForObject
   >[0];
-  includeInaccessibleObjectBackedItems?: boolean;
 };
 
 export const getWorkspaceSidebarOrphanItemsInDisplayOrder = ({
@@ -26,7 +25,6 @@ export const getWorkspaceSidebarOrphanItemsInDisplayOrder = ({
   objectMetadataItems,
   views,
   objectPermissionsByObjectMetadataId,
-  includeInaccessibleObjectBackedItems = false,
 }: GetWorkspaceSidebarOrphanItemsInDisplayOrderArgs): NavigationMenuItem[] => {
   const flatWorkspaceItems = workspaceNavigationMenuItems
     .filter((item) => !isDefined(item.folderId))
@@ -44,34 +42,26 @@ export const getWorkspaceSidebarOrphanItemsInDisplayOrder = ({
       });
     } else {
       const validItem = processedItemsById.get(item.id);
-      if (!isDefined(validItem) && !includeInaccessibleObjectBackedItems) {
+      if (!isDefined(validItem)) {
         return acc;
       }
-      const rowSource = isDefined(validItem) ? validItem : item;
-
-      if (rowSource.type === NavigationMenuItemType.LINK) {
-        acc.push(rowSource);
-        return acc;
-      }
-
-      if (includeInaccessibleObjectBackedItems) {
-        acc.push(rowSource);
-        return acc;
-      }
-
-      const objectMetadataItem = getObjectMetadataForNavigationMenuItem(
-        rowSource,
-        objectMetadataItems,
-        views,
-      );
-      if (
-        isDefined(objectMetadataItem) &&
-        getObjectPermissionsForObject(
-          objectPermissionsByObjectMetadataId,
-          objectMetadataItem.id,
-        ).canReadObjectRecords
-      ) {
-        acc.push(rowSource);
+      if (validItem.type === NavigationMenuItemType.LINK) {
+        acc.push(validItem);
+      } else {
+        const objectMetadataItem = getObjectMetadataForNavigationMenuItem(
+          validItem,
+          objectMetadataItems,
+          views,
+        );
+        if (
+          isDefined(objectMetadataItem) &&
+          getObjectPermissionsForObject(
+            objectPermissionsByObjectMetadataId,
+            objectMetadataItem.id,
+          ).canReadObjectRecords
+        ) {
+          acc.push(validItem);
+        }
       }
     }
     return acc;

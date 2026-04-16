@@ -15,6 +15,7 @@ import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/use
 import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
 import { stringifyRelativeDateFilter } from '@/views/view-filter-value/utils/stringifyRelativeDateFilter';
 
+import { useFeatureFlagsMap } from '@/workspace/hooks/useFeatureFlagsMap';
 import { DEFAULT_RELATIVE_DATE_FILTER_VALUE } from 'twenty-shared/constants';
 import {
   isDefined,
@@ -47,6 +48,10 @@ export const useApplyObjectFilterDropdownOperand = () => {
 
   const { getRelativeDateFilterWithUserTimezone } =
     useGetRelativeDateFilterWithUserTimezone();
+
+  const featureFlags = useFeatureFlagsMap();
+  const isWholeDayFilterEnabled =
+    featureFlags.IS_DATE_TIME_WHOLE_DAY_FILTER_ENABLED ?? false;
 
   const applyObjectFilterDropdownOperand = (
     newOperand: RecordFilterOperand,
@@ -122,6 +127,7 @@ export const useApplyObjectFilterDropdownOperand = () => {
             recordFilterToUpsert.value,
             newOperand,
             userTimezone,
+            isWholeDayFilterEnabled,
           );
         } else if (filterValueIsEmpty || isStillRelativeFilterValue.success) {
           const zonedDateToUse = Temporal.Now.zonedDateTimeISO(userTimezone);
@@ -133,7 +139,10 @@ export const useApplyObjectFilterDropdownOperand = () => {
 
             recordFilterToUpsert.value = initialNowDateFilterValue;
           } else {
-            if (newOperand === RecordFilterOperand.IS) {
+            if (
+              newOperand === RecordFilterOperand.IS &&
+              isWholeDayFilterEnabled
+            ) {
               recordFilterToUpsert.value = zonedDateToUse
                 .toPlainDate()
                 .toString();
@@ -163,6 +172,7 @@ const convertDateTimeFilterValue = (
   currentValue: string,
   targetOperand: RecordFilterOperand,
   userTimezone: string,
+  isWholeDayFilterEnabled = false,
 ): string => {
   const zonedDateToUse = Temporal.Now.zonedDateTimeISO(userTimezone);
 
@@ -172,7 +182,11 @@ const convertDateTimeFilterValue = (
         ? Temporal.Instant.from(currentValue).toZonedDateTimeISO(userTimezone)
         : Temporal.PlainDate.from(currentValue).toZonedDateTime(userTimezone);
 
-      return existingZoned.toPlainDate().toString();
+      if (isWholeDayFilterEnabled) {
+        return existingZoned.toPlainDate().toString();
+      } else {
+        return existingZoned.toInstant().toString();
+      }
     } catch {
       return zonedDateToUse.toPlainDate().toString();
     }

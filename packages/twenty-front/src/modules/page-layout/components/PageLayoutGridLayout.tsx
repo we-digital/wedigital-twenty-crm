@@ -205,15 +205,13 @@ export const PageLayoutGridLayout = ({ tabId }: PageLayoutGridLayoutProps) => {
         maxCols={12}
         containerPadding={[0, 0]}
         margin={[PAGE_LAYOUT_GRID_MARGIN, PAGE_LAYOUT_GRID_MARGIN]}
-        isDraggable={isPageLayoutInEditMode && !isLayoutEmpty}
-        isResizable={isPageLayoutInEditMode && !isLayoutEmpty}
+        isDraggable={isPageLayoutInEditMode}
+        isResizable={isPageLayoutInEditMode}
         draggableHandle=".drag-handle"
         compactType="vertical"
         preventCollision={false}
         resizeHandle={
-          isPageLayoutInEditMode && !isLayoutEmpty ? (
-            <PageLayoutGridResizeHandle />
-          ) : undefined
+          isPageLayoutInEditMode ? <PageLayoutGridResizeHandle /> : undefined
         }
         resizeHandles={['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw']}
         onDragStart={(_layout, _oldItem, newItem) => {

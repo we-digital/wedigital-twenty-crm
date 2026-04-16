@@ -1,8 +1,6 @@
-'use client';
-
-import { Body, Heading } from '@/design-system/components';
-import { THREE_CARDS_ILLUSTRATIONS } from '@/illustrations';
-import type { ThreeCardsIllustrationCardType } from '@/sections/ThreeCards/types';
+import { Body, Heading, IconButton } from '@/design-system/components';
+import { ArrowRightIcon } from '@/icons';
+import { ThreeCardsIllustrationCardType } from '@/sections/ThreeCards/types';
 import { theme } from '@/theme';
 import { styled } from '@linaria/react';
 import { ThreeCardsCardShape } from './CardShape';
@@ -28,7 +26,7 @@ const CardRule = styled.div`
   width: 100%;
 `;
 
-const CardEmbed = styled.div`
+const CardEmbed = styled.iframe`
   width: 100%;
   height: 240px;
   border: none;
@@ -39,9 +37,10 @@ const CardEmbed = styled.div`
 `;
 
 const CardFooter = styled.footer`
-  display: flex;
-  align-items: center;
-  gap: ${theme.spacing(2)};
+  display: grid;
+  grid-template-columns: auto auto auto 1fr;
+  align-items: start;
+  column-gap: ${theme.spacing(2)};
 `;
 
 const AttributionPipe = styled.span`
@@ -49,6 +48,10 @@ const AttributionPipe = styled.span`
   width: 0;
   height: 21px;
   border-left: 1px solid ${theme.colors.primary.border[20]};
+`;
+
+const FooterTrailingAction = styled.div`
+  justify-self: end;
 `;
 
 const CardBodyCell = styled.div`
@@ -66,9 +69,6 @@ export function IllustrationCard({
   illustrationCard,
   variant = 'shaped',
 }: IllustrationCardProps) {
-  const ThreeCardsIllustration =
-    THREE_CARDS_ILLUSTRATIONS[illustrationCard.illustration];
-
   return (
     <IllustrationCardContainer>
       {variant === 'shaped' && (
@@ -84,9 +84,13 @@ export function IllustrationCard({
         weight="medium"
       />
       <CardRule />
-      <CardEmbed>
-        <ThreeCardsIllustration />
-      </CardEmbed>
+      <CardEmbed
+        src="https://app.endlesstools.io/embed/1a3f6b56-90bb-4951-9401-c01a79fdc4f1"
+        title={illustrationCard.heading.text}
+        allow="clipboard-write; encrypted-media; gyroscope; web-share"
+        referrerPolicy="strict-origin-when-cross-origin"
+        allowFullScreen
+      />
       <CardRule />
       <CardBodyCell>
         <Body body={illustrationCard.body} size="sm" weight="regular" />
@@ -105,6 +109,17 @@ export function IllustrationCard({
             size="xs"
             weight="regular"
           />
+          <FooterTrailingAction>
+            <IconButton
+              icon={ArrowRightIcon}
+              ariaLabel="Learn more"
+              borderColor={theme.colors.primary.border[20]}
+              iconFillColor="transparent"
+              iconSize={24}
+              iconStrokeColor={theme.colors.primary.text[80]}
+              size={48}
+            />
+          </FooterTrailingAction>
         </CardFooter>
       )}
     </IllustrationCardContainer>

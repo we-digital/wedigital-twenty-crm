@@ -38,11 +38,10 @@ export class UpdateOneResolverFactory
       });
 
       try {
-        const { results: record } =
-          await this.commonUpdateOneQueryRunnerService.execute(
-            { ...args, selectedFields },
-            resolverContext,
-          );
+        const record = await this.commonUpdateOneQueryRunnerService.execute(
+          { ...args, selectedFields },
+          resolverContext,
+        );
 
         const typeORMObjectRecordsParser =
           new ObjectRecordsToGraphqlConnectionHelper(

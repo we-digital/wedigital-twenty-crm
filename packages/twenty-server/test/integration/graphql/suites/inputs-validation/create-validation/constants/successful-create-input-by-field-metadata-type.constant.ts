@@ -414,7 +414,6 @@ export const successfulCreateInputByFieldMetadataType: {
     },
     {
       input: {
-        name: 'position',
         position: undefined,
       },
       validateInput: (record: Record<string, any>) => {

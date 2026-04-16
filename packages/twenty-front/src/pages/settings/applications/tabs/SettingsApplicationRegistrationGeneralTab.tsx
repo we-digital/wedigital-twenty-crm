@@ -1,4 +1,4 @@
-import { SettingsTableCard } from '@/settings/components/SettingsTableCard';
+import { SettingsAdminTableCard } from '@/settings/admin-panel/components/SettingsAdminTableCard';
 import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
 import { SettingsTextInput } from '@/ui/input/components/SettingsTextInput';
 import { ConfirmationModal } from '@/ui/layout/modal/components/ConfirmationModal';
@@ -332,6 +332,15 @@ export const SettingsApplicationRegistrationGeneralTab = ({
       label: t`Name`,
       value: registration.name,
     },
+    ...(isNonEmptyString(registration.description)
+      ? [
+          {
+            Icon: IconTextCaption,
+            label: t`Description`,
+            value: registration.description,
+          },
+        ]
+      : []),
     {
       Icon: IconWorld,
       label: t`Universal ID`,
@@ -387,7 +396,7 @@ export const SettingsApplicationRegistrationGeneralTab = ({
           title={t`General`}
           description={t`Name and description are managed via your app manifest (CLI)`}
         />
-        <SettingsTableCard
+        <SettingsAdminTableCard
           rounded
           items={generalItems}
           gridAutoColumns="3fr 8fr"

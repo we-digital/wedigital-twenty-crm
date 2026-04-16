@@ -1,21 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 
 import MailComposer from 'nodemailer/lib/mail-composer';
 import { isDefined } from 'twenty-shared/utils';
-import { Repository } from 'typeorm';
 
 import { type MessageOutboundDriver } from 'src/modules/messaging/message-outbound-manager/interfaces/message-outbound-driver.interface';
 
-import { MessageChannelEntity } from 'src/engine/metadata-modules/message-channel/entities/message-channel.entity';
-import { MessageFolderEntity } from 'src/engine/metadata-modules/message-folder/entities/message-folder.entity';
-import { type ConnectedAccountEntity } from 'src/engine/metadata-modules/connected-account/entities/connected-account.entity';
+import { type ConnectedAccountWorkspaceEntity } from 'src/modules/connected-account/standard-objects/connected-account.workspace-entity';
 import { ImapClientProvider } from 'src/modules/messaging/message-import-manager/drivers/imap/providers/imap-client.provider';
 import { ImapFindDraftsFolderService } from 'src/modules/messaging/message-import-manager/drivers/imap/services/imap-find-drafts-folder.service';
 import { SmtpClientProvider } from 'src/modules/messaging/message-import-manager/drivers/smtp/providers/smtp-client.provider';
 import { type SendMessageInput } from 'src/modules/messaging/message-outbound-manager/types/send-message-input.type';
-import { type SendMessageResult } from 'src/modules/messaging/message-outbound-manager/types/send-message-result.type';
-import { extractMessageIdFromBuffer } from 'src/modules/messaging/message-outbound-manager/utils/extract-message-id-from-buffer.util';
 import { toMailComposerOptions } from 'src/modules/messaging/message-outbound-manager/utils/to-mail-composer-options.util';
 
 @Injectable()
@@ -24,17 +18,13 @@ export class ImapSmtpMessageOutboundService implements MessageOutboundDriver {
     private readonly smtpClientProvider: SmtpClientProvider,
     private readonly imapClientProvider: ImapClientProvider,
     private readonly imapFindDraftsFolderService: ImapFindDraftsFolderService,
-    @InjectRepository(MessageChannelEntity)
-    private readonly messageChannelRepository: Repository<MessageChannelEntity>,
-    @InjectRepository(MessageFolderEntity)
-    private readonly messageFolderRepository: Repository<MessageFolderEntity>,
   ) {}
 
   async sendMessage(
     sendMessageInput: SendMessageInput,
-    connectedAccount: ConnectedAccountEntity,
-  ): Promise<SendMessageResult> {
-    const { handle, connectionParameters } = connectedAccount;
+    connectedAccount: ConnectedAccountWorkspaceEntity,
+  ): Promise<void> {
+    const { handle, connectionParameters, messageChannels } = connectedAccount;
 
     const smtpClient =
       await this.smtpClientProvider.getSmtpClient(connectedAccount);
@@ -58,23 +48,13 @@ export class ImapSmtpMessageOutboundService implements MessageOutboundDriver {
       const imapClient =
         await this.imapClientProvider.getClient(connectedAccount);
 
-      const messageChannel = await this.messageChannelRepository.findOne({
-        where: {
-          connectedAccountId: connectedAccount.id,
-          handle: handle,
-        },
-      });
+      const messageChannel = messageChannels.find(
+        (channel) => channel.handle === handle,
+      );
 
-      let sentFolder: MessageFolderEntity | null = null;
-
-      if (isDefined(messageChannel)) {
-        sentFolder = await this.messageFolderRepository.findOne({
-          where: {
-            messageChannelId: messageChannel.id,
-            isSentFolder: true,
-          },
-        });
-      }
+      const sentFolder = messageChannel?.messageFolders.find(
+        (messageFolder) => messageFolder.isSentFolder,
+      );
 
       if (isDefined(sentFolder) && isDefined(sentFolder.name)) {
         await imapClient.append(sentFolder.name, messageBuffer);
@@ -82,15 +62,11 @@ export class ImapSmtpMessageOutboundService implements MessageOutboundDriver {
 
       await this.imapClientProvider.closeClient(imapClient);
     }
-
-    return {
-      headerMessageId: extractMessageIdFromBuffer(messageBuffer),
-    };
   }
 
   async createDraft(
     sendMessageInput: SendMessageInput,
-    connectedAccount: ConnectedAccountEntity,
+    connectedAccount: ConnectedAccountWorkspaceEntity,
   ): Promise<void> {
     const { handle, connectionParameters } = connectedAccount;
 

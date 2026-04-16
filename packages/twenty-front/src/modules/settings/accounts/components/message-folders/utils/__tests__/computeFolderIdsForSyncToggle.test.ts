@@ -15,7 +15,6 @@ describe('computeFolderIdsForSyncToggle', () => {
     externalId?: string | null;
     isSynced?: boolean;
   }): MessageFolder => ({
-    __typename: 'MessageFolder',
     id,
     name,
     parentFolderId,
@@ -23,8 +22,8 @@ describe('computeFolderIdsForSyncToggle', () => {
     isSentFolder: false,
     isSynced,
     messageChannelId: 'channel-1',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
+    __typename: 'MessageFolder',
+    syncCursor: '',
   });
 
   describe('when syncing a folder', () => {

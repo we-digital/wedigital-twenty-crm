@@ -1,23 +1,25 @@
-import { type BroadcastEntityName } from '@/browser-event/types/BroadcastEntityName';
 import { dispatchMetadataOperationBrowserEvent } from '@/browser-event/utils/dispatchMetadataOperationBrowserEvent';
 import { turnSseMetadataEventsToMetadataOperationBrowserEvents } from '@/sse-db-event/utils/turnSseMetadataEventsToMetadataOperationBrowserEvents';
 import { useCallback } from 'react';
-import { type MetadataEvent } from '~/generated-metadata/graphql';
+import {
+  type AllMetadataName,
+  type MetadataEvent,
+} from '~/generated-metadata/graphql';
 
-const groupSseMetadataEventsByEntityName = (
+const groupSseMetadataEventsByMetadataName = (
   sseMetadataEvents: MetadataEvent[],
-): Map<BroadcastEntityName, MetadataEvent[]> => {
-  const eventsByEntityName = new Map<BroadcastEntityName, MetadataEvent[]>();
+): Map<AllMetadataName, MetadataEvent[]> => {
+  const eventsByMetadataName = new Map<AllMetadataName, MetadataEvent[]>();
 
   for (const event of sseMetadataEvents) {
-    const entityName = event.metadataName as BroadcastEntityName;
+    const metadataName = event.metadataName as AllMetadataName;
 
-    const existing = eventsByEntityName.get(entityName) ?? [];
+    const existing = eventsByMetadataName.get(metadataName) ?? [];
 
-    eventsByEntityName.set(entityName, [...existing, event]);
+    eventsByMetadataName.set(metadataName, [...existing, event]);
   }
 
-  return eventsByEntityName;
+  return eventsByMetadataName;
 };
 
 export const useDispatchMetadataEventsFromSseToBrowserEvents = <
@@ -25,10 +27,10 @@ export const useDispatchMetadataEventsFromSseToBrowserEvents = <
 >() => {
   const dispatchMetadataEventsFromSseToBrowserEvents = useCallback(
     (metadataEvents: MetadataEvent[]) => {
-      const eventsByEntityName =
-        groupSseMetadataEventsByEntityName(metadataEvents);
+      const eventsByMetadataName =
+        groupSseMetadataEventsByMetadataName(metadataEvents);
 
-      for (const [metadataName, events] of eventsByEntityName) {
+      for (const [metadataName, events] of eventsByMetadataName) {
         const metadataOperationBrowserEvents =
           turnSseMetadataEventsToMetadataOperationBrowserEvents<T>({
             metadataName,

@@ -44,29 +44,12 @@ export const useStepsOutputSchema = () => {
           return;
         }
 
-        // TODO: Remove this fallback after upgrade command
-        // `upgrade:1-21:migrate-ai-agent-text-to-json-response-format`
-        // has run on all workspaces.
-        const persistedOutputSchema =
-          step.type === 'AI_AGENT' &&
-          (!isDefined(step.settings?.outputSchema) ||
-            Object.keys(step.settings.outputSchema).length === 0)
-            ? {
-                response: {
-                  isLeaf: true,
-                  type: 'string',
-                  label: 'Response',
-                  value: null,
-                },
-              }
-            : step.settings?.outputSchema;
-
         const outputSchema = shouldComputeOnFrontend
           ? computeStepOutputSchema({
               step,
               objectMetadataItems,
             })
-          : persistedOutputSchema;
+          : step.settings?.outputSchema;
 
         const stepOutputSchema: StepOutputSchemaV2 = {
           id: step.id,

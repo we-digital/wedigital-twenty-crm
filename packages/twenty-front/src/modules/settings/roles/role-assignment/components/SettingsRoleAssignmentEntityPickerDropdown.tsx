@@ -1,4 +1,3 @@
-import { SettingsEmptyPlaceholder } from '@/settings/components/SettingsEmptyPlaceholder';
 import { DropdownContent } from '@/ui/layout/dropdown/components/DropdownContent';
 import { DropdownMenuItemsContainer } from '@/ui/layout/dropdown/components/DropdownMenuItemsContainer';
 import { DropdownMenuSearchInput } from '@/ui/layout/dropdown/components/DropdownMenuSearchInput';
@@ -34,6 +33,12 @@ const StyledDropdownItem = styled.div`
 const StyledItemName = styled.div`
   color: ${themeCssVariables.font.color.secondary};
   font-weight: ${themeCssVariables.font.weight.medium};
+`;
+
+const StyledEmptyState = styled.div`
+  color: ${themeCssVariables.font.color.tertiary};
+  padding: ${themeCssVariables.spacing[2]};
+  text-align: center;
 `;
 
 type EntityData = Agent | ApiKeyForRole;
@@ -133,9 +138,7 @@ export const SettingsRoleAssignmentEntityPickerDropdown = ({
             </StyledDropdownItem>
           ))
         ) : (
-          <SettingsEmptyPlaceholder padding="2">
-            {getEmptyStateMessage()}
-          </SettingsEmptyPlaceholder>
+          <StyledEmptyState>{getEmptyStateMessage()}</StyledEmptyState>
         )}
       </DropdownMenuItemsContainer>
     </DropdownContent>

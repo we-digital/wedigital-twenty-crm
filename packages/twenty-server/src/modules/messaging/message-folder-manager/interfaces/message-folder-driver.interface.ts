@@ -1,14 +1,14 @@
-import { type MessageChannelEntity } from 'src/engine/metadata-modules/message-channel/entities/message-channel.entity';
-import { type ConnectedAccountEntity } from 'src/engine/metadata-modules/connected-account/entities/connected-account.entity';
-import { type MessageFolderEntity } from 'src/engine/metadata-modules/message-folder/entities/message-folder.entity';
+import { type ConnectedAccountWorkspaceEntity } from 'src/modules/connected-account/standard-objects/connected-account.workspace-entity';
+import { type MessageChannelWorkspaceEntity } from 'src/modules/messaging/common/standard-objects/message-channel.workspace-entity';
+import { type MessageFolderWorkspaceEntity } from 'src/modules/messaging/common/standard-objects/message-folder.workspace-entity';
 
 export type DiscoveredMessageFolder = Pick<
-  MessageFolderEntity,
+  MessageFolderWorkspaceEntity,
   'name' | 'isSynced' | 'isSentFolder' | 'externalId' | 'parentFolderId'
 >;
 
 export type MessageFolder = Pick<
-  MessageFolderEntity,
+  MessageFolderWorkspaceEntity,
   | 'name'
   | 'isSynced'
   | 'isSentFolder'
@@ -22,7 +22,7 @@ export type MessageFolder = Pick<
 export type MessageFolderDriver = {
   getAllMessageFolders(
     connectedAccount: Pick<
-      ConnectedAccountEntity,
+      ConnectedAccountWorkspaceEntity,
       | 'provider'
       | 'accessToken'
       | 'refreshToken'
@@ -30,6 +30,9 @@ export type MessageFolderDriver = {
       | 'handle'
       | 'connectionParameters'
     >,
-    messageChannel: Pick<MessageChannelEntity, 'messageFolderImportPolicy'>,
+    messageChannel: Pick<
+      MessageChannelWorkspaceEntity,
+      'messageFolderImportPolicy'
+    >,
   ): Promise<DiscoveredMessageFolder[]>;
 };

@@ -49,17 +49,6 @@ type ClickHouseUsageEventRecord = {
   metadata?: Record<string, unknown>;
 };
 
-type ClickHouseApplicationLogRecord = {
-  timestamp: string;
-  applicationId?: string;
-  logicFunctionId?: string;
-  logicFunctionName?: string;
-  executionId?: string;
-  level?: string;
-  message?: string;
-  properties?: Record<string, unknown>;
-};
-
 const ALLOWED_TABLES = Object.values(EventLogTable);
 const MAX_LIMIT = 10000;
 
@@ -68,7 +57,6 @@ const CLICKHOUSE_TABLE_NAMES: Record<EventLogTable, string> = {
   [EventLogTable.PAGEVIEW]: 'pageview',
   [EventLogTable.OBJECT_EVENT]: 'objectEvent',
   [EventLogTable.USAGE_EVENT]: 'usageEvent',
-  [EventLogTable.APPLICATION_LOG]: 'applicationLog',
 };
 
 @Injectable()
@@ -97,9 +85,7 @@ export class EventLogsService {
         ? 'resourceType'
         : input.table === EventLogTable.PAGEVIEW
           ? 'name'
-          : input.table === EventLogTable.APPLICATION_LOG
-            ? 'logicFunctionName'
-            : 'event';
+          : 'event';
 
     const whereClauses: string[] = ['"workspaceId" = {workspaceId:String}'];
     const params: Record<string, unknown> = { workspaceId };
@@ -215,9 +201,7 @@ export class EventLogsService {
     // userWorkspaceId directly which is more relevant in a workspace context.
     // Consider migrating all event tables to userWorkspaceId for consistency.
     if (isDefined(filters.userWorkspaceId)) {
-      if (table === EventLogTable.APPLICATION_LOG) {
-        // Application logs don't have a user column
-      } else if (table === EventLogTable.USAGE_EVENT) {
+      if (table === EventLogTable.USAGE_EVENT) {
         whereClauses.push('"userWorkspaceId" = {userWorkspaceId:String}');
         params.userWorkspaceId = filters.userWorkspaceId;
       } else {
@@ -265,10 +249,7 @@ export class EventLogsService {
   }
 
   private normalizeRecords(
-    records:
-      | ClickHouseEventRecord[]
-      | ClickHouseUsageEventRecord[]
-      | ClickHouseApplicationLogRecord[],
+    records: ClickHouseEventRecord[] | ClickHouseUsageEventRecord[],
     table: EventLogTable,
   ): EventLogRecord[] {
     if (table === EventLogTable.USAGE_EVENT) {
@@ -284,21 +265,6 @@ export class EventLogsService {
           resourceId: record.resourceId,
           resourceContext: record.resourceContext,
           ...(record.metadata ?? {}),
-        },
-      }));
-    }
-
-    if (table === EventLogTable.APPLICATION_LOG) {
-      return (records as ClickHouseApplicationLogRecord[]).map((record) => ({
-        event: record.logicFunctionName ?? '',
-        timestamp: new Date(record.timestamp),
-        properties: {
-          level: record.level,
-          message: record.message,
-          executionId: record.executionId,
-          logicFunctionId: record.logicFunctionId,
-          applicationId: record.applicationId,
-          ...(record.properties ?? {}),
         },
       }));
     }
