@@ -93,11 +93,11 @@ index 0000000000..785775967e
 +	branch = main
 diff --git a/.upstream-version b/.upstream-version
 new file mode 100644
-index 0000000000..2e4ba7e7c0
+index 0000000000..5603a3e382
 --- /dev/null
 +++ b/.upstream-version
 @@ -0,0 +1 @@
-+v1.19.11
++v1.20.11
 diff --git a/docker-compose.prod.yml b/docker-compose.prod.yml
 new file mode 100644
 index 0000000000..dc75f8200c
@@ -328,10 +328,10 @@ index 0000000000..dc75f8200c
 +  server-local-data:
 +  letsencrypt:
 diff --git a/package.json b/package.json
-index c6233d6e40..fe08537b0f 100644
+index a12d889736..12f6ac0da7 100644
 --- a/package.json
 +++ b/package.json
-@@ -192,7 +192,8 @@
+@@ -193,7 +193,8 @@
      "docs:generate": "tsx packages/twenty-docs/scripts/generate-docs-json.ts",
      "docs:generate-navigation-template": "tsx packages/twenty-docs/scripts/generate-navigation-template.ts",
      "docs:generate-paths": "tsx packages/twenty-docs/scripts/generate-documentation-paths.ts",
@@ -341,14 +341,14 @@ index c6233d6e40..fe08537b0f 100644
    },
    "workspaces": {
      "packages": [
-@@ -207,6 +208,7 @@
+@@ -208,6 +209,7 @@
        "packages/twenty-docs",
        "packages/twenty-e2e-testing",
        "packages/twenty-shared",
 +      "packages/twenty-widgets",
        "packages/twenty-sdk",
+       "packages/twenty-front-component-renderer",
        "packages/twenty-client-sdk",
-       "packages/twenty-apps",
 diff --git a/packages/twenty-docker/twenty-widgets/Dockerfile b/packages/twenty-docker/twenty-widgets/Dockerfile
 new file mode 100644
 index 0000000000..089f8b0d3f
@@ -593,10 +593,10 @@ index 0000000000..ca64be557d
 +  });
 +});
 diff --git a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
-index 8bcde95a48..9a60983df1 100644
+index 7d46c20801..9a60983df1 100644
 --- a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
 +++ b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
-@@ -1,9 +1,12 @@
+@@ -1,10 +1,13 @@
 +import { currentUserState } from '@/auth/states/currentUserState';
 +import { tokenPairState } from '@/auth/states/tokenPairState';
  import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
@@ -605,11 +605,13 @@ index 8bcde95a48..9a60983df1 100644
  import { WidgetSkeletonLoader } from '@/page-layout/widgets/components/WidgetSkeletonLoader';
  import { styled } from '@linaria/react';
 -import { useState } from 'react';
+-import { getSafeUrl, isDefined } from 'twenty-shared/utils';
 +import { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 +import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
- import { isDefined } from 'twenty-shared/utils';
++import { isDefined } from 'twenty-shared/utils';
  import { themeCssVariables } from 'twenty-ui/theme-constants';
  
+ const StyledContainer = styled.div<{ $isEditMode: boolean }>`
 @@ -55,9 +58,43 @@ export type IframeWidgetProps = {
    widget: PageLayoutWidget;
  };
@@ -759,23 +761,28 @@ index 8bcde95a48..9a60983df1 100644
    };
  
    const handleIframeError = () => {
-@@ -79,7 +207,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
+@@ -79,10 +207,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
      setHasError(true);
    };
  
--  if (hasError || !isDefined(url)) {
+-  const safeUrl = isDefined(url) ? getSafeUrl(url) : undefined;
+-  const isHttpUrl = isDefined(safeUrl) && /^https?:\/\//i.test(safeUrl);
+-
+-  if (hasError || !isHttpUrl) {
 +  if (hasError || !isDefined(url) || (isDefined(currentUser) && !targetOrigin)) {
      return (
        <StyledContainer $isEditMode={isPageLayoutInEditMode}>
          <StyledErrorContainer>
-@@ -98,6 +226,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
+@@ -101,7 +226,8 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
        )}
        <StyledIframe
          $isEditMode={isPageLayoutInEditMode}
+-        src={safeUrl}
 +        ref={iframeRef}
-         src={url}
++        src={url}
          title={title}
          onLoad={handleIframeLoad}
+         onError={handleIframeError}
 diff --git a/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module-factory.ts b/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module-factory.ts
 index 303cf9cd21..c298d03aff 100644
 --- a/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module-factory.ts
@@ -1493,7 +1500,7 @@ index 0000000000..10a48ad54c
 +echo "  5. For controlled upgrades: set CRM_IMAGE_TAG=${TARGET_TAG} in bbc-devops"
 +echo "============================================"
 diff --git a/yarn.lock b/yarn.lock
-index 17c928ef89..fc3b6d8549 100644
+index 8faa35e882..35b5f623f2 100644
 --- a/yarn.lock
 +++ b/yarn.lock
 @@ -5043,7 +5043,7 @@ __metadata:
@@ -1514,7 +1521,7 @@ index 17c928ef89..fc3b6d8549 100644
    version: 11.14.1
    resolution: "@emotion/styled@npm:11.14.1"
    dependencies:
-@@ -60075,6 +60075,18 @@ __metadata:
+@@ -60815,6 +60815,18 @@ __metadata:
    languageName: unknown
    linkType: soft
  
