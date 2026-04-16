@@ -1,9 +1,9 @@
 diff --git a/.github/workflows/build-and-push.yaml b/.github/workflows/build-and-push.yaml
 new file mode 100644
-index 0000000000..c39e784ab1
+index 0000000000..6b83e83754
 --- /dev/null
 +++ b/.github/workflows/build-and-push.yaml
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,65 @@
 +name: Build and Push CRM Image
 +
 +on:
@@ -69,18 +69,6 @@ index 0000000000..c39e784ab1
 +            APP_VERSION=${{ steps.version.outputs.app_version }}
 +          cache-from: type=gha
 +          cache-to: type=gha,mode=max
-+
-+  deploy:
-+    needs: build
-+    runs-on: ubuntu-latest
-+    steps:
-+      - name: Install doctl
-+        uses: digitalocean/action-doctl@v2
-+        with:
-+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-+
-+      - name: Trigger DO App Platform deployment
-+        run: doctl apps create-deployment ${{ secrets.DO_APP_ID }} --force-rebuild
 diff --git a/.github/workflows/cd-deploy-main.yaml b/.github/workflows/cd-deploy-main.yaml
 index 7fe62465b1..a8a1c73b17 100644
 --- a/.github/workflows/cd-deploy-main.yaml

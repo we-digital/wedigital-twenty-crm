@@ -58,7 +58,9 @@ const bootstrap = async () => {
     logger.error(`Unhandled rejection: ${reason}`, 'UnhandledRejection');
 
     if (shouldCaptureException(reason)) {
-      exceptionHandlerService.captureExceptions([reason as Error]);
+      exceptionHandlerService.captureExceptions([
+        reason instanceof Error ? reason : new Error(String(reason)),
+      ]);
     }
   });
 

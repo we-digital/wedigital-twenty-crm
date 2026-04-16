@@ -39,7 +39,9 @@ async function bootstrap() {
       );
 
       if (shouldCaptureException(reason)) {
-        exceptionHandlerService?.captureExceptions([reason as Error]);
+        exceptionHandlerService?.captureExceptions([
+          reason instanceof Error ? reason : new Error(String(reason)),
+        ]);
       }
     });
   } catch (err) {
