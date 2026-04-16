@@ -1,19 +1,30 @@
-name: Build and Deploy to DO App Platform
+name: Deploy CRM
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy (e.g., v1.20.11, sha-abc1234, latest)'
+        required: true
 
 jobs:
-  build-crm:
+  deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
       packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Create DB backup before deploy
+        run: |
+          echo "Creating database backup before deployment..."
+          doctl databases backups create ${{ secrets.DO_DB_CLUSTER_ID }}
+          echo "Backup initiated. Proceeding with deployment."
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -25,40 +36,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=sha,prefix=
-            type=raw,value=latest
+      - name: Promote image to stable
+        run: |
+          echo "Saving current stable as previous..."
+          docker buildx imagetools create \
+            -t "${IMAGE}:previous" "${IMAGE}:stable" 2>/dev/null \
+            || echo "No existing stable tag — first deployment, skipping previous."
 
-      - name: Get app version
-        id: version
-        run: echo "version=$(git describe --tags --match 'v*' --abbrev=0 | sed 's/^v//')" >> "$GITHUB_OUTPUT"
+          echo "Promoting ${IMAGE}:${{ inputs.image_tag }} → stable..."
+          docker buildx imagetools create \
+            -t "${IMAGE}:stable" "${IMAGE}:${{ inputs.image_tag }}"
 
-      - name: Build and push CRM image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: packages/twenty-docker/twenty/Dockerfile
-          target: twenty
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          build-args: |
-            APP_VERSION=${{ steps.version.outputs.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  deploy:
-    needs: build-crm
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-      - name: Trigger deployment
+      - name: Trigger DO App Platform deployment
         run: doctl apps create-deployment ${{ secrets.DO_APP_ID }} --force-rebuild
