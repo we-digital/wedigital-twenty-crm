@@ -63,15 +63,3 @@ jobs:
             APP_VERSION=${{ steps.version.outputs.app_version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-      - name: Trigger DO App Platform deployment
-        run: doctl apps create-deployment ${{ secrets.DO_APP_ID }} --force-rebuild
