@@ -965,7 +965,7 @@ index c8aab18e95..161773f78e 100644
  
        return {
 diff --git a/packages/twenty-server/src/main.ts b/packages/twenty-server/src/main.ts
-index 0265aca64d..9984f3d620 100644
+index 0265aca64d..d434fed307 100644
 --- a/packages/twenty-server/src/main.ts
 +++ b/packages/twenty-server/src/main.ts
 @@ -14,6 +14,8 @@ import { setPgDateTypeParser } from 'src/database/pg/set-pg-date-type-parser';
@@ -977,7 +977,7 @@ index 0265aca64d..9984f3d620 100644
  import { UnhandledExceptionFilter } from 'src/filters/unhandled-exception.filter';
  
  import { AppModule } from './app.module';
-@@ -42,6 +44,25 @@ const bootstrap = async () => {
+@@ -42,6 +44,26 @@ const bootstrap = async () => {
    });
    const logger = app.get(LoggerService);
    const twentyConfigService = app.get(TwentyConfigService);
@@ -994,20 +994,21 @@ index 0265aca64d..9984f3d620 100644
 +  process.on('unhandledRejection', (reason) => {
 +    logger.error(`Unhandled rejection: ${reason}`, 'UnhandledRejection');
 +
-+    if (shouldCaptureException(reason)) {
-+      exceptionHandlerService.captureExceptions([
-+        reason instanceof Error ? reason : new Error(String(reason)),
-+      ]);
++    const error =
++      reason instanceof Error ? reason : new Error(String(reason));
++
++    if (shouldCaptureException(error)) {
++      exceptionHandlerService.captureExceptions([error]);
 +    }
 +  });
  
    app.use(session(getSessionStorageOptions(twentyConfigService)));
  
 diff --git a/packages/twenty-server/src/queue-worker/queue-worker.ts b/packages/twenty-server/src/queue-worker/queue-worker.ts
-index 61ebe2a6b4..c31e4cb8fd 100644
+index 61ebe2a6b4..529113f074 100644
 --- a/packages/twenty-server/src/queue-worker/queue-worker.ts
 +++ b/packages/twenty-server/src/queue-worker/queue-worker.ts
-@@ -20,6 +20,30 @@ async function bootstrap() {
+@@ -20,6 +20,31 @@ async function bootstrap() {
  
      // Inject our logger
      app.useLogger(loggerService ?? false);
@@ -1029,10 +1030,11 @@ index 61ebe2a6b4..c31e4cb8fd 100644
 +        'UnhandledRejection',
 +      );
 +
-+      if (shouldCaptureException(reason)) {
-+        exceptionHandlerService?.captureExceptions([
-+          reason instanceof Error ? reason : new Error(String(reason)),
-+        ]);
++      const error =
++        reason instanceof Error ? reason : new Error(String(reason));
++
++      if (shouldCaptureException(error)) {
++        exceptionHandlerService?.captureExceptions([error]);
 +      }
 +    });
    } catch (err) {
