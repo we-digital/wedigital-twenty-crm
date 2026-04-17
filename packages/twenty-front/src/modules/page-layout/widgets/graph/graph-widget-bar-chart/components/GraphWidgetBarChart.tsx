@@ -285,9 +285,10 @@ export const GraphWidgetBarChart = ({
         onMouseLeave={handleTooltipMouseLeave}
         onSliceClick={onSliceClick}
       />
-      {showLegend && data.length > 0 && keys.length > 0 && (
-        <GraphWidgetLegend items={legendItems} show />
-      )}
+      <GraphWidgetLegend
+        items={legendItems}
+        show={showLegend && data.length > 0 && keys.length > 0}
+      />
     </StyledContainer>
   );
 };

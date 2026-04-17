@@ -5,7 +5,6 @@ import { type FlatPageLayoutTab } from 'src/engine/metadata-modules/flat-page-la
 import { type FlatPageLayoutWidgetMaps } from 'src/engine/metadata-modules/flat-page-layout-widget/types/flat-page-layout-widget-maps.type';
 import { type FlatPageLayoutWidget } from 'src/engine/metadata-modules/flat-page-layout-widget/types/flat-page-layout-widget.type';
 import { type FlatPageLayout } from 'src/engine/metadata-modules/flat-page-layout/types/flat-page-layout.type';
-import { resolveOverridableEntityProperty } from 'src/engine/metadata-modules/utils/resolve-overridable-entity-property.util';
 
 export type FlatPageLayoutTabWithWidgets = FlatPageLayoutTab & {
   widgets: FlatPageLayoutWidget[];
@@ -14,9 +13,6 @@ export type FlatPageLayoutTabWithWidgets = FlatPageLayoutTab & {
 export type FlatPageLayoutWithTabsAndWidgets = FlatPageLayout & {
   tabs: FlatPageLayoutTabWithWidgets[];
 };
-
-const getResolvedPageLayoutTabId = (widget: FlatPageLayoutWidget): string =>
-  resolveOverridableEntityProperty(widget, 'pageLayoutTabId');
 
 export const reconstructFlatPageLayoutWithTabsAndWidgets = ({
   layout,
@@ -29,7 +25,9 @@ export const reconstructFlatPageLayoutWithTabsAndWidgets = ({
 }): FlatPageLayoutWithTabsAndWidgets => {
   const tabs = Object.values(flatPageLayoutTabMaps.byUniversalIdentifier)
     .filter(isDefined)
-    .filter((tab) => tab.pageLayoutId === layout.id && tab.isActive)
+    .filter(
+      (tab) => tab.pageLayoutId === layout.id && !isDefined(tab.deletedAt),
+    )
     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 
   const tabsWithWidgets: FlatPageLayoutTabWithWidgets[] = tabs.map((tab) => {
@@ -39,7 +37,7 @@ export const reconstructFlatPageLayoutWithTabsAndWidgets = ({
       .filter(isDefined)
       .filter(
         (widget) =>
-          getResolvedPageLayoutTabId(widget) === tab.id && widget.isActive,
+          widget.pageLayoutTabId === tab.id && !isDefined(widget.deletedAt),
       );
 
     return {

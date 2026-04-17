@@ -1,33 +1,37 @@
-import { type Application } from '~/generated-metadata/graphql';
+import { isDefined } from 'twenty-shared/utils';
+import type { Application } from '~/generated-metadata/graphql';
 import { useUpdateOneApplicationVariable } from '~/pages/settings/applications/hooks/useUpdateOneApplicationVariable';
 import { SettingsApplicationDetailEnvironmentVariablesTable } from '~/pages/settings/applications/tabs/SettingsApplicationDetailEnvironmentVariablesTable';
 
 export const SettingsApplicationDetailSettingsTab = ({
   application,
 }: {
-  application?: Pick<
-    Application,
-    'applicationVariables' | 'id' | 'universalIdentifier' | 'canBeUninstalled'
-  >;
+  application?: Omit<Application, 'objects'> & {
+    objects: { id: string }[];
+  };
 }) => {
   const { updateOneApplicationVariable } = useUpdateOneApplicationVariable();
 
-  const envVariables = [...(application?.applicationVariables ?? [])].sort(
+  if (!isDefined(application)) {
+    return null;
+  }
+
+  const envVariables = [...(application.applicationVariables ?? [])].sort(
     (a, b) => a.key.localeCompare(b.key),
   );
 
   return (
-    <SettingsApplicationDetailEnvironmentVariablesTable
-      envVariables={envVariables}
-      onUpdate={({ key, value }) =>
-        application?.id
-          ? updateOneApplicationVariable({
-              key,
-              value,
-              applicationId: application.id,
-            })
-          : null
-      }
-    />
+    <>
+      <SettingsApplicationDetailEnvironmentVariablesTable
+        envVariables={envVariables}
+        onUpdate={({ key, value }) =>
+          updateOneApplicationVariable({
+            key,
+            value,
+            applicationId: application.id,
+          })
+        }
+      />
+    </>
   );
 };

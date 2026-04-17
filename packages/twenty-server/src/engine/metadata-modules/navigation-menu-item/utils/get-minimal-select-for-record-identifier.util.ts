@@ -11,7 +11,6 @@ import { type FlatObjectMetadata } from 'src/engine/metadata-modules/flat-object
 const ID_FIELD = 'id' as const;
 
 const COMPANY_AVATAR_COLUMN = 'domainNamePrimaryLinkUrl' as const;
-const PERSON_AVATAR_COLUMN = 'avatarFile' as const;
 
 export const getMinimalSelectForRecordIdentifier = ({
   flatObjectMetadata,
@@ -49,9 +48,6 @@ export const getMinimalSelectForRecordIdentifier = ({
 
   if (flatObjectMetadata.nameSingular === 'company') {
     selectColumns.push(COMPANY_AVATAR_COLUMN);
-    //TODO: Temporary solution before imageIdentifier refactor
-  } else if (flatObjectMetadata.nameSingular === 'person') {
-    selectColumns.push(PERSON_AVATAR_COLUMN);
   } else if (isDefined(flatObjectMetadata.imageIdentifierFieldMetadataId)) {
     const imageField = findFlatEntityByIdInFlatEntityMaps({
       flatEntityMaps: flatFieldMetadataMaps,

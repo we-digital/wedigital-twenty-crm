@@ -10,14 +10,17 @@ import {
 import { ApplicationRegistrationService } from 'src/engine/core-modules/application/application-registration/application-registration.service';
 import { MarketplaceCatalogSyncCronJob } from 'src/engine/core-modules/application/application-marketplace/crons/marketplace-catalog-sync.cron.job';
 import { MarketplaceAppDTO } from 'src/engine/core-modules/application/application-marketplace/dtos/marketplace-app.dto';
-import { MarketplaceAppDetailDTO } from 'src/engine/core-modules/application/application-marketplace/dtos/marketplace-app-detail.dto';
 import { InjectMessageQueue } from 'src/engine/core-modules/message-queue/decorators/message-queue.decorator';
 import { MessageQueue } from 'src/engine/core-modules/message-queue/message-queue.constants';
 import { MessageQueueService } from 'src/engine/core-modules/message-queue/services/message-queue.service';
 
+const MARKETPLACE_CACHE_TTL_MS = 5 * 60 * 1000;
+
 @Injectable()
 export class MarketplaceQueryService {
   private readonly logger = new Logger(MarketplaceQueryService.name);
+  private cachedApps: MarketplaceAppDTO[] | null = null;
+  private cacheExpiresAt = 0;
   private hasSyncBeenEnqueued = false;
 
   constructor(
@@ -27,6 +30,10 @@ export class MarketplaceQueryService {
   ) {}
 
   async findManyMarketplaceApps(): Promise<MarketplaceAppDTO[]> {
+    if (this.cachedApps !== null && Date.now() < this.cacheExpiresAt) {
+      return this.cachedApps;
+    }
+
     const registrations =
       await this.applicationRegistrationService.findManyListed();
 
@@ -39,25 +46,27 @@ export class MarketplaceQueryService {
         await this.messageQueueService.add(
           MarketplaceCatalogSyncCronJob.name,
           {},
-          { id: 'marketplace-catalog-sync' }, // Avoids triggering multiple pending jobs
         );
       }
 
       return [];
     }
 
-    return registrations.map((registration) =>
+    this.cachedApps = registrations.map((registration) =>
       this.toMarketplaceAppDTO(registration),
     );
+    this.cacheExpiresAt = Date.now() + MARKETPLACE_CACHE_TTL_MS;
+
+    return this.cachedApps;
   }
 
-  async findMarketplaceAppDetail(
+  async findOneMarketplaceApp(
     universalIdentifier: string,
-  ): Promise<MarketplaceAppDetailDTO> {
+  ): Promise<MarketplaceAppDTO> {
     const registration =
       await this.findRegistrationByUniversalIdentifier(universalIdentifier);
 
-    return this.toMarketplaceAppDetailDTO(registration);
+    return this.toMarketplaceAppDTO(registration);
   }
 
   async findRegistrationByUniversalIdentifier(
@@ -78,37 +87,34 @@ export class MarketplaceQueryService {
     return registration;
   }
 
-  private toMarketplaceAppDTO(
+  toMarketplaceAppDTO(
     registration: ApplicationRegistrationEntity,
   ): MarketplaceAppDTO {
-    const app = registration.manifest?.application;
+    const displayData = registration.marketplaceDisplayData;
 
     return {
       id: registration.universalIdentifier,
-      name: app?.displayName ?? registration.name,
-      description: app?.description ?? '',
-      icon: app?.icon ?? 'IconApps',
-      author: app?.author ?? 'Unknown',
-      category: app?.category ?? '',
-      logo: app?.logoUrl ?? undefined,
-      sourcePackage: registration.sourcePackage ?? undefined,
-      isFeatured: registration.isFeatured,
-    };
-  }
-
-  private toMarketplaceAppDetailDTO(
-    registration: ApplicationRegistrationEntity,
-  ): MarketplaceAppDetailDTO {
-    return {
-      id: registration.id,
-      universalIdentifier: registration.universalIdentifier,
       name: registration.name,
-      sourceType: registration.sourceType,
+      description: registration.description ?? '',
+      icon: displayData?.icon ?? 'IconApps',
+      version:
+        displayData?.version ?? registration.latestAvailableVersion ?? '0.0.0',
+      author: registration.author ?? 'Unknown',
+      category: displayData?.category ?? '',
+      logo: displayData?.logo,
+      screenshots: displayData?.screenshots ?? [],
+      aboutDescription:
+        displayData?.aboutDescription ?? registration.description ?? '',
+      providers: displayData?.providers ?? [],
+      websiteUrl: registration.websiteUrl ?? undefined,
+      termsUrl: registration.termsUrl ?? undefined,
+      objects: displayData?.objects ?? [],
+      fields: displayData?.fields ?? [],
+      logicFunctions: displayData?.logicFunctions ?? [],
+      frontComponents: displayData?.frontComponents ?? [],
       sourcePackage: registration.sourcePackage ?? undefined,
-      latestAvailableVersion: registration.latestAvailableVersion ?? undefined,
-      isListed: registration.isListed,
+      defaultRole: displayData?.defaultRole,
       isFeatured: registration.isFeatured,
-      manifest: registration.manifest ?? undefined,
     };
   }
 }

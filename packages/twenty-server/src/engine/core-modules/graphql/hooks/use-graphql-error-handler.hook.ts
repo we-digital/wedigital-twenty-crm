@@ -73,7 +73,7 @@ export const useGraphQLErrorHandlerHook = <
     return {
       id: req.workspace.id,
       displayName: req.workspace.displayName,
-      createdAt: req.workspace.createdAt ?? null,
+      createdAt: req.workspace.createdAt?.toISOString() ?? null,
       activationStatus: req.workspace.activationStatus,
     };
   }

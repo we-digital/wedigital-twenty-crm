@@ -21,8 +21,7 @@ export const InformationBannerNoBillingSubscription = () => {
   return (
     <InformationBanner
       componentInstanceId="information-banner-no-billing-subscription"
-      color="danger"
-      variant="secondary"
+      variant="danger"
       message={
         hasPermissionToSubscribe
           ? t`Your workspace doesn't have an active subscription.`

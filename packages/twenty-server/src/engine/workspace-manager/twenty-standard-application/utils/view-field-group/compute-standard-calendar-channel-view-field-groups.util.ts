@@ -20,14 +20,14 @@ export const computeStandardCalendarChannelViewFieldGroups = (
           isVisible: true,
         },
       }),
-    calendarChannelRecordPageFieldsSystem:
+    calendarChannelRecordPageFieldsOther:
       createStandardViewFieldGroupFlatMetadata({
         ...args,
         objectName: 'calendarChannel',
         context: {
           viewName: 'calendarChannelRecordPageFields',
-          viewFieldGroupName: 'system',
-          name: 'System',
+          viewFieldGroupName: 'other',
+          name: 'Other',
           position: 1,
           isVisible: true,
         },

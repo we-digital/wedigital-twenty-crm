@@ -55,13 +55,10 @@ const StyledTableRow = styled.div<{
 `;
 
 type TableRowProps = {
-  id?: string;
   isSelected?: boolean;
   isExpanded?: boolean;
   isClickable?: boolean;
   onClick?: () => void;
-  onMouseEnter?: React.MouseEventHandler<HTMLDivElement>;
-  onMouseLeave?: React.MouseEventHandler<HTMLDivElement>;
   to?: string;
   className?: string;
   style?: React.CSSProperties;
@@ -74,13 +71,10 @@ type TableRowProps = {
 };
 
 export const TableRow = ({
-  id,
   isSelected,
   isExpanded,
   isClickable,
   onClick,
-  onMouseEnter,
-  onMouseLeave,
   to,
   className,
   style,
@@ -93,12 +87,9 @@ export const TableRow = ({
   hoverBackgroundColor,
 }: React.PropsWithChildren<TableRowProps>) => (
   <StyledTableRow
-    id={id}
     isSelected={isSelected}
     isExpanded={isExpanded}
     onClick={onClick}
-    onMouseEnter={onMouseEnter}
-    onMouseLeave={onMouseLeave}
     gridAutoColumns={gridAutoColumns}
     gridTemplateColumns={gridTemplateColumns}
     className={className}

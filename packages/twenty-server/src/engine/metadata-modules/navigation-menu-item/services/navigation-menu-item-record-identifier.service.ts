@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { isDefined } from 'twenty-shared/utils';
 
 import { type WorkspaceAuthContext } from 'src/engine/core-modules/auth/types/workspace-auth-context.type';
-import { FileUrlService } from 'src/engine/core-modules/file/file-url/file-url.service';
+import { FileService } from 'src/engine/core-modules/file/services/file.service';
 import { getRecordDisplayName } from 'src/engine/core-modules/record-crud/utils/get-record-display-name.util';
 import { getRecordImageIdentifier } from 'src/engine/core-modules/record-crud/utils/get-record-image-identifier.util';
 import { WorkspaceManyOrAllFlatEntityMapsCacheService } from 'src/engine/metadata-modules/flat-entity/services/workspace-many-or-all-flat-entity-maps-cache.service';
@@ -14,14 +14,13 @@ import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspac
 import { getWorkspaceContext } from 'src/engine/twenty-orm/storage/orm-workspace-context.storage';
 import { formatResult } from 'src/engine/twenty-orm/utils/format-result.util';
 import { resolveRolePermissionConfig } from 'src/engine/twenty-orm/utils/resolve-role-permission-config.util';
-import { FileFolder } from 'twenty-shared/types';
 
 @Injectable()
 export class NavigationMenuItemRecordIdentifierService {
   constructor(
     private readonly workspaceManyOrAllFlatEntityMapsCacheService: WorkspaceManyOrAllFlatEntityMapsCacheService,
     private readonly globalWorkspaceOrmManager: GlobalWorkspaceOrmManager,
-    private readonly fileUrlService: FileUrlService,
+    private readonly fileService: FileService,
   ) {}
 
   async resolveRecordIdentifier({
@@ -125,11 +124,10 @@ export class NavigationMenuItemRecordIdentifierService {
       record,
       flatObjectMetadata: objectMetadata,
       flatFieldMetadataMaps,
-      signUrl: (fileId: string, fileFolder: FileFolder) =>
-        this.fileUrlService.signFileByIdUrl({
-          fileId,
+      signUrl: (url: string) =>
+        this.fileService.signFileUrl({
+          url,
           workspaceId,
-          fileFolder,
         }),
     });
 

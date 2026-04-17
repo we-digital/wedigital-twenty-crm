@@ -1,8 +1,9 @@
 import { type MessageFolder } from 'src/modules/messaging/message-folder-manager/interfaces/message-folder-driver.interface';
 
-import { MessageFolderPendingSyncAction } from 'twenty-shared/types';
-
-import { type MessageFolderEntity } from 'src/engine/metadata-modules/message-folder/entities/message-folder.entity';
+import {
+  MessageFolderPendingSyncAction,
+  type MessageFolderWorkspaceEntity,
+} from 'src/modules/messaging/common/standard-objects/message-folder.workspace-entity';
 
 export const computeUpdatedFolders = ({
   existingFolders,
@@ -10,7 +11,7 @@ export const computeUpdatedFolders = ({
   folderIdsToDelete,
 }: {
   existingFolders: MessageFolder[];
-  foldersToUpdate: Map<string, Partial<MessageFolderEntity>>;
+  foldersToUpdate: Map<string, Partial<MessageFolderWorkspaceEntity>>;
   folderIdsToDelete: string[];
 }): MessageFolder[] => {
   return existingFolders.map((existingFolder) => {

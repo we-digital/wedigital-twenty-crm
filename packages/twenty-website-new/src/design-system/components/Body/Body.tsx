@@ -4,7 +4,6 @@ import { BodyType } from './types/Body';
 
 const bodyClassName = css`
   margin: 0;
-  letter-spacing: -0.01em;
 
   &[data-family='sans'] {
     font-family: ${theme.font.family.sans};
@@ -16,7 +15,6 @@ const bodyClassName = css`
 
   &[data-family='mono'] {
     font-family: ${theme.font.family.mono};
-    letter-spacing: -0.02em;
   }
 
   &[data-weight='light'] {

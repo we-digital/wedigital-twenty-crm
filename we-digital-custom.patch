@@ -1,18 +1,24 @@
-diff --git a/.github/workflows/deploy.yaml b/.github/workflows/deploy.yaml
+diff --git a/.github/workflows/build-and-push.yaml b/.github/workflows/build-and-push.yaml
 new file mode 100644
-index 0000000000..f69d0b2be6
+index 0000000000..6b83e83754
 --- /dev/null
-+++ b/.github/workflows/deploy.yaml
-@@ -0,0 +1,63 @@
-+name: Build and Deploy to DO App Platform
++++ b/.github/workflows/build-and-push.yaml
+@@ -0,0 +1,65 @@
++name: Build and Push CRM Image
 +
 +on:
 +  push:
 +    branches:
 +      - main
++  workflow_dispatch:
++    inputs:
++      ref:
++        description: 'Git ref to build (branch, tag, or SHA)'
++        required: false
++        default: 'main'
 +
 +jobs:
-+  build-crm:
++  build:
 +    runs-on: ubuntu-latest
 +    permissions:
 +      contents: read
@@ -20,6 +26,23 @@ index 0000000000..f69d0b2be6
 +    steps:
 +      - name: Checkout repository
 +        uses: actions/checkout@v4
++        with:
++          ref: ${{ inputs.ref || github.sha }}
++          fetch-depth: 0
++
++      - name: Get upstream version
++        id: version
++        run: |
++          if [ -f .upstream-version ]; then
++            UPSTREAM_TAG=$(cat .upstream-version | tr -d '[:space:]')
++          else
++            UPSTREAM_TAG=$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null || echo "v0.0.0")
++          fi
++          SHA_SHORT=$(git rev-parse --short HEAD)
++          echo "upstream_tag=${UPSTREAM_TAG}" >> "$GITHUB_OUTPUT"
++          echo "app_version=${UPSTREAM_TAG#v}" >> "$GITHUB_OUTPUT"
++          echo "sha_short=${SHA_SHORT}" >> "$GITHUB_OUTPUT"
++          echo "Built version: ${UPSTREAM_TAG} (sha: ${SHA_SHORT})"
 +
 +      - name: Set up Docker Buildx
 +        uses: docker/setup-buildx-action@v3
@@ -31,42 +54,33 @@ index 0000000000..f69d0b2be6
 +          username: ${{ github.actor }}
 +          password: ${{ secrets.GITHUB_TOKEN }}
 +
-+      - name: Extract metadata
-+        id: meta
-+        uses: docker/metadata-action@v5
-+        with:
-+          images: ghcr.io/${{ github.repository }}
-+          tags: |
-+            type=sha,prefix=
-+            type=raw,value=latest
-+
-+      - name: Get app version
-+        id: version
-+        run: echo "version=$(git describe --tags --match 'v*' --abbrev=0 | sed 's/^v//')" >> "$GITHUB_OUTPUT"
-+
 +      - name: Build and push CRM image
 +        uses: docker/build-push-action@v6
 +        with:
 +          context: .
 +          file: packages/twenty-docker/twenty/Dockerfile
++          target: twenty
 +          push: true
-+          tags: ${{ steps.meta.outputs.tags }}
++          tags: |
++            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.upstream_tag }}
++            ghcr.io/${{ github.repository }}:sha-${{ steps.version.outputs.sha_short }}
++            ghcr.io/${{ github.repository }}:latest
 +          build-args: |
-+            APP_VERSION=${{ steps.version.outputs.version }}
++            APP_VERSION=${{ steps.version.outputs.app_version }}
 +          cache-from: type=gha
 +          cache-to: type=gha,mode=max
-+
-+  deploy:
-+    needs: build-crm
-+    runs-on: ubuntu-latest
-+    steps:
-+      - name: Install doctl
-+        uses: digitalocean/action-doctl@v2
-+        with:
-+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-+
-+      - name: Trigger deployment
-+        run: doctl apps create-deployment ${{ secrets.DO_APP_ID }} --force-rebuild
+diff --git a/.github/workflows/cd-deploy-main.yaml b/.github/workflows/cd-deploy-main.yaml
+index 7fe62465b1..a8a1c73b17 100644
+--- a/.github/workflows/cd-deploy-main.yaml
++++ b/.github/workflows/cd-deploy-main.yaml
+@@ -10,6 +10,7 @@ on:
+ 
+ jobs:
+   deploy-main:
++    if: github.repository == 'twentyhq/twenty'
+     timeout-minutes: 3
+     runs-on: ubuntu-latest
+     steps:
 diff --git a/.gitmodules b/.gitmodules
 new file mode 100644
 index 0000000000..785775967e
@@ -77,6 +91,13 @@ index 0000000000..785775967e
 +	path = packages/twenty-widgets/submodules/widget-mrz-input
 +	url = https://github.com/we-digital/widget-mrz-input
 +	branch = main
+diff --git a/.upstream-version b/.upstream-version
+new file mode 100644
+index 0000000000..2e4ba7e7c0
+--- /dev/null
++++ b/.upstream-version
+@@ -0,0 +1 @@
++v1.19.11
 diff --git a/docker-compose.prod.yml b/docker-compose.prod.yml
 new file mode 100644
 index 0000000000..dc75f8200c
@@ -307,10 +328,10 @@ index 0000000000..dc75f8200c
 +  server-local-data:
 +  letsencrypt:
 diff --git a/package.json b/package.json
-index a12d889736..12f6ac0da7 100644
+index c6233d6e40..fe08537b0f 100644
 --- a/package.json
 +++ b/package.json
-@@ -193,7 +193,8 @@
+@@ -192,7 +192,8 @@
      "docs:generate": "tsx packages/twenty-docs/scripts/generate-docs-json.ts",
      "docs:generate-navigation-template": "tsx packages/twenty-docs/scripts/generate-navigation-template.ts",
      "docs:generate-paths": "tsx packages/twenty-docs/scripts/generate-documentation-paths.ts",
@@ -320,14 +341,14 @@ index a12d889736..12f6ac0da7 100644
    },
    "workspaces": {
      "packages": [
-@@ -208,6 +209,7 @@
+@@ -207,6 +208,7 @@
        "packages/twenty-docs",
        "packages/twenty-e2e-testing",
        "packages/twenty-shared",
 +      "packages/twenty-widgets",
        "packages/twenty-sdk",
-       "packages/twenty-front-component-renderer",
        "packages/twenty-client-sdk",
+       "packages/twenty-apps",
 diff --git a/packages/twenty-docker/twenty-widgets/Dockerfile b/packages/twenty-docker/twenty-widgets/Dockerfile
 new file mode 100644
 index 0000000000..089f8b0d3f
@@ -572,10 +593,10 @@ index 0000000000..ca64be557d
 +  });
 +});
 diff --git a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
-index 7d46c20801..9a60983df1 100644
+index 8bcde95a48..9a60983df1 100644
 --- a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
 +++ b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
-@@ -1,10 +1,13 @@
+@@ -1,9 +1,12 @@
 +import { currentUserState } from '@/auth/states/currentUserState';
 +import { tokenPairState } from '@/auth/states/tokenPairState';
  import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
@@ -584,13 +605,11 @@ index 7d46c20801..9a60983df1 100644
  import { WidgetSkeletonLoader } from '@/page-layout/widgets/components/WidgetSkeletonLoader';
  import { styled } from '@linaria/react';
 -import { useState } from 'react';
--import { getSafeUrl, isDefined } from 'twenty-shared/utils';
 +import { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 +import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
-+import { isDefined } from 'twenty-shared/utils';
+ import { isDefined } from 'twenty-shared/utils';
  import { themeCssVariables } from 'twenty-ui/theme-constants';
  
- const StyledContainer = styled.div<{ $isEditMode: boolean }>`
 @@ -55,9 +58,43 @@ export type IframeWidgetProps = {
    widget: PageLayoutWidget;
  };
@@ -740,28 +759,23 @@ index 7d46c20801..9a60983df1 100644
    };
  
    const handleIframeError = () => {
-@@ -79,10 +207,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
+@@ -79,7 +207,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
      setHasError(true);
    };
  
--  const safeUrl = isDefined(url) ? getSafeUrl(url) : undefined;
--  const isHttpUrl = isDefined(safeUrl) && /^https?:\/\//i.test(safeUrl);
--
--  if (hasError || !isHttpUrl) {
+-  if (hasError || !isDefined(url)) {
 +  if (hasError || !isDefined(url) || (isDefined(currentUser) && !targetOrigin)) {
      return (
        <StyledContainer $isEditMode={isPageLayoutInEditMode}>
          <StyledErrorContainer>
-@@ -101,7 +226,8 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
+@@ -98,6 +226,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
        )}
        <StyledIframe
          $isEditMode={isPageLayoutInEditMode}
--        src={safeUrl}
 +        ref={iframeRef}
-+        src={url}
+         src={url}
          title={title}
          onLoad={handleIframeLoad}
-         onError={handleIframeError}
 diff --git a/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module-factory.ts b/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module-factory.ts
 index 303cf9cd21..c298d03aff 100644
 --- a/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module-factory.ts
@@ -839,18 +853,16 @@ index c27390d441..a81dc7245a 100644
      });
  
 diff --git a/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts b/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
-index ae9bb55365..0bf4f4a5d1 100644
+index ae9bb55365..76475519fa 100644
 --- a/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
 +++ b/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
-@@ -149,6 +149,12 @@ export class BullMQDriver
+@@ -149,6 +149,10 @@ export class BullMQDriver
          shouldStoreInCache: false,
        });
      });
 +
 +    this.workerMap[queueName].on('error', (error) => {
-+      this.logger.error(
-+        `Worker error on queue ${queueName}: ${error.message}`,
-+      );
++      this.logger.error(`Worker error on queue ${queueName}: ${error.message}`);
 +    });
    }
  
@@ -990,10 +1002,10 @@ index 0265aca64d..c6abb07d91 100644
    app.use(session(getSessionStorageOptions(twentyConfigService)));
  
 diff --git a/packages/twenty-server/src/queue-worker/queue-worker.ts b/packages/twenty-server/src/queue-worker/queue-worker.ts
-index 61ebe2a6b4..279c0c4a1f 100644
+index 61ebe2a6b4..529113f074 100644
 --- a/packages/twenty-server/src/queue-worker/queue-worker.ts
 +++ b/packages/twenty-server/src/queue-worker/queue-worker.ts
-@@ -20,6 +20,30 @@ async function bootstrap() {
+@@ -20,6 +20,31 @@ async function bootstrap() {
  
      // Inject our logger
      app.useLogger(loggerService ?? false);
@@ -1015,7 +1027,8 @@ index 61ebe2a6b4..279c0c4a1f 100644
 +        'UnhandledRejection',
 +      );
 +
-+      const error = reason instanceof Error ? reason : new Error(String(reason));
++      const error =
++        reason instanceof Error ? reason : new Error(String(reason));
 +
 +      if (shouldCaptureException(error)) {
 +        exceptionHandlerService?.captureExceptions([error]);
@@ -1259,6 +1272,13 @@ index 0000000000..f078f8cd3c
 +  );
 +}
 +
+diff --git a/packages/twenty-widgets/submodules/widget-mrz-input b/packages/twenty-widgets/submodules/widget-mrz-input
+new file mode 160000
+index 0000000000..1d0c5f7bcb
+--- /dev/null
++++ b/packages/twenty-widgets/submodules/widget-mrz-input
+@@ -0,0 +1 @@
++Subproject commit 1d0c5f7bcb0c0409b5235a118c0e1f5fd6442fe8
 diff --git a/packages/twenty-widgets/tsconfig.json b/packages/twenty-widgets/tsconfig.json
 new file mode 100644
 index 0000000000..b7fd79420c
@@ -1333,11 +1353,150 @@ index 0000000000..a0632eb92d
 +  ]
 +});
 +
+diff --git a/scripts/upgrade-upstream.sh b/scripts/upgrade-upstream.sh
+new file mode 100755
+index 0000000000..10a48ad54c
+--- /dev/null
++++ b/scripts/upgrade-upstream.sh
+@@ -0,0 +1,133 @@
++#!/usr/bin/env bash
++# ============================================================================
++# We Digital — Twenty CRM Upstream Upgrade Script
++#
++# Usage:
++#   ./scripts/upgrade-upstream.sh v1.22.0
++#
++# What it does:
++#   1. Creates a safety tag on main (pre-<tag>-upgrade)
++#   2. Fetches the target upstream tag
++#   3. Creates a new branch from main
++#   4. Replaces the entire tree with the upstream tag
++#   5. Applies the We Digital custom patch (we-digital-custom.patch)
++#   6. Updates .upstream-version
++#   7. Runs yarn install to sync lockfile
++#   8. Commits everything
++#   9. Regenerates the patch for the next upgrade
++#
++# Prerequisites:
++#   - 'upstream' remote pointing to https://github.com/twentyhq/twenty.git
++#   - Clean working tree (no uncommitted changes)
++#   - we-digital-custom.patch in repo root
++# ============================================================================
++
++set -euo pipefail
++
++TARGET_TAG="${1:-}"
++
++if [[ -z "$TARGET_TAG" ]]; then
++  echo "Usage: $0 <upstream-tag>"
++  echo "Example: $0 v1.22.0"
++  exit 1
++fi
++
++REPO_ROOT="$(git rev-parse --show-toplevel)"
++PATCH_FILE="$REPO_ROOT/we-digital-custom.patch"
++BRANCH_NAME="chore/upgrade-to-${TARGET_TAG}"
++
++# Preflight checks
++if [[ ! -f "$PATCH_FILE" ]]; then
++  echo "ERROR: $PATCH_FILE not found"
++  exit 1
++fi
++
++if ! git diff --quiet || ! git diff --cached --quiet; then
++  echo "ERROR: Working tree is not clean. Commit or stash changes first."
++  exit 1
++fi
++
++echo "=== Step 1: Create safety tag on main ==="
++SAFETY_TAG="pre-${TARGET_TAG}-upgrade"
++if git rev-parse "$SAFETY_TAG" >/dev/null 2>&1; then
++  echo "Tag $SAFETY_TAG already exists, skipping."
++else
++  git tag "$SAFETY_TAG" main
++  echo "Created tag: $SAFETY_TAG"
++fi
++
++echo ""
++echo "=== Step 2: Fetch upstream tag $TARGET_TAG ==="
++if ! git remote | grep -q upstream; then
++  echo "Adding upstream remote..."
++  git remote add upstream https://github.com/twentyhq/twenty.git
++fi
++git fetch upstream tag "$TARGET_TAG" --no-tags
++
++echo ""
++echo "=== Step 3: Create branch $BRANCH_NAME from main ==="
++git checkout main
++git checkout -b "$BRANCH_NAME"
++
++echo ""
++echo "=== Step 4: Replace tree with $TARGET_TAG ==="
++# Save patch to temp — git rm deletes all tracked files including the patch itself
++PATCH_BACKUP=$(mktemp)
++cp "$PATCH_FILE" "$PATCH_BACKUP"
++git rm -rf . --quiet
++git checkout "$TARGET_TAG" -- .
++
++echo ""
++echo "=== Step 5: Apply We Digital custom patch ==="
++# --3way allows git to handle conflicts if upstream changed our patched files
++if git apply --3way "$PATCH_BACKUP"; then
++  echo "Patch applied cleanly."
++else
++  echo ""
++  echo "WARNING: Patch had conflicts. Resolve them manually, then:"
++  echo "  git add -A && git commit"
++  echo ""
++  echo "Conflicting files will have <<<< markers."
++  echo "Check if upstream changed any of these files:"
++  echo "  - IframeWidget.tsx (check for new security fixes)"
++  echo "  - cache-storage, redis-client, session-storage (check for API changes)"
++  echo "  - file-storage.service.ts (check deleteByFileId signature)"
++  echo "  - main.ts, queue-worker.ts (check bootstrap changes)"
++  exit 1
++fi
++
++echo ""
++echo "=== Step 6: Update .upstream-version ==="
++echo "$TARGET_TAG" > "$REPO_ROOT/.upstream-version"
++echo "Set .upstream-version to $TARGET_TAG"
++
++echo ""
++echo "=== Step 7: Update yarn.lock ==="
++yarn install || true
++
++echo ""
++echo "=== Step 8: Stage and commit ==="
++git add -A
++git commit -m "chore: upgrade Twenty CRM to ${TARGET_TAG}
++
++Replace entire codebase with upstream ${TARGET_TAG} and re-apply
++We Digital custom patches (see we-digital-custom.patch).
++"
++
++echo ""
++echo "=== Step 9: Regenerate patch for next upgrade ==="
++git diff "${TARGET_TAG}" HEAD > "$PATCH_FILE"
++git add "$PATCH_FILE"
++git commit --amend --no-edit
++
++rm -f "$PATCH_BACKUP"
++
++echo ""
++echo "============================================"
++echo "Done! Next steps:"
++echo "  1. git push -u origin $BRANCH_NAME"
++echo "  2. Create PR: gh pr create --base main"
++echo "  3. Wait for CI to pass"
++echo "  4. After merge: build-and-push auto-builds + triggers deploy"
++echo "  5. For controlled upgrades: set CRM_IMAGE_TAG=${TARGET_TAG} in bbc-devops"
++echo "============================================"
 diff --git a/yarn.lock b/yarn.lock
-index b33fcb513f..dfaef1ccd8 100644
+index 17c928ef89..fc3b6d8549 100644
 --- a/yarn.lock
 +++ b/yarn.lock
-@@ -5181,7 +5181,7 @@ __metadata:
+@@ -5043,7 +5043,7 @@ __metadata:
    languageName: node
    linkType: hard
  
@@ -1346,7 +1505,7 @@ index b33fcb513f..dfaef1ccd8 100644
    version: 11.14.0
    resolution: "@emotion/react@npm:11.14.0"
    dependencies:
-@@ -5222,7 +5222,7 @@ __metadata:
+@@ -5084,7 +5084,7 @@ __metadata:
    languageName: node
    linkType: hard
  
@@ -1355,7 +1514,7 @@ index b33fcb513f..dfaef1ccd8 100644
    version: 11.14.1
    resolution: "@emotion/styled@npm:11.14.1"
    dependencies:
-@@ -60953,6 +60953,18 @@ __metadata:
+@@ -60075,6 +60075,18 @@ __metadata:
    languageName: unknown
    linkType: soft
  

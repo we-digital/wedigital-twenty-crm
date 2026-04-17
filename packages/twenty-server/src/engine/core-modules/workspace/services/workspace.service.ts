@@ -38,7 +38,6 @@ import {
   WorkspaceExceptionCode,
   WorkspaceNotFoundDefaultError,
 } from 'src/engine/core-modules/workspace/workspace.exception';
-import { CoreEntityCacheService } from 'src/engine/core-entity-cache/services/core-entity-cache.service';
 import { AiModelRegistryService } from 'src/engine/metadata-modules/ai/ai-models/services/ai-model-registry.service';
 import { isModelAllowedByWorkspace } from 'src/engine/metadata-modules/ai/ai-models/utils/is-model-allowed.util';
 import { FieldMetadataEntity } from 'src/engine/metadata-modules/field-metadata/field-metadata.entity';
@@ -125,7 +124,6 @@ export class WorkspaceService extends TypeOrmQueryService<WorkspaceEntity> {
     private readonly messageQueueService: MessageQueueService,
     @InjectDataSource()
     private readonly coreDataSource: DataSource,
-    private readonly coreEntityCacheService: CoreEntityCacheService,
   ) {
     super(workspaceRepository);
   }
@@ -292,11 +290,6 @@ export class WorkspaceService extends TypeOrmQueryService<WorkspaceEntity> {
       throw error;
     }
 
-    await this.coreEntityCacheService.invalidate(
-      'workspaceEntity',
-      workspace.id,
-    );
-
     if (payload.logo === null && isDefined(workspace.logoFileId)) {
       await this.fileCorePictureService.deleteCorePicture({
         fileId: workspace.logoFileId,
@@ -332,8 +325,8 @@ export class WorkspaceService extends TypeOrmQueryService<WorkspaceEntity> {
       activationStatus: WorkspaceActivationStatus.ONGOING_CREATION,
     });
 
-    await this.coreEntityCacheService.invalidate(
-      'workspaceEntity',
+    await this.featureFlagService.enableFeatureFlags(
+      DEFAULT_FEATURE_FLAGS,
       workspace.id,
     );
 
@@ -341,11 +334,6 @@ export class WorkspaceService extends TypeOrmQueryService<WorkspaceEntity> {
       workspace,
       userId: user.id,
     });
-
-    await this.featureFlagService.enableFeatureFlags(
-      DEFAULT_FEATURE_FLAGS,
-      workspace.id,
-    );
 
     await this.userWorkspaceService.createWorkspaceMember(workspace.id, user);
 
@@ -361,11 +349,6 @@ export class WorkspaceService extends TypeOrmQueryService<WorkspaceEntity> {
       activationStatus: WorkspaceActivationStatus.ACTIVE,
       version: extractVersionMajorMinorPatch(appVersion),
     });
-
-    await this.coreEntityCacheService.invalidate(
-      'workspaceEntity',
-      workspace.id,
-    );
 
     return await this.workspaceRepository.findOneBy({
       id: workspace.id,
@@ -404,7 +387,6 @@ export class WorkspaceService extends TypeOrmQueryService<WorkspaceEntity> {
 
     if (softDelete) {
       await this.workspaceRepository.softDelete({ id });
-      await this.coreEntityCacheService.invalidate('workspaceEntity', id);
 
       this.logger.log(`workspace ${id} soft deleted`);
 
@@ -436,7 +418,6 @@ export class WorkspaceService extends TypeOrmQueryService<WorkspaceEntity> {
     }
 
     await this.workspaceRepository.delete(id);
-    await this.coreEntityCacheService.invalidate('workspaceEntity', id);
 
     this.logger.log(`workspace ${id} hard deleted`);
 
@@ -590,10 +571,6 @@ export class WorkspaceService extends TypeOrmQueryService<WorkspaceEntity> {
         userWorkspaceId: userWorkspaceOfRemovedWorkspaceMember.id,
         softDelete,
       });
-      await this.coreEntityCacheService.invalidate(
-        'userWorkspaceEntity',
-        userWorkspaceOfRemovedWorkspaceMember.id,
-      );
     }
 
     const hasOtherUserWorkspaces = isDefined(
@@ -604,7 +581,6 @@ export class WorkspaceService extends TypeOrmQueryService<WorkspaceEntity> {
 
     if (!hasOtherUserWorkspaces) {
       await this.userRepository.softDelete(userId);
-      await this.coreEntityCacheService.invalidate('user', userId);
     }
   }
 

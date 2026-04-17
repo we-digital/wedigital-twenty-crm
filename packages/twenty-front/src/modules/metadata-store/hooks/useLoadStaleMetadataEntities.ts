@@ -5,8 +5,10 @@ import { splitPageLayoutWithRelated } from '@/metadata-store/utils/splitPageLayo
 import { splitViewWithRelated } from '@/metadata-store/utils/splitViewWithRelated';
 import { FIND_MANY_OBJECT_METADATA_ITEMS } from '@/object-metadata/graphql/queries';
 import { transformPageLayout } from '@/page-layout/utils/transformPageLayout';
+import { logicFunctionsState } from '@/settings/logic-functions/states/logicFunctionsState';
 import { useIsFeatureEnabled } from '@/workspace/hooks/useIsFeatureEnabled';
 import { useApolloClient } from '@apollo/client/react';
+import { useStore } from 'jotai';
 import { useCallback } from 'react';
 import { isDefined } from 'twenty-shared/utils';
 import {
@@ -15,10 +17,8 @@ import {
   FindManyCommandMenuItemsDocument,
   FindAllRecordPageLayoutsDocument,
   FindFieldsWidgetViewsDocument,
-  FindManyFrontComponentsDocument,
   FindManyLogicFunctionsDocument,
   FindManyNavigationMenuItemsDocument,
-  GetChatThreadsDocument,
   type ObjectMetadataItemsQuery,
   ViewType,
 } from '~/generated-metadata/graphql';
@@ -55,8 +55,11 @@ const hasOverlap = (
 
 export const useLoadStaleMetadataEntities = () => {
   const client = useApolloClient();
+  const store = useStore();
   const { replaceDraft, applyChanges } = useUpdateMetadataStoreDraft();
-  const isAiEnabled = useIsFeatureEnabled(FeatureFlagKey.IS_AI_ENABLED);
+  const isCommandMenuItemEnabled = useIsFeatureEnabled(
+    FeatureFlagKey.IS_COMMAND_MENU_ITEM_ENABLED,
+  );
 
   const loadStaleMetadataEntities = useCallback(
     async (staleEntityKeys: MetadataEntityKey[]) => {
@@ -164,6 +167,10 @@ export const useLoadStaleMetadataEntities = () => {
                 return;
               }
 
+              store.set(
+                logicFunctionsState.atom,
+                result.data.findManyLogicFunctions,
+              );
               replaceDraft(
                 'logicFunctions',
                 result.data.findManyLogicFunctions,
@@ -192,7 +199,10 @@ export const useLoadStaleMetadataEntities = () => {
         );
       }
 
-      if (staleEntityKeys.includes('commandMenuItems')) {
+      if (
+        staleEntityKeys.includes('commandMenuItems') &&
+        isCommandMenuItemEnabled
+      ) {
         fetchPromises.push(
           client
             .query({
@@ -209,49 +219,10 @@ export const useLoadStaleMetadataEntities = () => {
         );
       }
 
-      if (staleEntityKeys.includes('frontComponents')) {
-        fetchPromises.push(
-          client
-            .query({
-              query: FindManyFrontComponentsDocument,
-              fetchPolicy: 'network-only',
-            })
-            .then((result) => {
-              if (!isDefined(result.data?.frontComponents)) {
-                return;
-              }
-
-              replaceDraft('frontComponents', result.data.frontComponents);
-            }),
-        );
-      }
-
-      if (staleEntityKeys.includes('agentChatThreads') && isAiEnabled) {
-        fetchPromises.push(
-          client
-            .query({
-              query: GetChatThreadsDocument,
-              variables: { paging: { first: 500 } },
-              fetchPolicy: 'network-only',
-            })
-            .then((result) => {
-              if (!isDefined(result.data?.chatThreads?.edges)) {
-                return;
-              }
-
-              const threads = result.data.chatThreads.edges.map(
-                (edge) => edge.node,
-              );
-
-              replaceDraft('agentChatThreads', threads);
-            }),
-        );
-      }
-
       await Promise.all(fetchPromises);
       applyChanges();
     },
-    [client, replaceDraft, applyChanges, isAiEnabled],
+    [client, store, replaceDraft, applyChanges, isCommandMenuItemEnabled],
   );
 
   return { loadStaleMetadataEntities };

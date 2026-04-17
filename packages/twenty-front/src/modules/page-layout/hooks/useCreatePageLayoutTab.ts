@@ -59,6 +59,7 @@ export const useCreatePageLayoutTab = ({
         pageLayoutId: pageLayoutId,
         layoutMode: getDefaultTabLayoutMode(pageLayoutDraft.type),
         widgets: [],
+        isOverridden: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         deletedAt: null,

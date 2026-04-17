@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import { msg } from '@lingui/core/macro';
 import { render } from '@react-email/render';
 import { SendApprovedAccessDomainValidation } from 'twenty-emails';
-import { FileFolder, SettingsPath } from 'twenty-shared/types';
+import { SettingsPath } from 'twenty-shared/types';
 import { getSettingsPath, isDefined } from 'twenty-shared/utils';
 import { Repository } from 'typeorm';
 
@@ -18,7 +18,7 @@ import {
 import { approvedAccessDomainValidator } from 'src/engine/core-modules/approved-access-domain/approved-access-domain.validate';
 import { WorkspaceDomainsService } from 'src/engine/core-modules/domain/workspace-domains/services/workspace-domains.service';
 import { EmailService } from 'src/engine/core-modules/email/email.service';
-import { FileUrlService } from 'src/engine/core-modules/file/file-url/file-url.service';
+import { FileService } from 'src/engine/core-modules/file/services/file.service';
 import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
 import { WorkspaceMemberWorkspaceEntity } from 'src/modules/workspace-member/standard-objects/workspace-member.workspace-entity';
@@ -31,7 +31,7 @@ export class ApprovedAccessDomainService {
     private readonly approvedAccessDomainRepository: Repository<ApprovedAccessDomainEntity>,
     private readonly emailService: EmailService,
     private readonly twentyConfigService: TwentyConfigService,
-    private readonly fileUrlService: FileUrlService,
+    private readonly fileService: FileService,
     private readonly workspaceDomainsService: WorkspaceDomainsService,
   ) {}
 
@@ -78,13 +78,12 @@ export class ApprovedAccessDomainService {
       link: link.toString(),
       workspace: {
         name: workspace.displayName,
-        logo: isDefined(workspace.logoFileId)
-          ? this.fileUrlService.signFileByIdUrl({
-              fileId: workspace.logoFileId,
+        logo: workspace.logo
+          ? this.fileService.signFileUrl({
+              url: workspace.logo,
               workspaceId: workspace.id,
-              fileFolder: FileFolder.CorePicture,
             })
-          : undefined,
+          : workspace.logo,
       },
       domain: approvedAccessDomain.domain,
       sender: {

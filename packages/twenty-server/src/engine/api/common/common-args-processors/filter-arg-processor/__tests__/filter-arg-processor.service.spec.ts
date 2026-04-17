@@ -32,7 +32,7 @@ describe('FilterArgProcessorService', () => {
 
       byUniversalIdentifier[universalId] = {
         id: fieldId,
-        name: config.name,
+        name: fieldName,
         type: config.type ?? FieldMetadataType.TEXT,
         isNullable: config.isNullable ?? true,
         objectMetadataId: 'object-id',

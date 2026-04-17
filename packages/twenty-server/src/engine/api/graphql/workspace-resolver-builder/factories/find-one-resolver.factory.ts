@@ -38,11 +38,10 @@ export class FindOneResolverFactory
           workspaceSchemaBuilderContext: internalContext,
         });
 
-        const { results: record } =
-          await this.commonFindOneQueryRunnerService.execute(
-            { ...args, selectedFields },
-            resolverContext,
-          );
+        const record = await this.commonFindOneQueryRunnerService.execute(
+          { ...args, selectedFields },
+          resolverContext,
+        );
 
         const typeORMObjectRecordsParser =
           new ObjectRecordsToGraphqlConnectionHelper(

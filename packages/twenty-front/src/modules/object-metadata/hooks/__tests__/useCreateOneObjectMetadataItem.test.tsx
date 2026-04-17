@@ -4,7 +4,6 @@ import { useCreateOneObjectMetadataItem } from '@/object-metadata/hooks/useCreat
 
 import { getJestMetadataAndApolloMocksWrapper } from '~/testing/jest/getJestMetadataAndApolloMocksWrapper';
 import {
-  findManyCommandMenuItemsQuery,
   findManyNavigationMenuItemsQuery,
   findManyViewsQuery,
   query,
@@ -13,7 +12,7 @@ import {
 } from '@/object-metadata/hooks/__mocks__/useCreateOneObjectMetadataItem';
 
 import { jestExpectSuccessfulMetadataRequestResult } from '@/object-metadata/hooks/__tests__/utils/jest-expect-metadata-request-status.util';
-import { GetCurrentUserDocument } from '~/generated-metadata/graphql';
+import { GET_CURRENT_USER } from '@/users/graphql/queries/getCurrentUser';
 import { mockedUserData } from '~/testing/mock-data/users';
 import {
   query as findManyObjectMetadataItemsQuery,
@@ -34,7 +33,7 @@ const mocks = [
   },
   {
     request: {
-      query: GetCurrentUserDocument,
+      query: GET_CURRENT_USER,
       variables: {},
     },
     result: jest.fn(() => ({
@@ -73,17 +72,6 @@ const mocks = [
     result: jest.fn(() => ({
       data: {
         navigationMenuItems: [],
-      },
-    })),
-  },
-  {
-    request: {
-      query: findManyCommandMenuItemsQuery,
-      variables: {},
-    },
-    result: jest.fn(() => ({
-      data: {
-        commandMenuItems: [],
       },
     })),
   },

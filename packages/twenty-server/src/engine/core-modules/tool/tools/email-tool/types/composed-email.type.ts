@@ -1,4 +1,4 @@
-import { type ConnectedAccountEntity } from 'src/engine/metadata-modules/connected-account/entities/connected-account.entity';
+import { type ConnectedAccountWorkspaceEntity } from 'src/modules/connected-account/standard-objects/connected-account.workspace-entity';
 import { type MessageAttachment } from 'src/modules/messaging/message-import-manager/types/message';
 
 export type ComposedEmail = {
@@ -8,8 +8,6 @@ export type ComposedEmail = {
   plainTextBody: string;
   sanitizedHtmlBody: string;
   attachments: MessageAttachment[];
-  connectedAccount: ConnectedAccountEntity;
-  messageChannelId: string;
+  connectedAccount: ConnectedAccountWorkspaceEntity;
   inReplyTo?: string;
-  threadExternalId?: string;
 };

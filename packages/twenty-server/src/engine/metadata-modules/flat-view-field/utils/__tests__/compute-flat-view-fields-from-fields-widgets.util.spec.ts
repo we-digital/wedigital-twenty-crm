@@ -53,7 +53,6 @@ const buildFlatViewFieldGroupMaps = (
           id: entry.id,
           viewId: entry.viewId ?? VIEW_ID,
           position: entry.position ?? 0,
-          isActive: true,
           deletedAt: null,
         },
       ]),
@@ -70,7 +69,7 @@ const buildFlatViewFieldMaps = (
     viewId: string;
     viewFieldGroupId: string | null;
     position: number;
-    isActive: boolean;
+    deletedAt: string | null;
   }[] = [],
 ): FlatViewFieldMaps =>
   ({
@@ -86,18 +85,18 @@ const buildFieldsWidget = ({
   objectMetadataUniversalIdentifier = OBJECT_METADATA_UNIVERSAL_IDENTIFIER,
   viewId = VIEW_ID,
   isVisible = true,
-  isActive = true,
+  deletedAt = null as string | null,
 }: {
   widgetUniversalIdentifier?: string;
   objectMetadataUniversalIdentifier?: string;
   viewId?: string | null;
   isVisible?: boolean;
-  isActive?: boolean;
+  deletedAt?: string | null;
 } = {}) => ({
   universalIdentifier: widgetUniversalIdentifier,
   objectMetadataUniversalIdentifier,
   type: WidgetType.FIELDS,
-  isActive,
+  deletedAt,
   configuration: {
     configurationType: WidgetConfigurationType.FIELDS,
     viewId,
@@ -179,7 +178,7 @@ describe('computeFlatViewFieldsFromFieldsWidgets', () => {
       expect(result).toEqual([]);
     });
 
-    it('should skip inactive widgets', () => {
+    it('should skip deleted widgets', () => {
       const result = computeFlatViewFieldsFromFieldsWidgets({
         fieldsToCreate: [
           {
@@ -189,7 +188,7 @@ describe('computeFlatViewFieldsFromFieldsWidgets', () => {
           },
         ],
         flatPageLayoutWidgetMaps: buildFlatPageLayoutWidgetMaps([
-          buildFieldsWidget({ isActive: false }),
+          buildFieldsWidget({ deletedAt: '2024-01-01T00:00:00.000Z' }),
         ]),
         flatViewFieldMaps: buildFlatViewFieldMaps(),
         flatViewMaps: buildFlatViewMaps([
@@ -350,14 +349,14 @@ describe('computeFlatViewFieldsFromFieldsWidgets', () => {
             viewId: VIEW_ID,
             viewFieldGroupId: null,
             position: 3,
-            isActive: true,
+            deletedAt: null,
           },
           {
             universalIdentifier: 'existing-vf-2',
             viewId: VIEW_ID,
             viewFieldGroupId: null,
             position: 7,
-            isActive: true,
+            deletedAt: null,
           },
         ]),
         flatViewMaps: buildFlatViewMaps([
@@ -398,7 +397,7 @@ describe('computeFlatViewFieldsFromFieldsWidgets', () => {
             viewId: VIEW_ID,
             viewFieldGroupId: null,
             position: 2,
-            isActive: true,
+            deletedAt: null,
           },
         ]),
         flatViewMaps: buildFlatViewMaps([
@@ -414,7 +413,7 @@ describe('computeFlatViewFieldsFromFieldsWidgets', () => {
       expect(result[2].position).toBe(5);
     });
 
-    it('should ignore inactive view fields when computing position', () => {
+    it('should ignore deleted view fields when computing position', () => {
       const result = computeFlatViewFieldsFromFieldsWidgets({
         fieldsToCreate: [
           {
@@ -432,14 +431,14 @@ describe('computeFlatViewFieldsFromFieldsWidgets', () => {
             viewId: VIEW_ID,
             viewFieldGroupId: null,
             position: 5,
-            isActive: true,
+            deletedAt: null,
           },
           {
-            universalIdentifier: 'inactive-vf',
+            universalIdentifier: 'deleted-vf',
             viewId: VIEW_ID,
             viewFieldGroupId: null,
             position: 99,
-            isActive: false,
+            deletedAt: '2024-01-01T00:00:00.000Z',
           },
         ]),
         flatViewMaps: buildFlatViewMaps([
@@ -470,7 +469,7 @@ describe('computeFlatViewFieldsFromFieldsWidgets', () => {
             viewId: 'other-view-db-id',
             viewFieldGroupId: null,
             position: 50,
-            isActive: true,
+            deletedAt: null,
           },
         ]),
         flatViewMaps: buildFlatViewMaps([
@@ -557,21 +556,21 @@ describe('computeFlatViewFieldsFromFieldsWidgets', () => {
             viewId: VIEW_ID,
             viewFieldGroupId: VIEW_FIELD_GROUP_ID,
             position: 2,
-            isActive: true,
+            deletedAt: null,
           },
           {
             universalIdentifier: 'vf-no-group',
             viewId: VIEW_ID,
             viewFieldGroupId: null,
             position: 99,
-            isActive: true,
+            deletedAt: null,
           },
           {
             universalIdentifier: 'vf-other-group',
             viewId: VIEW_ID,
             viewFieldGroupId: 'other-group-id',
             position: 50,
-            isActive: true,
+            deletedAt: null,
           },
         ]),
         flatViewMaps: buildFlatViewMaps([
@@ -607,14 +606,14 @@ describe('computeFlatViewFieldsFromFieldsWidgets', () => {
             viewId: VIEW_ID,
             viewFieldGroupId: null,
             position: 1,
-            isActive: true,
+            deletedAt: null,
           },
           {
             universalIdentifier: 'vf-in-group',
             viewId: VIEW_ID,
             viewFieldGroupId: VIEW_FIELD_GROUP_ID,
             position: 99,
-            isActive: true,
+            deletedAt: null,
           },
         ]),
         flatViewMaps: buildFlatViewMaps([

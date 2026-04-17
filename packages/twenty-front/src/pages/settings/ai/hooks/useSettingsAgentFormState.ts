@@ -19,8 +19,13 @@ export const useSettingsAgentFormState = (mode: 'create' | 'edit') => {
     isCustom: true,
     modelConfiguration: {},
     responseFormat: {
-      // TODO: Keep text default until legacy text agents are migrated in production.
       type: 'text',
+      schema: {
+        type: 'object' as const,
+        properties: {},
+        required: [],
+        additionalProperties: false as const,
+      },
     },
     evaluationInputs: [],
   });
@@ -58,8 +63,13 @@ export const useSettingsAgentFormState = (mode: 'create' | 'edit') => {
         isCustom: true,
         modelConfiguration: {},
         responseFormat: {
-          // TODO: Keep text default until legacy text agents are migrated in production.
           type: 'text',
+          schema: {
+            type: 'object' as const,
+            properties: {},
+            required: [],
+            additionalProperties: false as const,
+          },
         },
         evaluationInputs: [],
       });

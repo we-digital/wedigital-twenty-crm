@@ -129,7 +129,6 @@ export type Mutation = {
   deactivateWorkflowVersion: Scalars['Boolean'];
   deleteWorkflowVersionEdge: WorkflowVersionStepChanges;
   deleteWorkflowVersionStep: WorkflowVersionStepChanges;
-  dismissMaintenanceModeBanner: Scalars['Boolean'];
   dismissReconnectAccountBanner: Scalars['Boolean'];
   duplicateWorkflow: WorkflowVersionDto;
   duplicateWorkflowVersionStep: WorkflowVersionStepChanges;
@@ -250,7 +249,6 @@ export type Query = {
   getTimelineThreadsFromCompanyId: TimelineThreadsWithTotal;
   getTimelineThreadsFromOpportunityId: TimelineThreadsWithTotal;
   getTimelineThreadsFromPersonId: TimelineThreadsWithTotal;
-  isMaintenanceModeBannerDismissed: Scalars['Boolean'];
   search: SearchResultConnection;
 };
 

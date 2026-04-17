@@ -3,6 +3,7 @@ import { findManyObjectMetadata } from 'test/integration/metadata/suites/object-
 import { createOneRole } from 'test/integration/metadata/suites/role/utils/create-one-role.util';
 import { deleteOneRole } from 'test/integration/metadata/suites/role/utils/delete-one-role.util';
 import { upsertRowLevelPermissionPredicates } from 'test/integration/metadata/suites/row-level-permission-predicate/utils/upsert-row-level-permission-predicates.util';
+import { updateFeatureFlag } from 'test/integration/metadata/suites/utils/update-feature-flag.util';
 import { jestExpectToBeDefined } from 'test/utils/jest-expect-to-be-defined.util.test';
 import {
   eachTestingContextFilter,
@@ -11,6 +12,7 @@ import {
 import {
   RowLevelPermissionPredicateGroupLogicalOperator,
   RowLevelPermissionPredicateOperand,
+  FeatureFlagKey,
 } from 'twenty-shared/types';
 import { v4 } from 'uuid';
 
@@ -161,6 +163,12 @@ describe('Row Level Permission Predicate upsert should fail', () => {
   let companyNameFieldMetadataId: string;
 
   beforeAll(async () => {
+    await updateFeatureFlag({
+      featureFlag: FeatureFlagKey.IS_ROW_LEVEL_PERMISSION_PREDICATES_ENABLED,
+      value: true,
+      expectToFail: false,
+    });
+
     const { objects } = await findManyObjectMetadata({
       expectToFail: false,
       input: {
@@ -217,6 +225,12 @@ describe('Row Level Permission Predicate upsert should fail', () => {
   });
 
   afterAll(async () => {
+    await updateFeatureFlag({
+      featureFlag: FeatureFlagKey.IS_ROW_LEVEL_PERMISSION_PREDICATES_ENABLED,
+      value: false,
+      expectToFail: false,
+    });
+
     if (createdRoleId) {
       await deleteOneRole({
         expectToFail: false,

@@ -7,16 +7,15 @@ import { theme } from '@/theme';
 import { styled } from '@linaria/react';
 
 const HeadingContainer = styled.div`
-  max-width: 360px;
-  width: 100%;
+  width: 360px;
   word-wrap: break-word;
 
-  &[data-page=${Pages.WhyTwenty}] {
-    color: ${theme.colors.secondary.text[100]};
-  }
-
   @media (min-width: ${theme.breakpoints.md}px) {
-    max-width: 672px;
+    width: 672px;
+
+    &[data-page=${Pages.WhyTwenty}] {
+      color: ${theme.colors.secondary.text[100]};
+    }
   }
 `;
 

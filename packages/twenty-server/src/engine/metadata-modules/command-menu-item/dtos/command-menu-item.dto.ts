@@ -13,10 +13,6 @@ import {
 
 import { UUIDScalarType } from 'src/engine/api/graphql/workspace-schema-builder/graphql-types/scalars';
 import { CommandMenuItemAvailabilityType } from 'src/engine/metadata-modules/command-menu-item/enums/command-menu-item-availability-type.enum';
-import {
-  type CommandMenuItemPayload,
-  CommandMenuItemPayloadUnion,
-} from 'src/engine/metadata-modules/command-menu-item/dtos/command-menu-item-payload.union';
 import { EngineComponentKey } from 'src/engine/metadata-modules/command-menu-item/enums/engine-component-key.enum';
 import { FrontComponentDTO } from 'src/engine/metadata-modules/front-component/dtos/front-component.dto';
 
@@ -71,10 +67,6 @@ export class CommandMenuItemDTO {
   @IsEnum(CommandMenuItemAvailabilityType)
   @Field(() => CommandMenuItemAvailabilityType)
   availabilityType: CommandMenuItemAvailabilityType;
-
-  @IsOptional()
-  @Field(() => CommandMenuItemPayloadUnion, { nullable: true })
-  payload?: CommandMenuItemPayload;
 
   @IsString({ each: true })
   @IsOptional()

@@ -311,6 +311,7 @@ export const SettingsEnterprise = ({
           <Button
             Icon={IconKey}
             title={isActivating ? t`Activating...` : t`Activate`}
+            variant="secondary"
             accent="blue"
             onClick={handleActivate}
             disabled={isActivating || !enterpriseKey.trim()}
@@ -629,6 +630,7 @@ export const SettingsEnterprise = ({
             <Button
               Icon={IconKey}
               title={t`Get Enterprise Key`}
+              variant="secondary"
               onClick={openCheckoutModal}
             />
           </Section>

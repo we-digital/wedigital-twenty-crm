@@ -12,7 +12,6 @@ import { FeatureFlagModule } from 'src/engine/core-modules/feature-flag/feature-
 import { FileModule } from 'src/engine/core-modules/file/file.module';
 import { OnboardingModule } from 'src/engine/core-modules/onboarding/onboarding.module';
 import { UploadProfilePicturePermissionGuard } from 'src/engine/core-modules/user-workspace/guards/upload-profile-picture-permission.guard';
-import { UserWorkspaceEntityCacheProviderService } from 'src/engine/core-modules/user-workspace/services/user-workspace-entity-cache-provider.service';
 import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
 import { UserWorkspaceService } from 'src/engine/core-modules/user-workspace/user-workspace.service';
 import { UserEntity } from 'src/engine/core-modules/user/user.entity';
@@ -58,10 +57,6 @@ import { WorkspaceDataSourceModule } from 'src/engine/workspace-datasource/works
     }),
   ],
   exports: [UserWorkspaceService],
-  providers: [
-    UserWorkspaceService,
-    UserWorkspaceEntityCacheProviderService,
-    UploadProfilePicturePermissionGuard,
-  ],
+  providers: [UserWorkspaceService, UploadProfilePicturePermissionGuard],
 })
 export class UserWorkspaceModule {}

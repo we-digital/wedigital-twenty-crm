@@ -1,19 +1,23 @@
+import { Command } from '@/command-menu-item/display/components/Command';
+import { CommandLink } from '@/command-menu-item/display/components/CommandLink';
+import { NoSelectionRecordCommandKeys } from '@/command-menu-item/record/no-selection/types/NoSelectionRecordCommandKeys';
+import { SingleRecordCommandKeys } from '@/command-menu-item/record/single-record/types/SingleRecordCommandKeys';
+import { type CommandMenuItemConfig } from '@/command-menu-item/types/CommandMenuItemConfig';
+import { CommandMenuItemScope } from '@/command-menu-item/types/CommandMenuItemScope';
+import { CommandMenuItemType } from '@/command-menu-item/types/CommandMenuItemType';
+import {
+  CommandMenuItemViewType,
+  CoreObjectNameSingular,
+  AppPath,
+} from 'twenty-shared/types';
+import { CoreObjectNamePlural } from '@/object-metadata/types/CoreObjectNamePlural';
 import { msg } from '@lingui/core/macro';
-import { CommandMenuItemViewType, AppPath } from 'twenty-shared/types';
 import {
   IconFileExport,
   IconHeart,
   IconTrash,
   IconUser,
 } from 'twenty-ui/display';
-
-import { Command } from '@/command-menu-item/display/components/Command';
-import { CommandLink } from '@/command-menu-item/display/components/CommandLink';
-import { type CommandMenuItemConfig } from '@/command-menu-item/types/CommandMenuItemConfig';
-import { CommandMenuItemScope } from '@/command-menu-item/types/CommandMenuItemScope';
-import { CommandMenuItemType } from '@/command-menu-item/types/CommandMenuItemType';
-import { CoreObjectNamePlural } from '@/object-metadata/types/CoreObjectNamePlural';
-import { EngineComponentKey } from '~/generated-metadata/graphql';
 
 export const createMockCommandMenuItems = ({
   deleteMock = () => {},
@@ -27,7 +31,7 @@ export const createMockCommandMenuItems = ({
   {
     type: CommandMenuItemType.Standard,
     scope: CommandMenuItemScope.RecordSelection,
-    key: EngineComponentKey.ADD_TO_FAVORITES,
+    key: SingleRecordCommandKeys.ADD_TO_FAVORITES,
     label: msg`Add to favorites`,
     shortLabel: msg`Add to favorites`,
     position: 2,
@@ -43,7 +47,7 @@ export const createMockCommandMenuItems = ({
   {
     type: CommandMenuItemType.Standard,
     scope: CommandMenuItemScope.RecordSelection,
-    key: EngineComponentKey.EXPORT_FROM_RECORD_INDEX,
+    key: SingleRecordCommandKeys.EXPORT_FROM_RECORD_INDEX,
     label: msg`Export`,
     shortLabel: msg`Export`,
     position: 4,
@@ -57,7 +61,7 @@ export const createMockCommandMenuItems = ({
   {
     type: CommandMenuItemType.Standard,
     scope: CommandMenuItemScope.RecordSelection,
-    key: EngineComponentKey.DELETE_SINGLE_RECORD,
+    key: SingleRecordCommandKeys.DELETE,
     label: msg`Delete`,
     shortLabel: msg`Delete`,
     position: 7,
@@ -74,7 +78,7 @@ export const createMockCommandMenuItems = ({
   {
     type: CommandMenuItemType.Navigation,
     scope: CommandMenuItemScope.Global,
-    key: EngineComponentKey.GO_TO_PEOPLE,
+    key: NoSelectionRecordCommandKeys.GO_TO_PEOPLE,
     label: msg`Go to People`,
     shortLabel: msg`People`,
     position: 19,
@@ -86,7 +90,9 @@ export const createMockCommandMenuItems = ({
       CommandMenuItemViewType.INDEX_PAGE_BULK_SELECTION,
       CommandMenuItemViewType.SHOW_PAGE,
     ],
-    shouldBeRegistered: () => true,
+    shouldBeRegistered: ({ objectMetadataItem, viewType }) =>
+      objectMetadataItem?.nameSingular !== CoreObjectNameSingular.Person ||
+      viewType === CommandMenuItemViewType.SHOW_PAGE,
     component: (
       <CommandLink
         to={AppPath.RecordIndexPage}

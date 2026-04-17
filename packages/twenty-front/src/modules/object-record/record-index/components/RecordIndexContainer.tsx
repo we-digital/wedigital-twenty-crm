@@ -12,9 +12,7 @@ import { useRecordIndexContextOrThrow } from '@/object-record/record-index/conte
 import { SpreadsheetImportProvider } from '@/spreadsheet-import/provider/components/SpreadsheetImportProvider';
 
 import { RecordIndexCalendarContainer } from '@/object-record/record-index/components/RecordIndexCalendarContainer';
-import { RecordIndexEmptyStateNotShared } from '@/object-record/record-index/components/RecordIndexEmptyStateNotShared';
 import { RecordIndexFiltersToContextStoreEffect } from '@/object-record/record-index/components/RecordIndexFiltersToContextStoreEffect';
-import { useHasCurrentViewNonReadableFields } from '@/object-record/record-index/hooks/useHasCurrentViewNonReadableFields';
 import { ViewBar } from '@/views/components/ViewBar';
 import { ViewType } from '@/views/types/ViewType';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
@@ -45,16 +43,12 @@ export const RecordIndexContainer = () => {
     objectNameSingular,
   } = useRecordIndexContextOrThrow();
 
-  const { hasCurrentViewNonReadableFields, nonReadableViewFieldInfo } =
-    useHasCurrentViewNonReadableFields(objectMetadataItem);
-
   return (
     <>
       <StyledContainer>
         <InformationBannerWrapper />
         <SpreadsheetImportProvider>
           <ViewBar
-            isReadOnly={hasCurrentViewNonReadableFields}
             viewBarId={recordIndexId}
             optionsDropdownButton={
               <ObjectOptionsDropdown
@@ -69,34 +63,28 @@ export const RecordIndexContainer = () => {
             viewBarId={recordIndexId}
           />
         </SpreadsheetImportProvider>
-        {hasCurrentViewNonReadableFields ? (
-          <RecordIndexEmptyStateNotShared
-            nonReadableViewFieldInfo={nonReadableViewFieldInfo}
-          />
-        ) : (
+        <RecordIndexFiltersToContextStoreEffect />
+        {recordIndexViewType === ViewType.TABLE && (
           <>
-            <RecordIndexFiltersToContextStoreEffect />
-            {recordIndexViewType === ViewType.TABLE && (
-              <RecordIndexTableContainer recordTableId={recordIndexId} />
-            )}
-            {recordIndexViewType === ViewType.KANBAN && (
-              <StyledContainerWithPadding>
-                <RecordBoardContainer
-                  recordBoardId={recordIndexId}
-                  viewBarId={recordIndexId}
-                  objectNameSingular={objectNameSingular}
-                />
-              </StyledContainerWithPadding>
-            )}
-            {recordIndexViewType === ViewType.CALENDAR && (
-              <StyledContainerWithPadding>
-                <RecordIndexCalendarContainer
-                  recordCalendarInstanceId={recordIndexId}
-                  viewBarInstanceId={recordIndexId}
-                />
-              </StyledContainerWithPadding>
-            )}
+            <RecordIndexTableContainer recordTableId={recordIndexId} />
           </>
+        )}
+        {recordIndexViewType === ViewType.KANBAN && (
+          <StyledContainerWithPadding>
+            <RecordBoardContainer
+              recordBoardId={recordIndexId}
+              viewBarId={recordIndexId}
+              objectNameSingular={objectNameSingular}
+            />
+          </StyledContainerWithPadding>
+        )}
+        {recordIndexViewType === ViewType.CALENDAR && (
+          <StyledContainerWithPadding>
+            <RecordIndexCalendarContainer
+              recordCalendarInstanceId={recordIndexId}
+              viewBarInstanceId={recordIndexId}
+            />
+          </StyledContainerWithPadding>
         )}
       </StyledContainer>
     </>

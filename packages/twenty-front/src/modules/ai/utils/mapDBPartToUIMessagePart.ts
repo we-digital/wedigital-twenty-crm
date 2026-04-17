@@ -5,10 +5,6 @@ import {
 } from 'twenty-shared/ai';
 import { type AgentMessagePart } from '~/generated-metadata/graphql';
 
-// Maps GraphQL DTO fields to UI message parts.
-// A parallel mapping for TypeORM entities exists in the server at:
-// packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/utils/mapDBPartsToUIMessageParts.ts
-
 export const mapDBPartToUIMessagePart = (
   part: AgentMessagePart,
 ): ExtendedUIMessagePart => {
@@ -51,7 +47,7 @@ export const mapDBPartToUIMessagePart = (
       };
     case 'step-start':
       return {
-        type: part.type,
+        type: 'step-start',
       };
     case 'data-routing-status':
       return {

@@ -9,16 +9,16 @@ const StyledEditor = styled.div<{
 }>`
   box-sizing: border-box;
   display: flex;
-  height: 100%;
   padding-right: ${({ multiline }) =>
-    multiline ? themeCssVariables.spacing[8] : '0'};
+    multiline ? themeCssVariables.spacing[4] : '0'};
   width: 100%;
+
   .editor-content {
     width: 100%;
   }
 
   .tiptap {
-    align-items: ${({ multiline }) => (multiline ? 'flex-start' : 'center')};
+    align-items: ${({ multiline }) => (multiline ? 'top' : 'center')};
     border: none !important;
     box-sizing: border-box;
     color: ${({ readonly }) =>
@@ -31,9 +31,9 @@ const StyledEditor = styled.div<{
     &::-webkit-scrollbar {
       display: none;
     }
-    height: ${({ multiline }) => (multiline ? 'auto' : '100%')};
+    height: 100%;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: ${({ multiline }) => (multiline ? 'auto' : 'hidden')};
     padding: ${themeCssVariables.spacing[1]} ${themeCssVariables.spacing[2]};
     scrollbar-width: none;
     white-space: ${({ multiline }) => (multiline ? 'pre' : 'nowrap')};

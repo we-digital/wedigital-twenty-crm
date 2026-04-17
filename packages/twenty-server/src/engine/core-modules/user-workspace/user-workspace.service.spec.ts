@@ -7,12 +7,11 @@ import { type ApprovedAccessDomainEntity } from 'src/engine/core-modules/approve
 import { ApprovedAccessDomainService } from 'src/engine/core-modules/approved-access-domain/services/approved-access-domain.service';
 import { AuthException } from 'src/engine/core-modules/auth/auth.exception';
 import { LoginTokenService } from 'src/engine/core-modules/auth/token/services/login-token.service';
-import { type AuthContextUser } from 'src/engine/core-modules/auth/types/auth-context.type';
 import { WorkspaceDomainsService } from 'src/engine/core-modules/domain/workspace-domains/services/workspace-domains.service';
 import { FeatureFlagService } from 'src/engine/core-modules/feature-flag/services/feature-flag.service';
 import { FileStorageService } from 'src/engine/core-modules/file-storage/file-storage.service';
 import { FileCorePictureService } from 'src/engine/core-modules/file/file-core-picture/services/file-core-picture.service';
-import { FileUrlService } from 'src/engine/core-modules/file/file-url/file-url.service';
+import { FileService } from 'src/engine/core-modules/file/services/file.service';
 import { OnboardingService } from 'src/engine/core-modules/onboarding/onboarding.service';
 import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
 import { UserWorkspaceService } from 'src/engine/core-modules/user-workspace/user-workspace.service';
@@ -126,7 +125,7 @@ describe('UserWorkspaceService', () => {
           useValue: {},
         },
         {
-          provide: FileUrlService,
+          provide: FileService,
           useValue: {},
         },
         {
@@ -250,14 +249,7 @@ describe('UserWorkspaceService', () => {
         lastName: 'Doe',
         defaultAvatarUrl: 'avatar-url',
         locale: 'en',
-        isEmailVerified: false,
-        disabled: false,
-        canImpersonate: false,
-        canAccessFullAdminPanel: false,
-        createdAt: '2024-01-01T00:00:00.000Z',
-        updatedAt: '2024-01-01T00:00:00.000Z',
-        deletedAt: null,
-      } as unknown as AuthContextUser;
+      } as UserEntity;
       const mainDataSource = {
         query: jest.fn(),
       } as unknown as DataSource;
@@ -308,10 +300,7 @@ describe('UserWorkspaceService', () => {
       const user = {
         id: 'user-id',
         email: 'test@example.com',
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        deletedAt: null,
-      } as unknown as UserEntity;
+      } as UserEntity;
       const workspace = {
         id: 'workspace-id',
         defaultRoleId: 'default-role-id',
@@ -346,7 +335,7 @@ describe('UserWorkspaceService', () => {
       });
       expect(service.createWorkspaceMember).toHaveBeenCalledWith(
         workspace.id,
-        expect.objectContaining({ id: user.id, email: user.email }),
+        user,
       );
       expect(
         userRoleService.assignRoleToManyUserWorkspace,
@@ -372,10 +361,7 @@ describe('UserWorkspaceService', () => {
       const user = {
         id: 'user-id',
         email: 'test@example.com',
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        deletedAt: null,
-      } as unknown as UserEntity;
+      } as UserEntity;
       const workspace = {
         id: 'workspace-id',
         defaultRoleId: 'default-role-id',
@@ -406,10 +392,7 @@ describe('UserWorkspaceService', () => {
       const user = {
         id: 'user-id',
         email: 'test@example.com',
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        deletedAt: null,
-      } as unknown as UserEntity;
+      } as UserEntity;
       const workspace = {
         id: 'workspace-id',
         defaultRoleId: undefined,

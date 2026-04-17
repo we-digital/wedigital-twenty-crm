@@ -1,14 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 
 import { msg } from '@lingui/core/macro';
 import { ImapFlow } from 'imapflow';
 import { createTransport } from 'nodemailer';
 import { ConnectedAccountProvider } from 'twenty-shared/types';
-import { Repository } from 'typeorm';
 
 import { UserInputError } from 'src/engine/core-modules/graphql/utils/graphql-errors.util';
-import { ConnectedAccountEntity } from 'src/engine/metadata-modules/connected-account/entities/connected-account.entity';
+import { ConnectedAccountDataAccessService } from 'src/engine/metadata-modules/connected-account/data-access/services/connected-account-data-access.service';
 import {
   type AccountType,
   type ConnectionParameters,
@@ -16,6 +14,7 @@ import {
 import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
 import { buildSystemAuthContext } from 'src/engine/twenty-orm/utils/build-system-auth-context.util';
 import { CalDAVClient } from 'src/modules/calendar/calendar-event-import-manager/drivers/caldav/lib/caldav.client';
+import { type ConnectedAccountWorkspaceEntity } from 'src/modules/connected-account/standard-objects/connected-account.workspace-entity';
 
 @Injectable()
 export class ImapSmtpCaldavService {
@@ -23,8 +22,7 @@ export class ImapSmtpCaldavService {
 
   constructor(
     private readonly globalWorkspaceOrmManager: GlobalWorkspaceOrmManager,
-    @InjectRepository(ConnectedAccountEntity)
-    private readonly connectedAccountRepository: Repository<ConnectedAccountEntity>,
+    private readonly connectedAccountDataAccessService: ConnectedAccountDataAccessService,
   ) {}
 
   async testImapConnection(
@@ -187,20 +185,20 @@ export class ImapSmtpCaldavService {
   async getImapSmtpCaldav(
     workspaceId: string,
     connectionId: string,
-  ): Promise<ConnectedAccountEntity | null> {
+  ): Promise<ConnectedAccountWorkspaceEntity | null> {
     const authContext = buildSystemAuthContext(workspaceId);
 
     return this.globalWorkspaceOrmManager.executeInWorkspaceContext(
       async () => {
-        const connectedAccount = await this.connectedAccountRepository.findOne({
-          where: {
-            id: connectionId,
-            provider: ConnectedAccountProvider.IMAP_SMTP_CALDAV,
-            workspaceId,
-          },
-        });
+        const connectedAccount =
+          await this.connectedAccountDataAccessService.findOne(workspaceId, {
+            where: {
+              id: connectionId,
+              provider: ConnectedAccountProvider.IMAP_SMTP_CALDAV,
+            },
+          });
 
-        return connectedAccount;
+        return connectedAccount as ConnectedAccountWorkspaceEntity | null;
       },
       authContext,
     );

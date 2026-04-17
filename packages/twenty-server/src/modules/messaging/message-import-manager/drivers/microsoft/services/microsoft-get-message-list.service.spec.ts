@@ -1,15 +1,13 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 
-import {
-  ConnectedAccountProvider,
-  MessageFolderImportPolicy,
-  MessageFolderPendingSyncAction,
-} from 'twenty-shared/types';
+import { ConnectedAccountProvider } from 'twenty-shared/types';
 
 import { type MessageFolder } from 'src/modules/messaging/message-folder-manager/interfaces/message-folder-driver.interface';
 
 import { OAuth2ClientManagerService } from 'src/modules/connected-account/oauth2-client-manager/services/oauth2-client-manager.service';
-import { type ConnectedAccountEntity } from 'src/engine/metadata-modules/connected-account/entities/connected-account.entity';
+import { type ConnectedAccountWorkspaceEntity } from 'src/modules/connected-account/standard-objects/connected-account.workspace-entity';
+import { MessageFolderImportPolicy } from 'src/modules/messaging/common/standard-objects/message-channel.workspace-entity';
+import { MessageFolderPendingSyncAction } from 'src/modules/messaging/common/standard-objects/message-folder.workspace-entity';
 import { MicrosoftGetMessageListService } from 'src/modules/messaging/message-import-manager/drivers/microsoft/services/microsoft-get-message-list.service';
 import { MicrosoftMessageListFetchErrorHandler } from 'src/modules/messaging/message-import-manager/drivers/microsoft/services/microsoft-message-list-fetch-error-handler.service';
 
@@ -30,7 +28,7 @@ describe('MicrosoftGetMessageListService', () => {
   let oAuth2ClientManagerService: OAuth2ClientManagerService;
 
   const mockConnectedAccount: Pick<
-    ConnectedAccountEntity,
+    ConnectedAccountWorkspaceEntity,
     | 'provider'
     | 'accessToken'
     | 'refreshToken'

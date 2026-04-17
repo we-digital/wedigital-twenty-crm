@@ -1,27 +1,29 @@
 import { Test, type TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
 
-import {
-  ConnectedAccountProvider,
-  MessageChannelContactAutoCreationPolicy,
-  MessageChannelType,
-  MessageChannelVisibility,
-  MessageFolderImportPolicy,
-  MessageFolderPendingSyncAction,
-} from 'twenty-shared/types';
+import { ConnectedAccountProvider } from 'twenty-shared/types';
 import { In } from 'typeorm';
 
 import { type DiscoveredMessageFolder } from 'src/modules/messaging/message-folder-manager/interfaces/message-folder-driver.interface';
 
-import { MessageFolderEntity } from 'src/engine/metadata-modules/message-folder/entities/message-folder.entity';
+import { MessageFolderDataAccessService } from 'src/engine/metadata-modules/message-folder/data-access/services/message-folder-data-access.service';
 import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
+import {
+  MessageChannelContactAutoCreationPolicy,
+  MessageChannelType,
+  MessageChannelVisibility,
+  MessageFolderImportPolicy,
+} from 'src/modules/messaging/common/standard-objects/message-channel.workspace-entity';
+import {
+  MessageFolderPendingSyncAction,
+  type MessageFolderWorkspaceEntity,
+} from 'src/modules/messaging/common/standard-objects/message-folder.workspace-entity';
 import { GmailGetAllFoldersService } from 'src/modules/messaging/message-folder-manager/drivers/gmail/services/gmail-get-all-folders.service';
 import { ImapGetAllFoldersService } from 'src/modules/messaging/message-folder-manager/drivers/imap/services/imap-get-all-folders.service';
 import { MicrosoftGetAllFoldersService } from 'src/modules/messaging/message-folder-manager/drivers/microsoft/services/microsoft-get-all-folders.service';
 import { SyncMessageFoldersService } from 'src/modules/messaging/message-folder-manager/services/sync-message-folders.service';
 
 type SyncedMessageFolder = Pick<
-  MessageFolderEntity,
+  MessageFolderWorkspaceEntity,
   | 'id'
   | 'name'
   | 'isSynced'
@@ -109,7 +111,7 @@ describe('SyncMessageFoldersService', () => {
   let service: SyncMessageFoldersService;
   let gmailGetAllFoldersService: jest.Mocked<GmailGetAllFoldersService>;
 
-  let mockMessageFolderRepository: {
+  let mockMessageFolderDataAccessService: {
     delete: jest.Mock;
     update: jest.Mock;
     save: jest.Mock;
@@ -117,7 +119,7 @@ describe('SyncMessageFoldersService', () => {
   };
 
   let createdFolderRecords: Array<
-    Partial<MessageFolderEntity> & {
+    Partial<MessageFolderWorkspaceEntity> & {
       id: string;
       externalId: string;
     }
@@ -126,10 +128,10 @@ describe('SyncMessageFoldersService', () => {
   beforeEach(async () => {
     createdFolderRecords = [];
 
-    mockMessageFolderRepository = {
+    mockMessageFolderDataAccessService = {
       delete: jest.fn(),
       update: jest.fn().mockResolvedValue(undefined),
-      save: jest.fn().mockImplementation(async (folder) => {
+      save: jest.fn().mockImplementation(async (_workspaceId, folder) => {
         createdFolderRecords.push({
           ...folder,
           id: `new-folder-${createdFolderRecords.length}-${Math.random().toString(36).substring(7)}`,
@@ -139,7 +141,7 @@ describe('SyncMessageFoldersService', () => {
           externalId: folder.externalId as string,
         });
       }),
-      find: jest.fn().mockImplementation(async ({ where }) => {
+      find: jest.fn().mockImplementation(async (_workspaceId, where) => {
         if (!where?.externalId) {
           return [];
         }
@@ -169,8 +171,8 @@ describe('SyncMessageFoldersService', () => {
           },
         },
         {
-          provide: getRepositoryToken(MessageFolderEntity),
-          useValue: mockMessageFolderRepository,
+          provide: MessageFolderDataAccessService,
+          useValue: mockMessageFolderDataAccessService,
         },
         {
           provide: GmailGetAllFoldersService,
@@ -226,18 +228,18 @@ describe('SyncMessageFoldersService', () => {
           workspaceId,
         });
 
-        expect(mockMessageFolderRepository.save).toHaveBeenCalledWith(
+        expect(mockMessageFolderDataAccessService.save).toHaveBeenCalledWith(
+          workspaceId,
           expect.objectContaining({
-            workspaceId,
             name: 'INBOX',
             externalId: 'inbox-ext',
             messageChannelId: 'channel-123',
             isSentFolder: false,
           }),
         );
-        expect(mockMessageFolderRepository.save).toHaveBeenCalledWith(
+        expect(mockMessageFolderDataAccessService.save).toHaveBeenCalledWith(
+          workspaceId,
           expect.objectContaining({
-            workspaceId,
             name: 'Sent',
             externalId: 'sent-ext',
             messageChannelId: 'channel-123',
@@ -273,9 +275,9 @@ describe('SyncMessageFoldersService', () => {
           workspaceId,
         });
 
-        expect(mockMessageFolderRepository.save).toHaveBeenCalledWith(
+        expect(mockMessageFolderDataAccessService.save).toHaveBeenCalledWith(
+          workspaceId,
           expect.objectContaining({
-            workspaceId,
             name: 'Projects',
             parentFolderId: 'parent-folder-id',
           }),
@@ -309,8 +311,9 @@ describe('SyncMessageFoldersService', () => {
           workspaceId,
         });
 
-        expect(mockMessageFolderRepository.update).toHaveBeenCalledWith(
-          { id: 'folder-1', messageChannelId: 'channel-123', workspaceId },
+        expect(mockMessageFolderDataAccessService.update).toHaveBeenCalledWith(
+          workspaceId,
+          { id: 'folder-1', messageChannelId: 'channel-123' },
           expect.objectContaining({ name: 'Primary Inbox' }),
         );
         expect(result).toContainEqual(
@@ -322,16 +325,11 @@ describe('SyncMessageFoldersService', () => {
       });
 
       it('should update folder when parent folder changes', async () => {
-        const newParentFolder = createMockExistingFolder({
-          id: 'new-parent-uuid',
-          externalId: 'new-parent-id',
-          name: 'New Parent',
-        });
         const existingFolder = createMockExistingFolder({
           id: 'folder-1',
           externalId: 'child-ext',
           name: 'Projects',
-          parentFolderId: 'old-parent-ext',
+          parentFolderId: 'old-parent-id',
         });
         const discoveredFolders = [
           createMockDiscoveredFolder({
@@ -339,13 +337,9 @@ describe('SyncMessageFoldersService', () => {
             name: 'Projects',
             parentFolderId: 'new-parent-id',
           }),
-          createMockDiscoveredFolder({
-            externalId: 'new-parent-id',
-            name: 'New Parent',
-          }),
         ];
         const messageChannel = createMockMessageChannel({
-          messageFolders: [existingFolder, newParentFolder],
+          messageFolders: [existingFolder],
         });
 
         gmailGetAllFoldersService.getAllMessageFolders.mockResolvedValue(
@@ -357,8 +351,9 @@ describe('SyncMessageFoldersService', () => {
           workspaceId,
         });
 
-        expect(mockMessageFolderRepository.update).toHaveBeenCalledWith(
-          { id: 'folder-1', messageChannelId: 'channel-123', workspaceId },
+        expect(mockMessageFolderDataAccessService.update).toHaveBeenCalledWith(
+          workspaceId,
+          { id: 'folder-1', messageChannelId: 'channel-123' },
           expect.objectContaining({
             parentFolderId: 'new-parent-id',
           }),
@@ -394,7 +389,9 @@ describe('SyncMessageFoldersService', () => {
           workspaceId,
         });
 
-        expect(mockMessageFolderRepository.update).not.toHaveBeenCalled();
+        expect(
+          mockMessageFolderDataAccessService.update,
+        ).not.toHaveBeenCalled();
       });
     });
 
@@ -431,8 +428,9 @@ describe('SyncMessageFoldersService', () => {
           workspaceId,
         });
 
-        expect(mockMessageFolderRepository.update).toHaveBeenCalledWith(
-          { id: In(['folder-2']), workspaceId },
+        expect(mockMessageFolderDataAccessService.update).toHaveBeenCalledWith(
+          workspaceId,
+          { id: In(['folder-2']) },
           expect.objectContaining({
             pendingSyncAction: 'FOLDER_DELETION',
           }),
@@ -493,25 +491,21 @@ describe('SyncMessageFoldersService', () => {
           workspaceId,
         });
 
-        expect(mockMessageFolderRepository.update).toHaveBeenCalledWith(
-          { id: In(['folder-to-delete']), workspaceId },
+        expect(mockMessageFolderDataAccessService.update).toHaveBeenCalledWith(
+          workspaceId,
+          { id: In(['folder-to-delete']) },
           expect.objectContaining({
             pendingSyncAction: 'FOLDER_DELETION',
           }),
         );
-        expect(mockMessageFolderRepository.update).toHaveBeenCalledWith(
-          {
-            id: 'folder-to-update',
-            messageChannelId: 'channel-123',
-            workspaceId,
-          },
+        expect(mockMessageFolderDataAccessService.update).toHaveBeenCalledWith(
+          workspaceId,
+          { id: 'folder-to-update', messageChannelId: 'channel-123' },
           expect.objectContaining({ name: 'New Name' }),
         );
-        expect(mockMessageFolderRepository.save).toHaveBeenCalledWith(
-          expect.objectContaining({
-            workspaceId,
-            externalId: 'new-ext',
-          }),
+        expect(mockMessageFolderDataAccessService.save).toHaveBeenCalledWith(
+          workspaceId,
+          expect.objectContaining({ externalId: 'new-ext' }),
         );
         expect(result).toHaveLength(4);
         expect(result).toContainEqual(

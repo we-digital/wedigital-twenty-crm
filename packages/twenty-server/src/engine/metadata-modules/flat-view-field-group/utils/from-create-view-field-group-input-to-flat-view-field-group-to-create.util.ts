@@ -46,7 +46,6 @@ export const fromCreateViewFieldGroupInputToFlatViewFieldGroupToCreate = ({
     universalIdentifier: createViewFieldGroupInput.universalIdentifier ?? v4(),
     position: createViewFieldGroupInput.position ?? 0,
     isVisible: createViewFieldGroupInput.isVisible ?? true,
-    isActive: true,
     overrides: null,
     viewFieldUniversalIdentifiers: [],
     applicationUniversalIdentifier: flatApplication.universalIdentifier,

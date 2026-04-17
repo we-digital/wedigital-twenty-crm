@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { FeatureFlagModule } from 'src/engine/core-modules/feature-flag/feature-flag.module';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
 import { DataSourceModule } from 'src/engine/metadata-modules/data-source/data-source.module';
-import { MessageFolderEntity } from 'src/engine/metadata-modules/message-folder/entities/message-folder.entity';
+import { MessageFolderDataAccessModule } from 'src/engine/metadata-modules/message-folder/data-access/message-folder-data-access.module';
 import { WorkspaceDataSourceModule } from 'src/engine/workspace-datasource/workspace-datasource.module';
 import { OAuth2ClientManagerModule } from 'src/modules/connected-account/oauth2-client-manager/oauth2-client-manager.module';
 import { GmailFoldersErrorHandlerService } from 'src/modules/messaging/message-folder-manager/drivers/gmail/services/gmail-folders-error-handler.service';
@@ -21,7 +21,8 @@ import { MessagingMicrosoftDriverModule } from 'src/modules/messaging/message-im
     FeatureFlagModule,
     WorkspaceDataSourceModule,
     DataSourceModule,
-    TypeOrmModule.forFeature([WorkspaceEntity, MessageFolderEntity]),
+    MessageFolderDataAccessModule,
+    TypeOrmModule.forFeature([WorkspaceEntity]),
     OAuth2ClientManagerModule,
     MessagingGmailDriverModule,
     MessagingMicrosoftDriverModule,

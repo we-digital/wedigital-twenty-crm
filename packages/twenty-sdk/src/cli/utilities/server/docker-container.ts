@@ -1,15 +1,13 @@
 import { execSync } from 'node:child_process';
 
 export const CONTAINER_NAME = 'twenty-app-dev';
-export const TEST_CONTAINER_NAME = 'twenty-app-dev-test';
 export const IMAGE = 'twentycrm/twenty-app-dev:latest';
 export const DEFAULT_PORT = 2020;
-export const DEFAULT_TEST_PORT = 2021;
 
-export const isContainerRunning = (containerName = CONTAINER_NAME): boolean => {
+export const isContainerRunning = (): boolean => {
   try {
     const result = execSync(
-      `docker inspect -f '{{.State.Running}}' ${containerName}`,
+      `docker inspect -f '{{.State.Running}}' ${CONTAINER_NAME}`,
       { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] },
     ).trim();
 
@@ -19,27 +17,22 @@ export const isContainerRunning = (containerName = CONTAINER_NAME): boolean => {
   }
 };
 
-export const getContainerPort = (containerName = CONTAINER_NAME): number => {
-  const defaultPort =
-    containerName === TEST_CONTAINER_NAME ? DEFAULT_TEST_PORT : DEFAULT_PORT;
-
+export const getContainerPort = (): number => {
   try {
     const result = execSync(
-      `docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' ${containerName}`,
+      `docker inspect -f '{{(index (index .NetworkSettings.Ports "3000/tcp") 0).HostPort}}' ${CONTAINER_NAME}`,
       { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] },
-    );
+    ).trim();
 
-    const match = result.match(/^NODE_PORT=(\d+)$/m);
-
-    return match ? parseInt(match[1], 10) : defaultPort;
+    return parseInt(result, 10) || DEFAULT_PORT;
   } catch {
-    return defaultPort;
+    return DEFAULT_PORT;
   }
 };
 
-export const containerExists = (containerName = CONTAINER_NAME): boolean => {
+export const containerExists = (): boolean => {
   try {
-    execSync(`docker inspect ${containerName}`, {
+    execSync(`docker inspect ${CONTAINER_NAME}`, {
       stdio: ['pipe', 'pipe', 'ignore'],
     });
 

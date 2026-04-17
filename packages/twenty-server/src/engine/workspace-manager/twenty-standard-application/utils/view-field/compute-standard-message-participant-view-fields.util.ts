@@ -175,7 +175,7 @@ export const computeStandardMessageParticipantViewFields = (
           position: 0,
           isVisible: true,
           size: 150,
-          viewFieldGroupName: 'system',
+          viewFieldGroupName: 'other',
         },
       }),
     messageParticipantRecordPageFieldsCreatedBy:
@@ -189,7 +189,7 @@ export const computeStandardMessageParticipantViewFields = (
           position: 1,
           isVisible: true,
           size: 150,
-          viewFieldGroupName: 'system',
+          viewFieldGroupName: 'other',
         },
       }),
   };

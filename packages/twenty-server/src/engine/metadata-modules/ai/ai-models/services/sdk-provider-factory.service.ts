@@ -8,9 +8,7 @@ import { createAnthropic, type AnthropicProvider } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createMistral } from '@ai-sdk/mistral';
 import { createOpenAI, type OpenAIProvider } from '@ai-sdk/openai';
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { createXai } from '@ai-sdk/xai';
-import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
 import { type LanguageModel } from 'ai';
 import { type AiSdkPackage } from 'twenty-shared/ai';
 
@@ -82,7 +80,11 @@ export class SdkProviderFactoryService {
   }
 
   getRawOpenAIProvider(providerName: string): OpenAIProvider | undefined {
-    return this.getRawProvider<OpenAIProvider>(providerName, AI_SDK_OPENAI);
+    return this.getRawProvider<OpenAIProvider>(
+      providerName,
+      AI_SDK_OPENAI,
+      AI_SDK_OPENAI_COMPATIBLE,
+    );
   }
 
   clearCache(): void {
@@ -132,27 +134,9 @@ export class SdkProviderFactoryService {
   private buildBedrockProvider(
     config: AiProviderConfig,
   ): AiSdkProviderInstance {
-    const region = config.region ?? 'us-east-1';
-    const useRoleCredentials = config.authType === 'role';
-    const awsCredentialProvider = useRoleCredentials
-      ? fromNodeProviderChain({ clientConfig: { region } })
-      : undefined;
-
     const provider = createAmazonBedrock({
-      region,
-      ...(awsCredentialProvider && {
-        credentialProvider: async () => {
-          const credentials = await awsCredentialProvider();
-
-          return {
-            accessKeyId: credentials.accessKeyId,
-            secretAccessKey: credentials.secretAccessKey,
-            sessionToken: credentials.sessionToken,
-          };
-        },
-      }),
-      ...(!useRoleCredentials &&
-        config.accessKeyId &&
+      region: config.region ?? 'us-east-1',
+      ...(config.accessKeyId &&
         config.secretAccessKey && {
           accessKeyId: config.accessKeyId,
           secretAccessKey: config.secretAccessKey,
@@ -174,10 +158,9 @@ export class SdkProviderFactoryService {
       throw new Error('baseUrl is required for openai-compatible providers');
     }
 
-    const provider = createOpenAICompatible({
-      name: config.name ?? 'openai-compatible',
+    const provider = createOpenAI({
       baseURL: config.baseUrl,
-      ...(config.apiKey && { apiKey: config.apiKey }),
+      apiKey: config.apiKey ?? '',
     });
 
     return {

@@ -6,12 +6,15 @@
 #   ./scripts/upgrade-upstream.sh v1.22.0
 #
 # What it does:
-#   1. Fetches the target upstream tag
-#   2. Creates a new branch from main
-#   3. Replaces the entire tree with the upstream tag
-#   4. Applies the We Digital custom patch (we-digital-custom.patch)
-#   5. Runs yarn install to sync lockfile
-#   6. Commits and shows next steps
+#   1. Creates a safety tag on main (pre-<tag>-upgrade)
+#   2. Fetches the target upstream tag
+#   3. Creates a new branch from main
+#   4. Replaces the entire tree with the upstream tag
+#   5. Applies the We Digital custom patch (we-digital-custom.patch)
+#   6. Updates .upstream-version
+#   7. Runs yarn install to sync lockfile
+#   8. Commits everything
+#   9. Regenerates the patch for the next upgrade
 #
 # Prerequisites:
 #   - 'upstream' remote pointing to https://github.com/twentyhq/twenty.git
@@ -44,7 +47,17 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
   exit 1
 fi
 
-echo "=== Step 1: Fetch upstream tag $TARGET_TAG ==="
+echo "=== Step 1: Create safety tag on main ==="
+SAFETY_TAG="pre-${TARGET_TAG}-upgrade"
+if git rev-parse "$SAFETY_TAG" >/dev/null 2>&1; then
+  echo "Tag $SAFETY_TAG already exists, skipping."
+else
+  git tag "$SAFETY_TAG" main
+  echo "Created tag: $SAFETY_TAG"
+fi
+
+echo ""
+echo "=== Step 2: Fetch upstream tag $TARGET_TAG ==="
 if ! git remote | grep -q upstream; then
   echo "Adding upstream remote..."
   git remote add upstream https://github.com/twentyhq/twenty.git
@@ -52,19 +65,22 @@ fi
 git fetch upstream tag "$TARGET_TAG" --no-tags
 
 echo ""
-echo "=== Step 2: Create branch $BRANCH_NAME from main ==="
+echo "=== Step 3: Create branch $BRANCH_NAME from main ==="
 git checkout main
 git checkout -b "$BRANCH_NAME"
 
 echo ""
-echo "=== Step 3: Replace tree with $TARGET_TAG ==="
+echo "=== Step 4: Replace tree with $TARGET_TAG ==="
+# Save patch to temp — git rm deletes all tracked files including the patch itself
+PATCH_BACKUP=$(mktemp)
+cp "$PATCH_FILE" "$PATCH_BACKUP"
 git rm -rf . --quiet
 git checkout "$TARGET_TAG" -- .
 
 echo ""
-echo "=== Step 4: Apply We Digital custom patch ==="
+echo "=== Step 5: Apply We Digital custom patch ==="
 # --3way allows git to handle conflicts if upstream changed our patched files
-if git apply --3way "$PATCH_FILE"; then
+if git apply --3way "$PATCH_BACKUP"; then
   echo "Patch applied cleanly."
 else
   echo ""
@@ -81,11 +97,16 @@ else
 fi
 
 echo ""
-echo "=== Step 5: Update yarn.lock ==="
+echo "=== Step 6: Update .upstream-version ==="
+echo "$TARGET_TAG" > "$REPO_ROOT/.upstream-version"
+echo "Set .upstream-version to $TARGET_TAG"
+
+echo ""
+echo "=== Step 7: Update yarn.lock ==="
 yarn install || true
 
 echo ""
-echo "=== Step 6: Stage and commit ==="
+echo "=== Step 8: Stage and commit ==="
 git add -A
 git commit -m "chore: upgrade Twenty CRM to ${TARGET_TAG}
 
@@ -94,11 +115,19 @@ We Digital custom patches (see we-digital-custom.patch).
 "
 
 echo ""
+echo "=== Step 9: Regenerate patch for next upgrade ==="
+git diff "${TARGET_TAG}" HEAD > "$PATCH_FILE"
+git add "$PATCH_FILE"
+git commit --amend --no-edit
+
+rm -f "$PATCH_BACKUP"
+
+echo ""
 echo "============================================"
 echo "Done! Next steps:"
 echo "  1. git push -u origin $BRANCH_NAME"
 echo "  2. Create PR: gh pr create --base main"
 echo "  3. Wait for CI to pass"
-echo "  4. After merge, regenerate patch:"
-echo "     git diff ${TARGET_TAG} HEAD > we-digital-custom.patch"
+echo "  4. After merge: build-and-push auto-builds + triggers deploy"
+echo "  5. For controlled upgrades: set CRM_IMAGE_TAG=${TARGET_TAG} in bbc-devops"
 echo "============================================"

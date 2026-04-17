@@ -1,5 +1,7 @@
-import { MessageFolderImportPolicy } from 'twenty-shared/types';
-import { type MessageChannelEntity } from 'src/engine/metadata-modules/message-channel/entities/message-channel.entity';
+import {
+  type MessageChannelWorkspaceEntity,
+  MessageFolderImportPolicy,
+} from 'src/modules/messaging/common/standard-objects/message-channel.workspace-entity';
 import { MESSAGING_GMAIL_EXCLUDED_CATEGORY_LABELS } from 'src/modules/messaging/message-import-manager/drivers/gmail/constants/messaging-gmail-excluded-category-labels.constant';
 import { MESSAGING_GMAIL_FOLDERS_WITH_CATEGORY_EXCLUSIONS } from 'src/modules/messaging/message-import-manager/drivers/gmail/constants/messaging-gmail-folders-with-category-exclusions.constant';
 import { type MessageWithParticipants } from 'src/modules/messaging/message-import-manager/types/message';
@@ -7,7 +9,7 @@ import { type MessageWithParticipants } from 'src/modules/messaging/message-impo
 export const filterGmailMessagesByFolderPolicy = (
   messages: MessageWithParticipants[],
   messageChannel: Pick<
-    MessageChannelEntity,
+    MessageChannelWorkspaceEntity,
     'messageFolders' | 'messageFolderImportPolicy'
   >,
 ): MessageWithParticipants[] => {

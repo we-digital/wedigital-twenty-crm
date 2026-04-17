@@ -29,6 +29,7 @@ const getFieldId = (
 export const getPageLayoutWidgetDataSeeds = (
   workspaceId: string,
   objectMetadataItems: ObjectMetadataEntity[],
+  isDashboardV2Enabled: boolean,
 ): SeederFlatPageLayoutWidget[] => {
   const opportunityObject = objectMetadataItems.find(
     (obj) =>
@@ -523,10 +524,9 @@ export const getPageLayoutWidgetDataSeeds = (
     } satisfies SeederFlatPageLayoutWidget,
   ].filter(isDefined);
 
-  const v2Widgets = getPageLayoutWidgetDataSeedsV2(
-    workspaceId,
-    objectMetadataItems,
-  );
+  const v2Widgets = isDashboardV2Enabled
+    ? getPageLayoutWidgetDataSeedsV2(workspaceId, objectMetadataItems)
+    : [];
 
   return [...v1Widgets, ...v2Widgets];
 };

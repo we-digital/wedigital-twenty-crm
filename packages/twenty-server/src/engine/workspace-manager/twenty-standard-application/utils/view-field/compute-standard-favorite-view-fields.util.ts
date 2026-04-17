@@ -234,7 +234,7 @@ export const computeStandardFavoriteViewFields = (
         position: 0,
         isVisible: true,
         size: 150,
-        viewFieldGroupName: 'system',
+        viewFieldGroupName: 'other',
       },
     }),
     favoriteRecordPageFieldsCreatedBy: createStandardViewFieldFlatMetadata({
@@ -247,7 +247,7 @@ export const computeStandardFavoriteViewFields = (
         position: 1,
         isVisible: true,
         size: 150,
-        viewFieldGroupName: 'system',
+        viewFieldGroupName: 'other',
       },
     }),
   };

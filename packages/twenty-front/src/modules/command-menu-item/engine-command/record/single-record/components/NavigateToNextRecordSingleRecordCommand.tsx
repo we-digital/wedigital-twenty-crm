@@ -15,13 +15,10 @@ export const NavigateToNextRecordSingleRecordCommand = () => {
     );
   }
 
-  const { navigateToNextRecord, isLoadingPagination } =
-    useRecordShowPagePagination(objectMetadataItem.nameSingular, recordId);
-
-  return (
-    <HeadlessEngineCommandWrapperEffect
-      execute={navigateToNextRecord}
-      ready={!isLoadingPagination}
-    />
+  const { navigateToNextRecord } = useRecordShowPagePagination(
+    objectMetadataItem.nameSingular,
+    recordId,
   );
+
+  return <HeadlessEngineCommandWrapperEffect execute={navigateToNextRecord} />;
 };

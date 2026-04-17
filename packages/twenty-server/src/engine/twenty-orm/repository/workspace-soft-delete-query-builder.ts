@@ -103,9 +103,7 @@ export class WorkspaceSoftDeleteQueryBuilder<
         objectMetadata.isCustom,
       );
 
-      const before = await beforeEventSelectQueryBuilder.getMany({
-        noFormatting: true,
-      });
+      const before = await beforeEventSelectQueryBuilder.getMany();
 
       this.expressionMap.wheres = applyTableAliasOnWhereCondition({
         condition: this.expressionMap.wheres,
@@ -115,9 +113,7 @@ export class WorkspaceSoftDeleteQueryBuilder<
 
       const typeORMSoftRemoveResultWithOnlyIdColumn = await super.execute();
 
-      const afterWithAllFields = await beforeEventSelectQueryBuilder.getMany({
-        noFormatting: true,
-      });
+      const afterWithAllFields = await beforeEventSelectQueryBuilder.getMany();
 
       const formattedAfter = formatResult<T[]>(
         afterWithAllFields,

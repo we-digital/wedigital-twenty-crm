@@ -1,9 +1,9 @@
+import { CONNECTED_ACCOUNT_DATA_SEED_IDS } from 'src/engine/workspace-manager/dev-seeder/data/constants/connected-account-data-seeds.constant';
 import {
   MessageChannelSyncStage,
   MessageChannelType,
   MessageChannelVisibility,
-} from 'twenty-shared/types';
-import { CONNECTED_ACCOUNT_DATA_SEED_IDS } from 'src/engine/workspace-manager/dev-seeder/data/constants/connected-account-data-seeds.constant';
+} from 'src/modules/messaging/common/standard-objects/message-channel.workspace-entity';
 
 type MessageChannelDataSeed = {
   id: string;

@@ -19,7 +19,3 @@ export const Default: Story = {};
 export const Pipeline: Story = {
   args: { variant: 'pipeline' },
 };
-
-export const Circle: Story = {
-  args: { variant: 'circle' },
-};

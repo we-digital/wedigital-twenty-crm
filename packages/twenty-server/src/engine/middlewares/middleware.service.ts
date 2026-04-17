@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { isNonEmptyString } from '@sniptt/guards';
 import { type Request, type Response } from 'express';
-import { FeatureFlagKey } from 'twenty-shared/types';
 import { type APP_LOCALES, SOURCE_LOCALE } from 'twenty-shared/translations';
 import { isDefined } from 'twenty-shared/utils';
 
@@ -11,7 +9,6 @@ import { AuthGraphqlApiExceptionFilter } from 'src/engine/core-modules/auth/filt
 import { AccessTokenService } from 'src/engine/core-modules/auth/token/services/access-token.service';
 import { getAuthExceptionRestStatus } from 'src/engine/core-modules/auth/utils/get-auth-exception-rest-status.util';
 import { ExceptionHandlerService } from 'src/engine/core-modules/exception-handler/exception-handler.service';
-import { FeatureFlagService } from 'src/engine/core-modules/feature-flag/services/feature-flag.service';
 import { ErrorCode } from 'src/engine/core-modules/graphql/utils/graphql-errors.util';
 import { JwtWrapperService } from 'src/engine/core-modules/jwt/services/jwt-wrapper.service';
 import { DataSourceService } from 'src/engine/metadata-modules/data-source/data-source.service';
@@ -32,7 +29,6 @@ export class MiddlewareService {
     private readonly workspaceStorageCacheService: WorkspaceCacheStorageService,
     private readonly flatEntityMapsCacheService: WorkspaceManyOrAllFlatEntityMapsCacheService,
     private readonly dataSourceService: DataSourceService,
-    private readonly featureFlagService: FeatureFlagService,
     private readonly exceptionHandlerService: ExceptionHandlerService,
     private readonly jwtWrapperService: JwtWrapperService,
   ) {}
@@ -110,24 +106,13 @@ export class MiddlewareService {
         )
       : undefined;
 
-    if (!data.workspace) {
-      throw new Error('No data sources found');
-    }
+    const dataSourcesMetadata = data.workspace
+      ? await this.dataSourceService.getDataSourcesMetadataFromWorkspaceId(
+          data.workspace.id,
+        )
+      : undefined;
 
-    const isDataSourceMigrated = await this.featureFlagService.isFeatureEnabled(
-      FeatureFlagKey.IS_DATASOURCE_MIGRATED,
-      data.workspace.id,
-    );
-
-    const hasSchema = isDataSourceMigrated
-      ? isNonEmptyString(data.workspace.databaseSchema)
-      : (
-          await this.dataSourceService.getDataSourcesMetadataFromWorkspaceId(
-            data.workspace.id,
-          )
-        ).length > 0;
-
-    if (!hasSchema) {
+    if (!dataSourcesMetadata || dataSourcesMetadata.length === 0) {
       throw new Error('No data sources found');
     }
 

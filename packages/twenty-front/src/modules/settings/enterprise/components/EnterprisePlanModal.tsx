@@ -71,19 +71,8 @@ const StyledIntervalContainer = styled.div`
   width: 100%;
 `;
 
-const StyledIntervalCardContent = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
 const StyledIntervalTitle = styled.div`
   color: ${themeCssVariables.font.color.secondary};
-  font-size: ${themeCssVariables.font.size.md};
-  margin-bottom: ${themeCssVariables.spacing[2]};
-`;
-
-const StyledIntervalSubtitle = styled.div`
-  color: ${themeCssVariables.font.color.tertiary};
   font-size: ${themeCssVariables.font.size.md};
 `;
 
@@ -143,7 +132,7 @@ export const EnterprisePlanModal = () => {
   return (
     <ModalStatefulWrapper
       modalInstanceId={ENTERPRISE_PLAN_MODAL_ID}
-      size="medium"
+      size="small"
       padding="none"
       isClosable
     >
@@ -168,19 +157,13 @@ export const EnterprisePlanModal = () => {
             checked={selectedInterval === 'monthly'}
             handleChange={() => setSelectedInterval('monthly')}
           >
-            <StyledIntervalCardContent>
-              <StyledIntervalTitle>{t`Monthly`}</StyledIntervalTitle>
-              <StyledIntervalSubtitle>{`$${MONTHLY_PRICE} / ${t`seat / month`}`}</StyledIntervalSubtitle>
-            </StyledIntervalCardContent>
+            <StyledIntervalTitle>{t`Monthly subscription`}</StyledIntervalTitle>
           </CardPicker>
           <CardPicker
             checked={selectedInterval === 'yearly'}
             handleChange={() => setSelectedInterval('yearly')}
           >
-            <StyledIntervalCardContent>
-              <StyledIntervalTitle>{t`Yearly`}</StyledIntervalTitle>
-              <StyledIntervalSubtitle>{`$${YEARLY_PRICE} / ${t`seat / month`}`}</StyledIntervalSubtitle>
-            </StyledIntervalCardContent>
+            <StyledIntervalTitle>{t`Yearly subscription`}</StyledIntervalTitle>
           </CardPicker>
         </StyledIntervalContainer>
 

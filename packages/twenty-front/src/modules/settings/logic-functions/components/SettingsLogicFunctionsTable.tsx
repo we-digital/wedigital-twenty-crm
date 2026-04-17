@@ -16,7 +16,7 @@ export const StyledTableRow = (
   props: React.ComponentProps<typeof TableRow>,
 ) => (
   <TableRow
-    gridTemplateColumns="300px 1fr 32px"
+    gridTemplateColumns="164px 1fr 96px 32px"
     // oxlint-disable-next-line react/jsx-props-no-spreading
     {...props}
   />
@@ -43,7 +43,8 @@ export const SettingsLogicFunctionsTable = ({
     <Table>
       <StyledTableRow>
         <TableHeader>{t`Name`}</TableHeader>
-        <TableHeader align={'right'}>{t`Trigger`}</TableHeader>
+        <TableHeader></TableHeader>
+        <TableHeader>{t`Runtime`}</TableHeader>
         <TableHeader></TableHeader>
       </StyledTableRow>
       <StyledTableBodyContainer>

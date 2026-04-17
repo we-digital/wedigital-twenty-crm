@@ -12,7 +12,6 @@ const CLICKHOUSE_TABLE_NAMES: Record<EventLogTable, string> = {
   [EventLogTable.PAGEVIEW]: 'pageview',
   [EventLogTable.OBJECT_EVENT]: 'objectEvent',
   [EventLogTable.USAGE_EVENT]: 'usageEvent',
-  [EventLogTable.APPLICATION_LOG]: 'applicationLog',
 };
 
 export type EventLogCleanupParams = {

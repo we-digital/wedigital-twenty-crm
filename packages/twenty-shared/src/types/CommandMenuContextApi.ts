@@ -16,5 +16,4 @@ export type CommandMenuContextApi = {
   targetObjectReadPermissions: Record<string, boolean>;
   targetObjectWritePermissions: Record<string, boolean>;
   objectMetadataItem: Record<string, unknown>;
-  objectMetadataLabel: string;
 };

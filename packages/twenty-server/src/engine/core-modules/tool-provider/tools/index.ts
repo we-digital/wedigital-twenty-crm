@@ -12,6 +12,7 @@ export {
   createExecuteToolTool,
   executeToolInputSchema,
   type ExecuteToolInput,
+  type ExecuteToolResult,
 } from './execute-tool.tool';
 
 export {

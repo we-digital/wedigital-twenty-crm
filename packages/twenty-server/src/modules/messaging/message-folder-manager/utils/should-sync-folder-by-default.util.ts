@@ -1,4 +1,4 @@
-import { MessageFolderImportPolicy } from 'twenty-shared/types';
+import { MessageFolderImportPolicy } from 'src/modules/messaging/common/standard-objects/message-channel.workspace-entity';
 
 export const shouldSyncFolderByDefault = (
   messageFolderImportPolicy: MessageFolderImportPolicy,

@@ -21,7 +21,6 @@
   "rules": {
     "func-style": ["error", "declaration", { "allowArrowFunctions": true }],
     "no-console": ["warn", { "allow": ["group", "groupCollapsed", "groupEnd"] }],
-    "no-script-url": "error",
     "no-control-regex": "off",
     "no-debugger": "error",
     "no-duplicate-imports": "error",
@@ -59,7 +58,6 @@
     "react/jsx-uses-react": "off",
     "react/react-in-jsx-scope": "off",
     "react/jsx-no-useless-fragment": "off",
-    "react/jsx-no-script-url": "error",
     "react/jsx-props-no-spreading": ["error", { "explicitSpread": "ignore" }],
 
     "react-hooks/rules-of-hooks": "error",

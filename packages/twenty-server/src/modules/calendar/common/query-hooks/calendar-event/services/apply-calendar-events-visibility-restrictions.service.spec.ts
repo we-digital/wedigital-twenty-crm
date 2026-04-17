@@ -1,13 +1,10 @@
 import { Test, type TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
 
 import { FIELD_RESTRICTED_ADDITIONAL_PERMISSIONS_REQUIRED } from 'twenty-shared/constants';
 
-import { CalendarChannelVisibility } from 'twenty-shared/types';
-import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
-import { CalendarChannelEntity } from 'src/engine/metadata-modules/calendar-channel/entities/calendar-channel.entity';
-import { ConnectedAccountEntity } from 'src/engine/metadata-modules/connected-account/entities/connected-account.entity';
+import { ConnectedAccountDataAccessService } from 'src/engine/metadata-modules/connected-account/data-access/services/connected-account-data-access.service';
 import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
+import { CalendarChannelVisibility } from 'src/modules/calendar/common/standard-objects/calendar-channel.workspace-entity';
 import { type CalendarEventWorkspaceEntity } from 'src/modules/calendar/common/standard-objects/calendar-event.workspace-entity';
 
 import { ApplyCalendarEventsVisibilityRestrictionsService } from './apply-calendar-events-visibility-restrictions.service';
@@ -52,15 +49,7 @@ describe('ApplyCalendarEventsVisibilityRestrictionsService', () => {
     findOneByOrFail: jest.fn(),
   };
 
-  const mockConnectedAccountRepository = {
-    find: jest.fn(),
-  };
-
-  const mockUserWorkspaceRepository = {
-    findOne: jest.fn(),
-  };
-
-  const mockCalendarChannelRepository = {
+  const mockConnectedAccountDataAccessService = {
     find: jest.fn(),
   };
 
@@ -87,16 +76,8 @@ describe('ApplyCalendarEventsVisibilityRestrictionsService', () => {
           useValue: mockGlobalWorkspaceOrmManager,
         },
         {
-          provide: getRepositoryToken(ConnectedAccountEntity),
-          useValue: mockConnectedAccountRepository,
-        },
-        {
-          provide: getRepositoryToken(UserWorkspaceEntity),
-          useValue: mockUserWorkspaceRepository,
-        },
-        {
-          provide: getRepositoryToken(CalendarChannelEntity),
-          useValue: mockCalendarChannelRepository,
+          provide: ConnectedAccountDataAccessService,
+          useValue: mockConnectedAccountDataAccessService,
         },
       ],
     }).compile();
@@ -114,17 +95,17 @@ describe('ApplyCalendarEventsVisibilityRestrictionsService', () => {
       createMockCalendarEvent('1', 'Test Event', 'Test Description'),
     ];
 
+    mockWorkspaceMemberRepository.findOneByOrFail.mockResolvedValue({
+      id: 'workspace-member-id',
+    });
+
     mockCalendarEventAssociationRepository.find.mockResolvedValue([
       {
         calendarEventId: '1',
-        calendarChannelId: '1',
-      },
-    ]);
-
-    mockCalendarChannelRepository.find.mockResolvedValue([
-      {
-        id: '1',
-        visibility: CalendarChannelVisibility.SHARE_EVERYTHING,
+        calendarChannel: {
+          id: '1',
+          visibility: CalendarChannelVisibility.SHARE_EVERYTHING,
+        },
       },
     ]);
 
@@ -142,7 +123,7 @@ describe('ApplyCalendarEventsVisibilityRestrictionsService', () => {
           item.description !== FIELD_RESTRICTED_ADDITIONAL_PERMISSIONS_REQUIRED,
       ),
     ).toBe(true);
-    expect(mockConnectedAccountRepository.find).not.toHaveBeenCalled();
+    expect(mockConnectedAccountDataAccessService.find).not.toHaveBeenCalled();
   });
 
   it('should return calendar event with obfuscated title and description if the visibility is METADATA', async () => {
@@ -153,22 +134,18 @@ describe('ApplyCalendarEventsVisibilityRestrictionsService', () => {
     mockCalendarEventAssociationRepository.find.mockResolvedValue([
       {
         calendarEventId: '1',
-        calendarChannelId: '1',
+        calendarChannel: {
+          id: '1',
+          visibility: CalendarChannelVisibility.METADATA,
+        },
       },
     ]);
 
-    mockCalendarChannelRepository.find.mockResolvedValue([
-      {
-        id: '1',
-        visibility: CalendarChannelVisibility.METADATA,
-      },
-    ]);
-
-    mockUserWorkspaceRepository.findOne.mockResolvedValue({
-      id: 'user-workspace-id',
+    mockWorkspaceMemberRepository.findOneByOrFail.mockResolvedValue({
+      id: 'workspace-member-id',
     });
 
-    mockConnectedAccountRepository.find.mockResolvedValue([]);
+    mockConnectedAccountDataAccessService.find.mockResolvedValue([]);
 
     const result = await service.applyCalendarEventsVisibilityRestrictions(
       calendarEvents,
@@ -193,22 +170,18 @@ describe('ApplyCalendarEventsVisibilityRestrictionsService', () => {
     mockCalendarEventAssociationRepository.find.mockResolvedValue([
       {
         calendarEventId: '1',
-        calendarChannelId: '1',
+        calendarChannel: {
+          id: '1',
+          visibility: CalendarChannelVisibility.METADATA,
+        },
       },
     ]);
 
-    mockCalendarChannelRepository.find.mockResolvedValue([
-      {
-        id: '1',
-        visibility: CalendarChannelVisibility.METADATA,
-      },
-    ]);
-
-    mockUserWorkspaceRepository.findOne.mockResolvedValue({
-      id: 'user-workspace-id',
+    mockWorkspaceMemberRepository.findOneByOrFail.mockResolvedValue({
+      id: 'workspace-member-account-owner-id',
     });
 
-    mockConnectedAccountRepository.find.mockResolvedValue([{ id: '1' }]);
+    mockConnectedAccountDataAccessService.find.mockResolvedValue([{ id: '1' }]);
 
     const result = await service.applyCalendarEventsVisibilityRestrictions(
       calendarEvents,
@@ -234,21 +207,17 @@ describe('ApplyCalendarEventsVisibilityRestrictionsService', () => {
     mockCalendarEventAssociationRepository.find.mockResolvedValue([
       {
         calendarEventId: '1',
-        calendarChannelId: '1',
+        calendarChannel: {
+          id: '1',
+        },
       },
     ]);
 
-    mockCalendarChannelRepository.find.mockResolvedValue([
-      {
-        id: '1',
-      },
-    ]);
-
-    mockUserWorkspaceRepository.findOne.mockResolvedValue({
-      id: 'user-workspace-id',
+    mockWorkspaceMemberRepository.findOneByOrFail.mockResolvedValue({
+      id: 'workspace-member-not-account-owner-id',
     });
 
-    mockConnectedAccountRepository.find.mockResolvedValue([]);
+    mockConnectedAccountDataAccessService.find.mockResolvedValue([]);
 
     const result = await service.applyCalendarEventsVisibilityRestrictions(
       calendarEvents,
@@ -266,41 +235,35 @@ describe('ApplyCalendarEventsVisibilityRestrictionsService', () => {
       createMockCalendarEvent('3', 'Event 3', 'Description 3'),
     ];
 
-    mockUserWorkspaceRepository.findOne.mockResolvedValue({
-      id: 'user-workspace-id',
+    mockWorkspaceMemberRepository.findOneByOrFail.mockResolvedValue({
+      id: 'workspace-member-id',
     });
 
     mockCalendarEventAssociationRepository.find.mockResolvedValue([
       {
         calendarEventId: '1',
-        calendarChannelId: '1',
+        calendarChannel: {
+          id: '1',
+          visibility: CalendarChannelVisibility.SHARE_EVERYTHING,
+        },
       },
       {
         calendarEventId: '2',
-        calendarChannelId: '2',
+        calendarChannel: {
+          id: '2',
+          visibility: CalendarChannelVisibility.METADATA,
+        },
       },
       {
         calendarEventId: '3',
-        calendarChannelId: '3',
+        calendarChannel: {
+          id: '3',
+          visibility: CalendarChannelVisibility.METADATA,
+        },
       },
     ]);
 
-    mockCalendarChannelRepository.find.mockResolvedValue([
-      {
-        id: '1',
-        visibility: CalendarChannelVisibility.SHARE_EVERYTHING,
-      },
-      {
-        id: '2',
-        visibility: CalendarChannelVisibility.METADATA,
-      },
-      {
-        id: '3',
-        visibility: CalendarChannelVisibility.METADATA,
-      },
-    ]);
-
-    mockConnectedAccountRepository.find
+    mockConnectedAccountDataAccessService.find
       .mockResolvedValueOnce([]) // request for calendar event 3
       .mockResolvedValueOnce([{ id: '1' }]); // request for calendar event 2
 
@@ -328,38 +291,37 @@ describe('ApplyCalendarEventsVisibilityRestrictionsService', () => {
       createMockCalendarEvent('3', 'Event 3', 'Description 3'),
     ];
 
+    mockWorkspaceMemberRepository.findOneByOrFail.mockResolvedValue({
+      id: 'workspace-member-id',
+    });
+
     mockCalendarEventAssociationRepository.find.mockResolvedValue([
       {
         calendarEventId: '1',
-        calendarChannelId: '1',
+        calendarChannel: {
+          id: '1',
+          visibility: CalendarChannelVisibility.SHARE_EVERYTHING,
+        },
       },
       {
         calendarEventId: '2',
-        calendarChannelId: '2',
+        calendarChannel: {
+          id: '2',
+          visibility: CalendarChannelVisibility.METADATA,
+        },
       },
       {
         calendarEventId: '3',
-        calendarChannelId: '3',
+        calendarChannel: {
+          id: '3',
+          visibility: CalendarChannelVisibility.METADATA,
+        },
       },
     ]);
 
-    mockCalendarChannelRepository.find.mockResolvedValue([
-      {
-        id: '1',
-        visibility: CalendarChannelVisibility.SHARE_EVERYTHING,
-      },
-      {
-        id: '2',
-        visibility: CalendarChannelVisibility.METADATA,
-      },
-      {
-        id: '3',
-        visibility: CalendarChannelVisibility.METADATA,
-      },
-    ]);
-
-    // userId is undefined (api key request), so connected account check is skipped
-    // METADATA events should be obfuscated
+    mockConnectedAccountDataAccessService.find
+      .mockResolvedValueOnce([]) // request for calendar event 3
+      .mockResolvedValueOnce([{ id: '1' }]); // request for calendar event 2
 
     const result = await service.applyCalendarEventsVisibilityRestrictions(
       calendarEvents,
@@ -369,17 +331,12 @@ describe('ApplyCalendarEventsVisibilityRestrictionsService', () => {
 
     expect(result).toEqual([
       calendarEvents[0],
-      {
-        ...calendarEvents[1],
-        title: FIELD_RESTRICTED_ADDITIONAL_PERMISSIONS_REQUIRED,
-        description: FIELD_RESTRICTED_ADDITIONAL_PERMISSIONS_REQUIRED,
-      },
+      calendarEvents[1],
       {
         ...calendarEvents[2],
         title: FIELD_RESTRICTED_ADDITIONAL_PERMISSIONS_REQUIRED,
         description: FIELD_RESTRICTED_ADDITIONAL_PERMISSIONS_REQUIRED,
       },
     ]);
-    expect(mockConnectedAccountRepository.find).not.toHaveBeenCalled();
   });
 });

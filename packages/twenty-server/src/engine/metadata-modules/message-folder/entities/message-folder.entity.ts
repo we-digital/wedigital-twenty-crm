@@ -31,7 +31,7 @@ export class MessageFolderEntity extends WorkspaceRelatedEntity {
   @Column({ type: 'boolean', nullable: false })
   isSynced: boolean;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   parentFolderId: string | null;
 
   @Column({ type: 'varchar', nullable: true })

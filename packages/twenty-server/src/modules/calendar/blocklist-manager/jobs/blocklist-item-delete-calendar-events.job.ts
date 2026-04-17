@@ -1,15 +1,13 @@
 import { Scope } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 
 import { isDefined } from 'twenty-shared/utils';
-import { And, Any, ILike, In, Not, Or, type Repository } from 'typeorm';
+import { And, Any, ILike, In, Not, Or } from 'typeorm';
 import { type ObjectRecordCreateEvent } from 'twenty-shared/database-events';
 
 import { Process } from 'src/engine/core-modules/message-queue/decorators/process.decorator';
 import { Processor } from 'src/engine/core-modules/message-queue/decorators/processor.decorator';
 import { MessageQueue } from 'src/engine/core-modules/message-queue/message-queue.constants';
-import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
-import { CalendarChannelEntity } from 'src/engine/metadata-modules/calendar-channel/entities/calendar-channel.entity';
+import { CalendarChannelDataAccessService } from 'src/engine/metadata-modules/calendar-channel/data-access/services/calendar-channel-data-access.service';
 import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
 import { buildSystemAuthContext } from 'src/engine/twenty-orm/utils/build-system-auth-context.util';
 import { type WorkspaceEventBatch } from 'src/engine/workspace-event-emitter/types/workspace-event-batch.type';
@@ -28,10 +26,7 @@ export type BlocklistItemDeleteCalendarEventsJobData = WorkspaceEventBatch<
 export class BlocklistItemDeleteCalendarEventsJob {
   constructor(
     private readonly globalWorkspaceOrmManager: GlobalWorkspaceOrmManager,
-    @InjectRepository(CalendarChannelEntity)
-    private readonly calendarChannelRepository: Repository<CalendarChannelEntity>,
-    @InjectRepository(UserWorkspaceEntity)
-    private readonly userWorkspaceRepository: Repository<UserWorkspaceEntity>,
+    private readonly calendarChannelDataAccessService: CalendarChannelDataAccessService,
     private readonly calendarEventCleanerService: CalendarEventCleanerService,
   ) {}
 
@@ -83,12 +78,6 @@ export class BlocklistItemDeleteCalendarEventsJob {
           'calendarChannelEventAssociation',
         );
 
-      const workspaceMemberRepository =
-        await this.globalWorkspaceOrmManager.getRepository(
-          workspaceId,
-          'workspaceMember',
-        );
-
       for (const workspaceMemberId of handlesToDeleteByWorkspaceMemberIdMap.keys()) {
         const handles =
           handlesToDeleteByWorkspaceMemberIdMap.get(workspaceMemberId);
@@ -97,37 +86,22 @@ export class BlocklistItemDeleteCalendarEventsJob {
           continue;
         }
 
-        const workspaceMember = await workspaceMemberRepository.findOne({
-          where: { id: workspaceMemberId },
-        });
-
-        if (!workspaceMember) {
-          continue;
-        }
-
-        const userWorkspace = await this.userWorkspaceRepository.findOne({
-          where: { userId: workspaceMember.userId, workspaceId },
-          select: ['id'],
-        });
-
-        if (!userWorkspace) {
-          continue;
-        }
-
-        const calendarChannels = await this.calendarChannelRepository.find({
-          select: {
-            id: true,
-            handle: true,
-            connectedAccount: {
-              handleAliases: true,
+        const calendarChannels =
+          await this.calendarChannelDataAccessService.find(workspaceId, {
+            select: {
+              id: true,
+              handle: true,
+              connectedAccount: {
+                handleAliases: true,
+              },
             },
-          },
-          where: {
-            connectedAccount: { userWorkspaceId: userWorkspace.id },
-            workspaceId,
-          },
-          relations: ['connectedAccount'],
-        });
+            where: {
+              connectedAccount: {
+                accountOwnerId: workspaceMemberId,
+              },
+            },
+            relations: ['connectedAccount'],
+          });
 
         for (const calendarChannel of calendarChannels) {
           const calendarChannelHandles = [calendarChannel.handle];

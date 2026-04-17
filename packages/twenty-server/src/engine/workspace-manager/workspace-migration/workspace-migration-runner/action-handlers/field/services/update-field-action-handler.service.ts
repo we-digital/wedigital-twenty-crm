@@ -266,8 +266,9 @@ export class UpdateFieldActionHandlerService extends WorkspaceMigrationRunnerAct
 
         if (
           isDefined(toSettings?.asExpression) &&
-          (toSettings.asExpression !== fromSettings?.asExpression ||
-            toSettings.generatedType !== fromSettings?.generatedType)
+          isDefined(fromSettings?.asExpression) &&
+          (toSettings.asExpression !== fromSettings.asExpression ||
+            toSettings.generatedType !== fromSettings.generatedType)
         ) {
           await this.workspaceSchemaManagerService.columnManager.dropColumns({
             queryRunner,

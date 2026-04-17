@@ -32,8 +32,7 @@ export const InformationBannerFailPaymentInfo = () => {
   return (
     <InformationBanner
       componentInstanceId="information-banner-fail-payment-info"
-      color="danger"
-      variant="secondary"
+      variant="danger"
       message={
         hasPermissionToUpdateBillingDetails
           ? t`Last payment failed. Please update your billing details.`

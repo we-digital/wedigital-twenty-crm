@@ -39,7 +39,7 @@ const getMatchingFieldsWidgets = ({
     .filter(isDefined)
     .filter(
       (widget) =>
-        widget.isActive &&
+        !isDefined(widget.deletedAt) &&
         widget.type === WidgetType.FIELDS &&
         widget.objectMetadataUniversalIdentifier ===
           objectMetadataUniversalIdentifier &&
@@ -59,7 +59,7 @@ const findLastViewFieldGroupId = ({
     flatViewFieldGroupMaps.byUniversalIdentifier,
   )
     .filter(isDefined)
-    .filter((group) => group.isActive && group.viewId === viewId);
+    .filter((group) => !isDefined(group.deletedAt) && group.viewId === viewId);
 
   if (groupsForView.length === 0) {
     return null;
@@ -87,7 +87,7 @@ const computeNextPosition = ({
     .filter(isDefined)
     .filter(
       (viewField: FlatViewField) =>
-        viewField.isActive && viewField.viewId === viewId,
+        !isDefined(viewField.deletedAt) && viewField.viewId === viewId,
     )
     .filter(
       (viewField: FlatViewField) =>
@@ -199,7 +199,6 @@ export const computeFlatViewFieldsFromFieldsWidgets = ({
           size: DEFAULT_VIEW_FIELD_SIZE,
           position,
           aggregateOperation: null,
-          isActive: true,
           universalOverrides: null,
           createdAt: now,
           updatedAt: now,

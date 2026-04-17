@@ -38,11 +38,10 @@ export class DestroyOneResolverFactory
       });
 
       try {
-        const { results: record } =
-          await this.commonDestroyOneQueryRunnerService.execute(
-            { ...args, selectedFields },
-            resolverContext,
-          );
+        const record = await this.commonDestroyOneQueryRunnerService.execute(
+          { ...args, selectedFields },
+          resolverContext,
+        );
 
         const typeORMObjectRecordsParser =
           new ObjectRecordsToGraphqlConnectionHelper(

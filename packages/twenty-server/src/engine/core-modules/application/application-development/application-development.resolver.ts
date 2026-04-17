@@ -8,7 +8,7 @@ import { Args, Mutation } from '@nestjs/graphql';
 
 import GraphQLUpload from 'graphql-upload/GraphQLUpload.mjs';
 import { PermissionFlagType } from 'twenty-shared/constants';
-import { FileFolder } from 'twenty-shared/types';
+import { FeatureFlagKey, FileFolder } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 
 import type { FileUpload } from 'graphql-upload/processRequest.mjs';
@@ -24,7 +24,6 @@ import { ApplicationExceptionFilter } from 'src/engine/core-modules/application/
 import { ApplicationSyncService } from 'src/engine/core-modules/application/application-manifest/application-sync.service';
 import { ApplicationTokenPairDTO } from 'src/engine/core-modules/application/application-oauth/dtos/application-token-pair.dto';
 import { ApplicationRegistrationVariableService } from 'src/engine/core-modules/application/application-registration-variable/application-registration-variable.service';
-import { resolveManifestAssetUrls } from 'src/engine/core-modules/application/application-marketplace/utils/resolve-manifest-asset-urls.util';
 import { ApplicationRegistrationService } from 'src/engine/core-modules/application/application-registration/application-registration.service';
 import { ApplicationRegistrationSourceType } from 'src/engine/core-modules/application/application-registration/enums/application-registration-source-type.enum';
 import {
@@ -37,12 +36,15 @@ import { FileStorageService } from 'src/engine/core-modules/file-storage/file-st
 import { FileDTO } from 'src/engine/core-modules/file/dtos/file.dto';
 import { ResolverValidationPipe } from 'src/engine/core-modules/graphql/pipes/resolver-validation.pipe';
 import { SdkClientGenerationService } from 'src/engine/core-modules/sdk-client/sdk-client-generation.service';
-import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
 import { type WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
 import { AuthUser } from 'src/engine/decorators/auth/auth-user.decorator';
 import { AuthUserWorkspaceId } from 'src/engine/decorators/auth/auth-user-workspace-id.decorator';
 import { AuthWorkspace } from 'src/engine/decorators/auth/auth-workspace.decorator';
 import { DevelopmentGuard } from 'src/engine/guards/development.guard';
+import {
+  FeatureFlagGuard,
+  RequireFeatureFlag,
+} from 'src/engine/guards/feature-flag.guard';
 import { SettingsPermissionGuard } from 'src/engine/guards/settings-permission.guard';
 import { WorkspaceAuthGuard } from 'src/engine/guards/workspace-auth.guard';
 import { WorkspaceMigrationGraphqlApiExceptionInterceptor } from 'src/engine/workspace-manager/workspace-migration/interceptors/workspace-migration-graphql-api-exception.interceptor';
@@ -54,6 +56,7 @@ import { streamToBuffer } from 'src/utils/stream-to-buffer';
 @UseFilters(ApplicationExceptionFilter)
 @UseGuards(
   WorkspaceAuthGuard,
+  FeatureFlagGuard,
   DevelopmentGuard,
   SettingsPermissionGuard(PermissionFlagType.APPLICATIONS),
 )
@@ -66,16 +69,18 @@ export class ApplicationDevelopmentResolver {
     private readonly applicationRegistrationVariableService: ApplicationRegistrationVariableService,
     private readonly fileStorageService: FileStorageService,
     private readonly sdkClientGenerationService: SdkClientGenerationService,
-    private readonly twentyConfigService: TwentyConfigService,
   ) {}
 
   @Mutation(() => DevelopmentApplicationDTO)
+  @RequireFeatureFlag(FeatureFlagKey.IS_APPLICATION_ENABLED)
   async createDevelopmentApplication(
     @Args() { universalIdentifier, name }: CreateDevelopmentApplicationInput,
     @AuthWorkspace() { id: workspaceId }: WorkspaceEntity,
   ): Promise<DevelopmentApplicationDTO> {
-    const applicationRegistrationId =
-      await this.findApplicationRegistrationId(universalIdentifier);
+    const applicationRegistrationId = await this.findApplicationRegistrationId(
+      universalIdentifier,
+      workspaceId,
+    );
 
     const existing = await this.applicationService.findByUniversalIdentifier({
       universalIdentifier,
@@ -105,6 +110,7 @@ export class ApplicationDevelopmentResolver {
   }
 
   @Mutation(() => ApplicationTokenPairDTO)
+  @RequireFeatureFlag(FeatureFlagKey.IS_APPLICATION_ENABLED)
   async generateApplicationToken(
     @Args() { applicationId }: GenerateApplicationTokenInput,
     @AuthWorkspace() { id: workspaceId }: WorkspaceEntity,
@@ -120,12 +126,14 @@ export class ApplicationDevelopmentResolver {
   }
 
   @Mutation(() => WorkspaceMigrationDTO)
+  @RequireFeatureFlag(FeatureFlagKey.IS_APPLICATION_ENABLED)
   async syncApplication(
     @Args() { manifest }: ApplicationInput,
     @AuthWorkspace() { id: workspaceId }: WorkspaceEntity,
   ): Promise<WorkspaceMigrationDTO> {
     const applicationRegistrationId = await this.findApplicationRegistrationId(
       manifest.application.universalIdentifier,
+      workspaceId,
     );
 
     const application = await this.applicationService.findByUniversalIdentifier(
@@ -164,7 +172,6 @@ export class ApplicationDevelopmentResolver {
       applicationRegistrationId,
       manifest,
       workspaceId,
-      application.id,
     );
 
     return {
@@ -176,6 +183,7 @@ export class ApplicationDevelopmentResolver {
 
   @Mutation(() => FileDTO)
   @UseGuards(SettingsPermissionGuard(PermissionFlagType.UPLOAD_FILE))
+  @RequireFeatureFlag(FeatureFlagKey.IS_APPLICATION_ENABLED)
   async uploadApplicationFile(
     @AuthWorkspace() { id: workspaceId }: WorkspaceEntity,
     @Args({ name: 'file', type: () => GraphQLUpload })
@@ -217,6 +225,7 @@ export class ApplicationDevelopmentResolver {
 
   private async findApplicationRegistrationId(
     universalIdentifier: string,
+    workspaceId: string,
   ): Promise<string> {
     const existingRegistration =
       await this.applicationRegistrationService.findOneByUniversalIdentifier(
@@ -230,33 +239,55 @@ export class ApplicationDevelopmentResolver {
       );
     }
 
+    const isOwner =
+      await this.applicationRegistrationService.isOwnedByWorkspace(
+        existingRegistration.id,
+        workspaceId,
+      );
+
+    if (!isOwner) {
+      throw new ApplicationException(
+        'Cannot sync application: registration is owned by another workspace',
+        ApplicationExceptionCode.FORBIDDEN,
+      );
+    }
+
     return existingRegistration.id;
   }
 
   private async syncRegistrationMetadata(
     applicationRegistrationId: string,
-    manifest: ApplicationInput['manifest'],
+    manifest: { application: ApplicationInput['manifest']['application'] },
     workspaceId: string,
-    applicationId: string,
   ): Promise<void> {
-    const serverUrl = this.twentyConfigService.get('SERVER_URL');
-
-    const manifestWithResolvedUrls = resolveManifestAssetUrls(
-      manifest,
-      (filePath) =>
-        `${serverUrl}/public-assets/${workspaceId}/${applicationId}/${filePath}`,
-    );
-
-    await this.applicationRegistrationService.updateFromManifest(
-      applicationRegistrationId,
-      manifestWithResolvedUrls,
-    );
-
-    if (manifest.application.serverVariables) {
-      await this.applicationRegistrationVariableService.syncVariableSchemas(
+    const isOwner =
+      await this.applicationRegistrationService.isOwnedByWorkspace(
         applicationRegistrationId,
-        manifest.application.serverVariables,
+        workspaceId,
       );
+
+    if (isOwner) {
+      await this.applicationRegistrationService.update(
+        {
+          id: applicationRegistrationId,
+          update: {
+            name: manifest.application.displayName,
+            description: manifest.application.description,
+            logoUrl: manifest.application.logoUrl,
+            author: manifest.application.author,
+            websiteUrl: manifest.application.websiteUrl,
+            termsUrl: manifest.application.termsUrl,
+          },
+        },
+        workspaceId,
+      );
+
+      if (manifest.application.serverVariables) {
+        await this.applicationRegistrationVariableService.syncVariableSchemas(
+          applicationRegistrationId,
+          manifest.application.serverVariables,
+        );
+      }
     }
   }
 }

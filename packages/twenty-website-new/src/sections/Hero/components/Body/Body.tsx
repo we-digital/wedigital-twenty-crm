@@ -9,36 +9,28 @@ import { styled } from '@linaria/react';
 const BodyContainer = styled.div`
   color: ${theme.colors.primary.text[60]};
   margin-top: calc(${theme.spacing(2)} - ${theme.spacing(6)});
-  max-width: 360px;
-  width: 100%;
-
-  &[data-page=${Pages.WhyTwenty}] {
-    color: ${theme.colors.secondary.text[60]};
-  }
+  width: 360px;
 
   @media (min-width: ${theme.breakpoints.md}px) {
     &[data-page=${Pages.Home}] {
-      max-width: 591px;
+      width: 591px;
     }
 
     &[data-page=${Pages.Partner}] {
-      max-width: 500px;
+      width: 500px;
     }
 
     &[data-page=${Pages.Pricing}] {
-      max-width: 500px;
+      width: 500px;
     }
 
     &[data-page=${Pages.Product}] {
-      max-width: 591px;
+      width: 591px;
     }
 
     &[data-page=${Pages.WhyTwenty}] {
-      max-width: 443px;
-    }
-
-    &[data-page=${Pages.ReleaseNotes}] {
-      max-width: 591px;
+      width: 443px;
+      color: ${theme.colors.secondary.text[100]};
     }
   }
 `;

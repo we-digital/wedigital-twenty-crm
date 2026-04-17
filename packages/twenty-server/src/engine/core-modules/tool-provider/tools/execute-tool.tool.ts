@@ -4,7 +4,6 @@ import { z } from 'zod';
 
 import { type ToolRegistryService } from 'src/engine/core-modules/tool-provider/services/tool-registry.service';
 import { type ToolContext } from 'src/engine/core-modules/tool-provider/types/tool-context.type';
-import { type ToolOutput } from 'src/engine/core-modules/tool/types/tool-output.type';
 
 export const EXECUTE_TOOL_TOOL_NAME = 'execute_tool';
 
@@ -41,6 +40,15 @@ export const executeToolInputSchema = jsonSchema<ExecuteToolInput>(
   },
 );
 
+export type ExecuteToolResult = {
+  toolName: string;
+  result?: unknown;
+  error?: {
+    message: string;
+    suggestion: string;
+  };
+};
+
 export const createExecuteToolTool = (
   toolRegistry: ToolRegistryService,
   context: ToolContext,
@@ -53,21 +61,25 @@ export const createExecuteToolTool = (
   execute: async (
     parameters: ExecuteToolInput,
     options: ToolExecutionOptions,
-  ): Promise<ToolOutput> => {
+  ): Promise<ExecuteToolResult> => {
     const { toolName, arguments: args } = parameters;
 
     if (excludeTools?.has(toolName)) {
       return {
-        success: false,
-        message: `Tool "${toolName}" is not available`,
-        error: `Tool "${toolName}" is not available in this context. Use get_tool_catalog to see which tools are available.`,
+        toolName,
+        error: {
+          message: `Tool "${toolName}" is not available in this context.`,
+          suggestion: 'Use get_tool_catalog to see which tools are available.',
+        },
       };
     }
 
     const directTool = directTools?.[toolName];
 
     if (directTool?.execute) {
-      return directTool.execute(args, options) as Promise<ToolOutput>;
+      const result = await directTool.execute(args, options);
+
+      return { toolName, result };
     }
 
     return toolRegistry.resolveAndExecute(toolName, args, context, options);

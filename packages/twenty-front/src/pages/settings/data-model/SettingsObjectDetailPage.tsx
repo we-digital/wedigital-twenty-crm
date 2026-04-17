@@ -5,31 +5,23 @@ import { useFilteredObjectMetadataItems } from '@/object-metadata/hooks/useFilte
 import { SettingsPageContainer } from '@/settings/components/SettingsPageContainer';
 import { ObjectFields } from '@/settings/data-model/object-details/components/tabs/ObjectFields';
 import { ObjectIndexes } from '@/settings/data-model/object-details/components/tabs/ObjectIndexes';
-import { ObjectLayout } from '@/settings/data-model/object-details/components/tabs/ObjectLayout';
 import { ObjectSettings } from '@/settings/data-model/object-details/components/tabs/ObjectSettings';
 import { SubMenuTopBarContainer } from '@/ui/layout/page/components/SubMenuTopBarContainer';
 import { TabList } from '@/ui/layout/tab-list/components/TabList';
 import { isAdvancedModeEnabledState } from '@/ui/navigation/navigation-drawer/states/isAdvancedModeEnabledState';
-import { useAtomState } from '@/ui/utilities/state/jotai/hooks/useAtomState';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { useIsFeatureEnabled } from '@/workspace/hooks/useIsFeatureEnabled';
+import { useAtomState } from '@/ui/utilities/state/jotai/hooks/useAtomState';
 import { styled } from '@linaria/react';
-import {
-  AppPath,
-  CoreObjectNameSingular,
-  SettingsPath,
-} from 'twenty-shared/types';
+import { AppPath, SettingsPath } from 'twenty-shared/types';
 
-import { isDDLLockedState } from '@/client-config/states/isDDLLockedState';
 import { isObjectMetadataReadOnly } from '@/object-record/read-only/utils/isObjectMetadataReadOnly';
 import { activeTabIdComponentState } from '@/ui/layout/tab-list/states/activeTabIdComponentState';
 import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { useLingui } from '@lingui/react/macro';
-import { getAppPath, getSettingsPath, isDefined } from 'twenty-shared/utils';
+import { getSettingsPath, isDefined } from 'twenty-shared/utils';
 import {
-  IconArrowUpRight,
   IconCodeCircle,
-  IconLayout,
   IconListDetails,
   IconPlus,
   IconPoint,
@@ -65,12 +57,9 @@ export const SettingsObjectDetailPage = () => {
     findObjectMetadataItemByNamePlural(objectNamePlural) ??
     findObjectMetadataItemByNamePlural(updatedObjectNamePlural);
 
-  const isDDLLocked = useAtomStateValue(isDDLLockedState);
-
-  const readonly =
-    isObjectMetadataReadOnly({
-      objectMetadataItem,
-    }) || isDDLLocked;
+  const readonly = isObjectMetadataReadOnly({
+    objectMetadataItem,
+  });
 
   const activeTabId = useAtomComponentStateValue(
     activeTabIdComponentState,
@@ -80,9 +69,6 @@ export const SettingsObjectDetailPage = () => {
   const isAdvancedModeEnabled = useAtomStateValue(isAdvancedModeEnabledState);
   const isUniqueIndexesEnabled = useIsFeatureEnabled(
     FeatureFlagKey.IS_UNIQUE_INDEXES_ENABLED,
-  );
-  const isRecordPageLayoutEditingEnabled = useIsFeatureEnabled(
-    FeatureFlagKey.IS_RECORD_PAGE_LAYOUT_EDITING_ENABLED,
   );
 
   const [isDeleting, setIsDeleting] = useState(false);
@@ -119,15 +105,6 @@ export const SettingsObjectDetailPage = () => {
       hide: false,
     },
     {
-      id: SETTINGS_OBJECT_DETAIL_TABS.TABS_IDS.LAYOUT,
-      title: t`Layout`,
-      Icon: IconLayout,
-      hide:
-        !isRecordPageLayoutEditingEnabled ||
-        objectMetadataItem.isRemote ||
-        objectMetadataItem.nameSingular === CoreObjectNameSingular.Dashboard,
-    },
-    {
       id: SETTINGS_OBJECT_DETAIL_TABS.TABS_IDS.INDEXES,
       title: t`Indexes`,
       Icon: IconCodeCircle,
@@ -154,8 +131,6 @@ export const SettingsObjectDetailPage = () => {
             setIsDeleting={setIsDeleting}
           />
         );
-      case SETTINGS_OBJECT_DETAIL_TABS.TABS_IDS.LAYOUT:
-        return <ObjectLayout objectMetadataItem={objectMetadataItem} />;
       case SETTINGS_OBJECT_DETAIL_TABS.TABS_IDS.INDEXES:
         return <ObjectIndexes objectMetadataItem={objectMetadataItem} />;
       default:
@@ -200,17 +175,6 @@ export const SettingsObjectDetailPage = () => {
             tabs={tabs}
             componentInstanceId={
               SETTINGS_OBJECT_DETAIL_TABS.COMPONENT_INSTANCE_ID
-            }
-            rightComponent={
-              <Button
-                Icon={IconArrowUpRight}
-                title={t`See records`}
-                variant="tertiary"
-                size="small"
-                to={getAppPath(AppPath.RecordIndexPage, {
-                  objectNamePlural: objectMetadataItem.namePlural,
-                })}
-              />
             }
           />
           <StyledContentContainer>

@@ -35,7 +35,6 @@ type Assertions = [
       | 'labelSingular'
       | 'labelPlural'
       | 'labelIdentifierFieldMetadataUniversalIdentifier'
-      | 'isSearchable'
     >
   >,
 ];

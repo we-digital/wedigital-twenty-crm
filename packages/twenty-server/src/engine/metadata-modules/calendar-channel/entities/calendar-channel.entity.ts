@@ -1,5 +1,3 @@
-import { registerEnumType } from '@nestjs/graphql';
-
 import {
   Column,
   CreateDateColumn,
@@ -20,19 +18,6 @@ import {
 
 import { ConnectedAccountEntity } from 'src/engine/metadata-modules/connected-account/entities/connected-account.entity';
 import { WorkspaceRelatedEntity } from 'src/engine/workspace-manager/types/workspace-related-entity';
-
-registerEnumType(CalendarChannelVisibility, {
-  name: 'CalendarChannelVisibility',
-});
-registerEnumType(CalendarChannelSyncStatus, {
-  name: 'CalendarChannelSyncStatus',
-});
-registerEnumType(CalendarChannelSyncStage, {
-  name: 'CalendarChannelSyncStage',
-});
-registerEnumType(CalendarChannelContactAutoCreationPolicy, {
-  name: 'CalendarChannelContactAutoCreationPolicy',
-});
 
 @Entity({ name: 'calendarChannel', schema: 'core' })
 export class CalendarChannelEntity extends WorkspaceRelatedEntity {

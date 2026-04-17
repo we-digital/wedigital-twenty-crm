@@ -67,8 +67,9 @@ export class RefreshTokenService {
       );
     }
 
-    const user = await this.userRepository.findOneBy({
-      id: jwtPayload.sub,
+    const user = await this.userRepository.findOne({
+      where: { id: jwtPayload.sub },
+      relations: ['appTokens'],
     });
 
     if (!user) {
@@ -83,10 +84,23 @@ export class RefreshTokenService {
         token.revokedAt.getTime() <= Date.now() - ms(reuseGracePeriod);
 
       if (wasRevokedBeforeGracePeriod) {
-        // Reject the stale token but don't revoke all tokens — the most
-        // common cause is a lost renewal response, not actual token theft.
+        // Token was revoked long ago and is being reused -- suspicious.
+        // Revoke all user refresh tokens as a safety measure.
+        await Promise.all(
+          user.appTokens.map(async ({ id, type }) => {
+            if (type === AppTokenType.RefreshToken) {
+              await this.appTokenRepository.update(
+                { id },
+                {
+                  revokedAt: new Date(),
+                },
+              );
+            }
+          }),
+        );
+
         throw new AuthException(
-          'This refresh token has been revoked.',
+          'Suspicious activity detected, this refresh token has been revoked. All tokens have been revoked.',
           AuthExceptionCode.FORBIDDEN_EXCEPTION,
         );
       }

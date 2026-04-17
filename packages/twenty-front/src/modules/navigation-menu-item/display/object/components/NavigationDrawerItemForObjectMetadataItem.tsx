@@ -1,18 +1,14 @@
-import { t } from '@lingui/core/macro';
-import { isNonEmptyString } from '@sniptt/guards';
-import { Fragment, type ReactNode, useContext } from 'react';
+import type { ReactNode } from 'react';
 
 import { isLayoutCustomizationModeEnabledState } from '@/layout-customization/states/isLayoutCustomizationModeEnabledState';
-import { recordIdentifierToObjectRecordIdentifier } from '@/navigation-menu-item/common/utils/recordIdentifierToObjectRecordIdentifier';
+import { ObjectIconWithViewOverlay } from '@/navigation-menu-item/display/view/components/ObjectIconWithViewOverlay';
+import { getObjectColorWithFallback } from '@/object-metadata/utils/getObjectColorWithFallback';
 import { getNavigationMenuItemComputedLink } from '@/navigation-menu-item/display/utils/getNavigationMenuItemComputedLink';
 import { getNavigationMenuItemLabel } from '@/navigation-menu-item/display/utils/getNavigationMenuItemLabel';
-import { ObjectIconWithViewOverlay } from '@/navigation-menu-item/display/view/components/ObjectIconWithViewOverlay';
+import { recordIdentifierToObjectRecordIdentifier } from '@/navigation-menu-item/common/utils/recordIdentifierToObjectRecordIdentifier';
 import { lastVisitedViewPerObjectMetadataItemState } from '@/navigation/states/lastVisitedViewPerObjectMetadataItemState';
 import { objectMetadataItemsSelector } from '@/object-metadata/states/objectMetadataItemsSelector';
 import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
-import { getObjectColorWithFallback } from '@/object-metadata/utils/getObjectColorWithFallback';
-import { getObjectPermissionsForObject } from '@/object-metadata/utils/getObjectPermissionsForObject';
-import { useObjectPermissions } from '@/object-record/hooks/useObjectPermissions';
 import { NavigationDrawerItem } from '@/ui/navigation/navigation-drawer/components/NavigationDrawerItem';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { viewsSelector } from '@/views/states/selectors/viewsSelector';
@@ -23,8 +19,7 @@ import {
   NavigationMenuItemType,
 } from 'twenty-shared/types';
 import { getAppPath, isDefined } from 'twenty-shared/utils';
-import { Avatar, IconLock, useIcons } from 'twenty-ui/display';
-import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
+import { Avatar, useIcons } from 'twenty-ui/display';
 import { type NavigationMenuItem } from '~/generated-metadata/graphql';
 
 export type NavigationDrawerItemForObjectMetadataItemProps = {
@@ -49,18 +44,11 @@ export const NavigationDrawerItemForObjectMetadataItem = ({
   const isLayoutCustomizationModeEnabled = useAtomStateValue(
     isLayoutCustomizationModeEnabledState,
   );
-  const { objectPermissionsByObjectMetadataId } = useObjectPermissions();
-  const { theme } = useContext(ThemeContext);
   const lastVisitedViewPerObjectMetadataItem = useAtomStateValue(
     lastVisitedViewPerObjectMetadataItemState,
   );
   const objectMetadataItems = useAtomStateValue(objectMetadataItemsSelector);
   const views = useAtomStateValue(viewsSelector);
-
-  const canReadObjectRecords = getObjectPermissionsForObject(
-    objectPermissionsByObjectMetadataId,
-    objectMetadataItem.id,
-  ).canReadObjectRecords;
 
   const lastVisitedViewId =
     lastVisitedViewPerObjectMetadataItem?.[objectMetadataItem.id];
@@ -119,18 +107,11 @@ export const NavigationDrawerItemForObjectMetadataItem = ({
     ? getNavigationMenuItemLabel(navigationMenuItem, objectMetadataItems, views)
     : objectMetadataItem.labelPlural;
 
-  const primaryLabel =
-    isRecord || isViewWithResolvedView
+  const label = isRecord
+    ? itemLabel
+    : isViewWithResolvedView
       ? itemLabel
       : objectMetadataItem.labelPlural;
-
-  const needsInaccessibleRecordPlaceholder =
-    isLayoutCustomizationModeEnabled &&
-    isRecord &&
-    !canReadObjectRecords &&
-    !isNonEmptyString(primaryLabel.trim());
-
-  const label = needsInaccessibleRecordPlaceholder ? t`Record` : primaryLabel;
 
   const recordIdentifier =
     isRecord && isDefined(navigationMenuItem?.targetRecordIdentifier)
@@ -170,9 +151,6 @@ export const NavigationDrawerItemForObjectMetadataItem = ({
       ? objectMetadataItem.labelSingular
       : undefined;
 
-  const showInaccessibleLock =
-    isLayoutCustomizationModeEnabled && !canReadObjectRecords;
-
   return (
     <NavigationDrawerItem
       label={label}
@@ -191,20 +169,7 @@ export const NavigationDrawerItemForObjectMetadataItem = ({
       isSelectedInEditMode={isSelectedInEditMode}
       isDragging={isDragging}
       triggerEvent={isLayoutCustomizationModeEnabled ? 'CLICK' : undefined}
-      alwaysShowRightOptions={showInaccessibleLock}
-      rightOptions={
-        showInaccessibleLock ? (
-          <Fragment>
-            <IconLock
-              size={theme.icon.size.sm}
-              stroke={theme.icon.stroke.sm}
-              color={themeCssVariables.font.color.tertiary}
-            />
-          </Fragment>
-        ) : (
-          rightOptions
-        )
-      }
+      rightOptions={rightOptions}
     />
   );
 };

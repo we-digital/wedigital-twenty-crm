@@ -54,14 +54,13 @@ export class DeleteRecordService {
       }
 
       if (soft) {
-        const { results: deletedRecord } =
-          await this.commonDeleteOneRunner.execute(
-            {
-              id: objectRecordId,
-              selectedFields,
-            },
-            queryRunnerContext,
-          );
+        const deletedRecord = await this.commonDeleteOneRunner.execute(
+          {
+            id: objectRecordId,
+            selectedFields,
+          },
+          queryRunnerContext,
+        );
 
         this.logger.log(`Record soft deleted successfully from ${objectName}`);
 
@@ -71,14 +70,13 @@ export class DeleteRecordService {
           result: deletedRecord,
         };
       } else {
-        const { results: destroyedRecord } =
-          await this.commonDestroyOneRunner.execute(
-            {
-              id: objectRecordId,
-              selectedFields,
-            },
-            queryRunnerContext,
-          );
+        const destroyedRecord = await this.commonDestroyOneRunner.execute(
+          {
+            id: objectRecordId,
+            selectedFields,
+          },
+          queryRunnerContext,
+        );
 
         this.logger.log(
           `Record permanently deleted successfully from ${objectName}`,

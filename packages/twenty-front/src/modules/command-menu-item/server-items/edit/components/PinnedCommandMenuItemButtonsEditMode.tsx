@@ -1,24 +1,27 @@
+import { CommandMenuButton } from '@/command-menu/components/CommandMenuButton';
 import { useCommandMenuContextApi } from '@/command-menu-item/server-items/common/hooks/useCommandMenuContextApi';
 import { doesCommandMenuItemMatchObjectMetadataId } from '@/command-menu-item/server-items/common/utils/doesCommandMenuItemMatchObjectMetadataId';
 import { PinnedCommandMenuItemsInlineMeasurements } from '@/command-menu-item/server-items/display/components/PinnedCommandMenuItemsInlineMeasurements';
 import { PINNED_COMMAND_MENU_ITEMS_GAP } from '@/command-menu-item/server-items/display/constants/PinnedCommandMenuItemsGap';
 import { usePinnedCommandMenuItemsInlineLayout } from '@/command-menu-item/server-items/display/hooks/usePinnedCommandMenuItemsInlineLayout';
-import { mainContextStoreHasSelectedRecordsSelector } from '@/context-store/states/selectors/mainContextStoreHasSelectedRecordsSelector';
+import { commandMenuItemEditSelectionModeState } from '@/command-menu-item/server-items/edit/states/commandMenuItemEditSelectionModeState';
 import { commandMenuItemsDraftState } from '@/command-menu-item/server-items/edit/states/commandMenuItemsDraftState';
-import { type CommandMenuItemConfig } from '@/command-menu-item/types/CommandMenuItemConfig';
 import { CommandMenuItemScope } from '@/command-menu-item/types/CommandMenuItemScope';
+import { type CommandMenuItemConfig } from '@/command-menu-item/types/CommandMenuItemConfig';
 import { CommandMenuItemType } from '@/command-menu-item/types/CommandMenuItemType';
-import { CommandMenuButton } from '@/command-menu/components/CommandMenuButton';
 import { NodeDimension } from '@/ui/utilities/dimensions/components/NodeDimension';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { COMMAND_MENU_DEFAULT_ICON } from '@/workflow/workflow-trigger/constants/CommandMenuDefaultIcon';
 import { styled } from '@linaria/react';
 import { motion } from 'framer-motion';
 import { useContext, useMemo } from 'react';
-import { interpolateCommandMenuItemTemplate } from 'twenty-shared/utils';
+import { interpolateCommandMenuItemLabel } from 'twenty-shared/utils';
 import { useIcons } from 'twenty-ui/display';
 import { ThemeContext } from 'twenty-ui/theme-constants';
-import { CommandMenuItemAvailabilityType } from '~/generated-metadata/graphql';
+import {
+  CommandMenuItemAvailabilityType,
+  type CommandMenuItemFieldsFragment,
+} from '~/generated-metadata/graphql';
 
 const StyledActionContainer = styled(motion.div)`
   align-items: center;
@@ -56,24 +59,23 @@ export const PinnedCommandMenuItemButtonsEditMode = () => {
 
   const commandMenuItemsDraft =
     useAtomStateValue(commandMenuItemsDraftState) ?? [];
-
-  const mainContextStoreHasSelectedRecords = useAtomStateValue(
-    mainContextStoreHasSelectedRecordsSelector,
+  const commandMenuItemEditSelectionMode = useAtomStateValue(
+    commandMenuItemEditSelectionModeState,
   );
 
   const allowedAvailabilityTypes = useMemo(
     () =>
       new Set<CommandMenuItemAvailabilityType>([
         CommandMenuItemAvailabilityType.GLOBAL,
-        mainContextStoreHasSelectedRecords
+        commandMenuItemEditSelectionMode === 'selection'
           ? CommandMenuItemAvailabilityType.RECORD_SELECTION
           : CommandMenuItemAvailabilityType.FALLBACK,
       ]),
-    [mainContextStoreHasSelectedRecords],
+    [commandMenuItemEditSelectionMode],
   );
 
   const interpolateLabel = (rawLabel: string | null | undefined) =>
-    interpolateCommandMenuItemTemplate({
+    interpolateCommandMenuItemLabel({
       label: rawLabel,
       context: commandMenuContextApi,
     });
@@ -112,6 +114,7 @@ export const PinnedCommandMenuItemButtonsEditMode = () => {
         }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
+      commandMenuItemsDraft,
       currentObjectMetadataItemId,
       allowedAvailabilityTypes,
       commandMenuContextApi,

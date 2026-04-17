@@ -5,7 +5,7 @@ import { themeCssVariables } from '@ui/theme-constants';
 const StyledContainer = styled.div`
   border-radius: ${themeCssVariables.border.radius.sm};
   border: 1px solid ${themeCssVariables.border.color.medium};
-  background: ${themeCssVariables.background.secondary};
+  background: ${themeCssVariables.background.transparent.secondary};
   display: flex;
   justify-content: space-between;
   padding: ${themeCssVariables.spacing[3]};

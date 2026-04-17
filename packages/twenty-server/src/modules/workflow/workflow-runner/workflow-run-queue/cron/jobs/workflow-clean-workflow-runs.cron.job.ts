@@ -4,9 +4,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { WorkspaceActivationStatus } from 'twenty-shared/workspace';
 import { In, Repository } from 'typeorm';
 
-import { InjectCacheStorage } from 'src/engine/core-modules/cache-storage/decorators/cache-storage.decorator';
-import { CacheStorageService } from 'src/engine/core-modules/cache-storage/services/cache-storage.service';
-import { CacheStorageNamespace } from 'src/engine/core-modules/cache-storage/types/cache-storage-namespace.enum';
 import { SentryCronMonitor } from 'src/engine/core-modules/cron/sentry-cron-monitor.decorator';
 import { ExceptionHandlerService } from 'src/engine/core-modules/exception-handler/exception-handler.service';
 import { InjectMessageQueue } from 'src/engine/core-modules/message-queue/decorators/message-queue.decorator';
@@ -28,11 +25,9 @@ import {
 } from 'src/modules/workflow/workflow-runner/workflow-run-queue/jobs/workflow-clean-workflow-runs.job';
 import { getRunsToCleanFindOptions } from 'src/modules/workflow/workflow-runner/workflow-run-queue/utils/get-runs-to-clean-find-options.util';
 
-export const CLEAN_WORKFLOW_RUN_CRON_PATTERN = '0 */3 * * *';
+export const CLEAN_WORKFLOW_RUN_CRON_PATTERN = '0 0 * * *';
 
-const LAST_PARTITION_CACHE_KEY = 'workflow-clean-workflow-runs:last-partition';
-const NUMBER_OF_PARTITIONS = 10;
-const WORKSPACE_BATCH_SIZE = 10;
+const WORKSPACE_BATCH_SIZE = 50;
 
 @Processor(MessageQueue.cronQueue)
 export class WorkflowCleanWorkflowRunsCronJob {
@@ -45,8 +40,6 @@ export class WorkflowCleanWorkflowRunsCronJob {
     private readonly messageQueueService: MessageQueueService,
     private readonly globalWorkspaceOrmManager: GlobalWorkspaceOrmManager,
     private readonly exceptionHandlerService: ExceptionHandlerService,
-    @InjectCacheStorage(CacheStorageNamespace.ModuleWorkflow)
-    private readonly cacheStorageService: CacheStorageService,
   ) {}
 
   @Process(WorkflowCleanWorkflowRunsCronJob.name)
@@ -57,27 +50,21 @@ export class WorkflowCleanWorkflowRunsCronJob {
   async handle() {
     this.logger.log('Starting WorkflowCleanWorkflowRunsCronJob cron');
 
-    const allActiveWorkspaces = await this.workspaceRepository.find({
+    const activeWorkspaces = await this.workspaceRepository.find({
       where: {
         activationStatus: WorkspaceActivationStatus.ACTIVE,
       },
       select: ['id'],
-      order: { id: 'ASC' },
     });
-
-    const partition = await this.getAndIncrementPartition();
-    const workspacesForThisRun = allActiveWorkspaces.filter(
-      (_, index) => index % NUMBER_OF_PARTITIONS === partition,
-    );
 
     let enqueuedCount = 0;
 
     for (
       let workspaceIndex = 0;
-      workspaceIndex < workspacesForThisRun.length;
+      workspaceIndex < activeWorkspaces.length;
       workspaceIndex += WORKSPACE_BATCH_SIZE
     ) {
-      const batch = workspacesForThisRun.slice(
+      const batch = activeWorkspaces.slice(
         workspaceIndex,
         workspaceIndex + WORKSPACE_BATCH_SIZE,
       );
@@ -100,7 +87,7 @@ export class WorkflowCleanWorkflowRunsCronJob {
     }
 
     this.logger.log(
-      `Completed WorkflowCleanWorkflowRunsCronJob cron (partition ${partition}/${NUMBER_OF_PARTITIONS}), enqueued ${enqueuedCount} jobs`,
+      `Completed WorkflowCleanWorkflowRunsCronJob cron, enqueued ${enqueuedCount} jobs`,
     );
   }
 
@@ -117,21 +104,6 @@ export class WorkflowCleanWorkflowRunsCronJob {
     }
 
     return false;
-  }
-
-  private async getAndIncrementPartition(): Promise<number> {
-    const lastPartition = await this.cacheStorageService.get<number>(
-      LAST_PARTITION_CACHE_KEY,
-    );
-
-    const partition =
-      lastPartition !== undefined
-        ? (lastPartition + 1) % NUMBER_OF_PARTITIONS
-        : 0;
-
-    await this.cacheStorageService.set(LAST_PARTITION_CACHE_KEY, partition);
-
-    return partition;
   }
 
   private async hasRunsToClean(workspaceId: string): Promise<boolean> {

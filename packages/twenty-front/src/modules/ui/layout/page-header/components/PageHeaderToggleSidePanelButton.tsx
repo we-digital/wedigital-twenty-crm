@@ -6,6 +6,7 @@ import { RootStackingContextZIndices } from '@/ui/layout/constants/RootStackingC
 import { PAGE_HEADER_SIDE_PANEL_BUTTON_CLICK_OUTSIDE_ID } from '@/ui/layout/page-header/constants/PageHeaderSidePanelButtonClickOutsideId';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { styled } from '@linaria/react';
+import { i18n } from '@lingui/core';
 import { t } from '@lingui/core/macro';
 import { motion } from 'framer-motion';
 import { useContext } from 'react';
@@ -166,7 +167,7 @@ export const PageHeaderToggleSidePanelButton = () => {
       <StyledTooltipWrapper>
         <AppTooltip
           anchorSelect="#toggle-side-panel-button"
-          content={ariaLabel}
+          content={i18n._(ariaLabel)}
           delay={TooltipDelay.longDelay}
           place={TooltipPosition.Bottom}
           offset={5}

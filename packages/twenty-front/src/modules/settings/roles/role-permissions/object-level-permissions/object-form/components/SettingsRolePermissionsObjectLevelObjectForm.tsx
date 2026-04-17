@@ -8,6 +8,7 @@ import { SettingsRolePermissionsObjectLevelRecordLevelSection } from '@/settings
 import { settingsDraftRoleFamilyState } from '@/settings/roles/states/settingsDraftRoleFamilyState';
 import { SubMenuTopBarContainer } from '@/ui/layout/page/components/SubMenuTopBarContainer';
 import { useAtomFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilyStateValue';
+import { useFeatureFlagsMap } from '@/workspace/hooks/useFeatureFlagsMap';
 import { t } from '@lingui/core/macro';
 import { useSearchParams } from 'react-router-dom';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
@@ -22,6 +23,7 @@ import { useQuery } from '@apollo/client/react';
 import {
   type BillingEntitlement,
   BillingEntitlementKey,
+  FeatureFlagKey,
   FindOneAgentDocument,
 } from '~/generated-metadata/graphql';
 
@@ -53,6 +55,8 @@ export const SettingsRolePermissionsObjectLevelObjectForm = ({
     objectId: objectMetadataId,
   });
 
+  const featureFlagsMap = useFeatureFlagsMap();
+
   const workspaceBillingEntitlements = currentWorkspace?.billingEntitlements;
 
   const isRLSBillingEntitlementEnabled =
@@ -61,6 +65,9 @@ export const SettingsRolePermissionsObjectLevelObjectForm = ({
         entitlement.key === BillingEntitlementKey.RLS &&
         entitlement.value === true,
     ) ?? false;
+
+  const isRowLevelPermissionPredicatesEnabled =
+    featureFlagsMap[FeatureFlagKey.IS_ROW_LEVEL_PERMISSION_PREDICATES_ENABLED];
 
   const objectMetadataItem = objectMetadata.objectMetadataItem;
 
@@ -157,11 +164,13 @@ export const SettingsRolePermissionsObjectLevelObjectForm = ({
           objectMetadataItem={objectMetadataItem}
           roleId={roleId}
         />
-        <SettingsRolePermissionsObjectLevelRecordLevelSection
-          objectMetadataItem={objectMetadataItem}
-          roleId={roleId}
-          hasOrganizationPlan={isRLSBillingEntitlementEnabled}
-        />
+        {isRowLevelPermissionPredicatesEnabled && (
+          <SettingsRolePermissionsObjectLevelRecordLevelSection
+            objectMetadataItem={objectMetadataItem}
+            roleId={roleId}
+            hasOrganizationPlan={isRLSBillingEntitlementEnabled}
+          />
+        )}
       </SettingsPageContainer>
     </SubMenuTopBarContainer>
   );

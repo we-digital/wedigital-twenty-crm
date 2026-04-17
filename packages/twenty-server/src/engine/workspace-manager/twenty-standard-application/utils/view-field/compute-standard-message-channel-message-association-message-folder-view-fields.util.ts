@@ -31,8 +31,8 @@ export const computeStandardMessageChannelMessageAssociationMessageFolderViewFie
           objectName: 'messageChannelMessageAssociationMessageFolder',
           context: {
             viewName: 'allMessageChannelMessageAssociationMessageFolders',
-            viewFieldName: 'messageFolderId',
-            fieldName: 'messageFolderId',
+            viewFieldName: 'messageFolder',
+            fieldName: 'messageFolder',
             position: 1,
             isVisible: true,
             size: 150,
@@ -74,8 +74,8 @@ export const computeStandardMessageChannelMessageAssociationMessageFolderViewFie
           context: {
             viewName:
               'messageChannelMessageAssociationMessageFolderRecordPageFields',
-            viewFieldName: 'messageFolderId',
-            fieldName: 'messageFolderId',
+            viewFieldName: 'messageFolder',
+            fieldName: 'messageFolder',
             position: 1,
             isVisible: true,
             size: 150,
@@ -94,7 +94,7 @@ export const computeStandardMessageChannelMessageAssociationMessageFolderViewFie
             position: 0,
             isVisible: true,
             size: 150,
-            viewFieldGroupName: 'system',
+            viewFieldGroupName: 'other',
           },
         }),
       messageChannelMessageAssociationMessageFolderRecordPageFieldsCreatedBy:
@@ -109,7 +109,7 @@ export const computeStandardMessageChannelMessageAssociationMessageFolderViewFie
             position: 1,
             isVisible: true,
             size: 150,
-            viewFieldGroupName: 'system',
+            viewFieldGroupName: 'other',
           },
         }),
     };

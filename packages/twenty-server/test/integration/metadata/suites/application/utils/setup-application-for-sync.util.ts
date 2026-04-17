@@ -21,13 +21,14 @@ export const setupApplicationForSync = async ({
 
   await globalThis.testDataSource.query(
     `INSERT INTO core."applicationRegistration"
-      (id, "universalIdentifier", name, "oAuthClientId",
+      (id, "universalIdentifier", name, description, "oAuthClientId",
        "oAuthRedirectUris", "oAuthScopes", "workspaceId", "sourceType")
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     [
       registrationId,
       applicationUniversalIdentifier,
       name,
+      description,
       oAuthClientId,
       [],
       [],

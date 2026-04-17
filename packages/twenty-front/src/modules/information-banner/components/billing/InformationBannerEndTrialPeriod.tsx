@@ -14,8 +14,7 @@ export const InformationBannerEndTrialPeriod = () => {
   return (
     <InformationBanner
       componentInstanceId="information-banner-end-trial-period"
-      color="danger"
-      variant="secondary"
+      variant="danger"
       message={
         hasPermissionToEndTrialPeriod
           ? t`End trial period to continue using Workflow or AI features.`

@@ -330,7 +330,6 @@ describe('AiBillingService', () => {
         'gpt-4o',
         { usage: mockTokenUsage },
         'workspace-1',
-        UsageOperationType.AI_CHAT_TOKEN,
         'agent-id-123',
       );
 
@@ -341,7 +340,7 @@ describe('AiBillingService', () => {
         [
           {
             resourceType: UsageResourceType.AI,
-            operationType: UsageOperationType.AI_CHAT_TOKEN,
+            operationType: UsageOperationType.AI_TOKEN,
             creditsUsedMicro: 7500,
             quantity: 1500,
             unit: UsageUnit.TOKEN,

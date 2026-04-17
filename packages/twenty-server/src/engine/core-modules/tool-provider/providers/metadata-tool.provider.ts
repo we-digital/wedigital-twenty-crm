@@ -2,14 +2,18 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 
 import { PermissionFlagType } from 'twenty-shared/constants';
 
-import { type GenerateDescriptorOptions } from 'src/engine/core-modules/tool-provider/interfaces/generate-descriptor-options.type';
-import { type ToolProvider } from 'src/engine/core-modules/tool-provider/interfaces/tool-provider.interface';
-import { type ToolProviderContext } from 'src/engine/core-modules/tool-provider/interfaces/tool-provider-context.type';
+import {
+  type GenerateDescriptorOptions,
+  type ToolProvider,
+  type ToolProviderContext,
+} from 'src/engine/core-modules/tool-provider/interfaces/tool-provider.interface';
 
-import { ToolCategory } from 'twenty-shared/ai';
+import { ToolCategory } from 'src/engine/core-modules/tool-provider/enums/tool-category.enum';
 import { ToolExecutorService } from 'src/engine/core-modules/tool-provider/services/tool-executor.service';
-import { type ToolDescriptor } from 'src/engine/core-modules/tool-provider/types/tool-descriptor.type';
-import { type ToolIndexEntry } from 'src/engine/core-modules/tool-provider/types/tool-index-entry.type';
+import {
+  type ToolDescriptor,
+  type ToolIndexEntry,
+} from 'src/engine/core-modules/tool-provider/types/tool-descriptor.type';
 import { toolSetToDescriptors } from 'src/engine/core-modules/tool-provider/utils/tool-set-to-descriptors.util';
 import { FieldMetadataToolsFactory } from 'src/engine/metadata-modules/field-metadata/tools/field-metadata-tools.factory';
 import { ObjectMetadataToolsFactory } from 'src/engine/metadata-modules/object-metadata/tools/object-metadata-tools.factory';
@@ -58,7 +62,6 @@ export class MetadataToolProvider implements ToolProvider, OnModuleInit {
 
     return toolSetToDescriptors(toolSet, ToolCategory.METADATA, {
       includeSchemas: options?.includeSchemas ?? true,
-      icon: 'IconSettings',
     });
   }
 }

@@ -63,6 +63,7 @@ export const SettingsBillingCreditsSection = ({
   } = getWorkflowNodeExecutionUsage();
 
   const progressBarValue = (usedCredits / totalGrantedCredits) * 100;
+  const displayedProgressBarValue = progressBarValue < 3 ? 3 : progressBarValue;
 
   const intervalLabel = getIntervalLabel(isMonthlyPlan);
 
@@ -89,7 +90,7 @@ export const SettingsBillingCreditsSection = ({
             value={`${formatNumber(usedCredits)}/${formatNumber(totalGrantedCredits, { abbreviate: true, decimals: 2 })}`}
           />
           <ProgressBar
-            value={progressBarValue}
+            value={displayedProgressBarValue}
             barColor={
               progressBarValue > 100 ? theme.color.red8 : theme.color.blue
             }

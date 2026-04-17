@@ -135,13 +135,12 @@ export const MenuItem = ({
           <RightIcon size={theme.icon.size.md} stroke={theme.icon.stroke.sm} />
         )}
         {RightComponent}
-        {hasSubMenu && (
+        {hasSubMenu && !disabled && (
           <StyledSubMenuIcon
             animate={{ rotate: isSubMenuOpened ? 90 : 0 }}
             transition={{
               duration: theme.animation.duration.normal,
             }}
-            style={{ visibility: disabled ? 'hidden' : 'visible' }}
           >
             <IconChevronRight
               size={theme.icon.size.sm}

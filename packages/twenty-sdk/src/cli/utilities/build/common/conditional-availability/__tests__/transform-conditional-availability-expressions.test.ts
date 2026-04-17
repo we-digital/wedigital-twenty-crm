@@ -38,7 +38,6 @@ const buildMockCommandMenuContextApi = (
   targetObjectReadPermissions: {},
   targetObjectWritePermissions: {},
   objectMetadataItem: {},
-  objectMetadataLabel: '',
   ...overrides,
 });
 

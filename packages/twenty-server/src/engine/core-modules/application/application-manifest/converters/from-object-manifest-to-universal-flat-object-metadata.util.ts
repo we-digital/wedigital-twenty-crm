@@ -29,7 +29,7 @@ export const fromObjectManifestToUniversalFlatObjectMetadata = ({
     isSystem: false,
     isUIReadOnly: false,
     isAuditLogged: true,
-    isSearchable: objectManifest.isSearchable ?? true,
+    isSearchable: false,
     duplicateCriteria: null,
     shortcut: null,
     isLabelSyncedWithName: false,

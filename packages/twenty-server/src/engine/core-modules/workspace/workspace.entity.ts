@@ -234,9 +234,13 @@ export class WorkspaceEntity {
   @Column({ default: 1 })
   metadataVersion: number;
 
-  @Field(() => String, { nullable: true })
-  @Column({ type: 'varchar', nullable: true, default: null })
-  databaseSchema: string | null;
+  @Field()
+  @Column({ default: '' })
+  databaseUrl: string;
+
+  @Field()
+  @Column({ default: '' })
+  databaseSchema: string;
 
   @Field()
   @Column({ unique: true })

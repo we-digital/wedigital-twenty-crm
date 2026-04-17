@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { buildClientSchema, getIntrospectionQuery, printSchema } from 'graphql';
+import { getIntrospectionQuery, buildClientSchema, printSchema } from 'graphql';
 
 import { generateMetadataClient } from '../src/generate/generate-metadata-client';
 

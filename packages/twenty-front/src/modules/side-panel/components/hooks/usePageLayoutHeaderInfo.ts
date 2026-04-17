@@ -76,7 +76,7 @@ export const usePageLayoutHeaderInfo = ({
       };
     }
 
-    case SidePanelPages.DashboardIframeSettings: {
+    case SidePanelPages.PageLayoutIframeSettings: {
       if (!isDefined(pageLayoutEditingWidgetId)) {
         return null;
       }
@@ -106,7 +106,7 @@ export const usePageLayoutHeaderInfo = ({
       };
     }
 
-    case SidePanelPages.DashboardChartSettings: {
+    case SidePanelPages.PageLayoutGraphTypeSelect: {
       if (!isDefined(pageLayoutEditingWidgetId)) {
         return null;
       }
@@ -145,7 +145,7 @@ export const usePageLayoutHeaderInfo = ({
       };
     }
 
-    case SidePanelPages.RecordPageFieldsSettings: {
+    case SidePanelPages.PageLayoutFieldsSettings: {
       if (!isDefined(pageLayoutEditingWidgetId)) {
         return null;
       }
@@ -175,37 +175,7 @@ export const usePageLayoutHeaderInfo = ({
       };
     }
 
-    case SidePanelPages.RecordPageFieldSettings: {
-      if (!isDefined(pageLayoutEditingWidgetId)) {
-        return null;
-      }
-
-      const widgetInEditMode = draftPageLayout.tabs
-        .flatMap((tab) => tab.widgets)
-        .find((widget) => widget.id === pageLayoutEditingWidgetId);
-
-      if (!isDefined(widgetInEditMode)) {
-        return null;
-      }
-
-      const title = isDefined(editedTitle)
-        ? editedTitle
-        : isDefined(widgetInEditMode.title) && widgetInEditMode.title !== ''
-          ? widgetInEditMode.title
-          : '';
-
-      return {
-        headerIcon: IconList,
-        headerIconColor: iconColor,
-        headerType: t`Field Widget`,
-        title,
-        isReadonly: false,
-        tab: undefined,
-        widgetInEditMode,
-      };
-    }
-
-    case SidePanelPages.DashboardRecordTableSettings: {
+    case SidePanelPages.PageLayoutRecordTableSettings: {
       if (!isDefined(pageLayoutEditingWidgetId)) {
         return null;
       }
@@ -227,7 +197,7 @@ export const usePageLayoutHeaderInfo = ({
       return {
         headerIcon: IconTable,
         headerIconColor: iconColor,
-        headerType: t`View`,
+        headerType: t`Record Table`,
         title,
         isReadonly: false,
         tab: undefined,
@@ -235,19 +205,7 @@ export const usePageLayoutHeaderInfo = ({
       };
     }
 
-    case SidePanelPages.PageLayoutDashboardWidgetTypeSelect: {
-      return {
-        headerIcon: IconPlus,
-        headerIconColor: iconColor,
-        headerType: '',
-        title: t`New widget`,
-        isReadonly: true,
-        tab: undefined,
-        widgetInEditMode: undefined,
-      };
-    }
-
-    case SidePanelPages.PageLayoutRecordPageWidgetTypeSelect: {
+    case SidePanelPages.PageLayoutWidgetTypeSelect: {
       return {
         headerIcon: IconPlus,
         headerIconColor: iconColor,

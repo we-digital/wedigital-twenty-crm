@@ -1,34 +1,21 @@
-import type { TrustedByLogosType } from '@/sections/TrustedBy/types';
-import { theme } from '@/theme';
-import { styled } from '@linaria/react';
-import NextImage from 'next/image';
+import { styled } from "@linaria/react";
+import type { ReactNode } from "react";
 
 const StyledLogo = styled.div`
-  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 140px;
+  height: inherit;
+  position: relative;
   overflow: clip;
   flex-shrink: 0;
-  position: relative;
-  width: 64px;
-
-  @media (min-width: ${theme.breakpoints.md}px) {
-    height: 40px;
-    width: 80px;
-  }
 `;
 
-type LogoProps = TrustedByLogosType;
+type LogoProps = {
+  children: ReactNode;
+}
 
-export function Logo({ fit = 'contain', src }: LogoProps) {
-  return (
-    <StyledLogo aria-hidden="true">
-      <NextImage
-        alt=""
-        fill
-        sizes="(min-width: 921px) 80px, 64px"
-        src={src}
-        unoptimized
-        style={{ objectFit: fit, objectPosition: 'center' }}
-      />
-    </StyledLogo>
-  );
+export function Logo({ children }: LogoProps) {
+  return <StyledLogo>{children}</StyledLogo>;
 }
