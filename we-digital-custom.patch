@@ -93,11 +93,11 @@ index 0000000000..785775967e
 +	branch = main
 diff --git a/.upstream-version b/.upstream-version
 new file mode 100644
-index 0000000000..5603a3e382
+index 0000000000..a68c29a5ce
 --- /dev/null
 +++ b/.upstream-version
 @@ -0,0 +1 @@
-+v1.20.11
++v1.21.0
 diff --git a/docker-compose.prod.yml b/docker-compose.prod.yml
 new file mode 100644
 index 0000000000..dc75f8200c
@@ -1500,10 +1500,10 @@ index 0000000000..10a48ad54c
 +echo "  5. For controlled upgrades: set CRM_IMAGE_TAG=${TARGET_TAG} in bbc-devops"
 +echo "============================================"
 diff --git a/yarn.lock b/yarn.lock
-index 8faa35e882..35b5f623f2 100644
+index b33fcb513f..dfaef1ccd8 100644
 --- a/yarn.lock
 +++ b/yarn.lock
-@@ -5043,7 +5043,7 @@ __metadata:
+@@ -5181,7 +5181,7 @@ __metadata:
    languageName: node
    linkType: hard
  
@@ -1512,7 +1512,7 @@ index 8faa35e882..35b5f623f2 100644
    version: 11.14.0
    resolution: "@emotion/react@npm:11.14.0"
    dependencies:
-@@ -5084,7 +5084,7 @@ __metadata:
+@@ -5222,7 +5222,7 @@ __metadata:
    languageName: node
    linkType: hard
  
@@ -1521,7 +1521,7 @@ index 8faa35e882..35b5f623f2 100644
    version: 11.14.1
    resolution: "@emotion/styled@npm:11.14.1"
    dependencies:
-@@ -60815,6 +60815,18 @@ __metadata:
+@@ -60953,6 +60953,18 @@ __metadata:
    languageName: unknown
    linkType: soft
  
