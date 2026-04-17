@@ -57,10 +57,11 @@ const bootstrap = async () => {
   process.on('unhandledRejection', (reason) => {
     logger.error(`Unhandled rejection: ${reason}`, 'UnhandledRejection');
 
-    if (shouldCaptureException(reason)) {
-      exceptionHandlerService.captureExceptions([
-        reason instanceof Error ? reason : new Error(String(reason)),
-      ]);
+    const error =
+      reason instanceof Error ? reason : new Error(String(reason));
+
+    if (shouldCaptureException(error)) {
+      exceptionHandlerService.captureExceptions([error]);
     }
   });
 
