@@ -56,8 +56,8 @@ jobs:
           target: twenty
           push: true
           tags: |
+            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.upstream_tag }}-${{ github.run_number }}
             ghcr.io/${{ github.repository }}:${{ steps.version.outputs.upstream_tag }}
-            ghcr.io/${{ github.repository }}:sha-${{ steps.version.outputs.sha_short }}
             ghcr.io/${{ github.repository }}:latest
           build-args: |
             APP_VERSION=${{ steps.version.outputs.app_version }}

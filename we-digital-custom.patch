@@ -853,18 +853,16 @@ index c27390d441..a81dc7245a 100644
      });
  
 diff --git a/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts b/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
-index ae9bb55365..0bf4f4a5d1 100644
+index ae9bb55365..76475519fa 100644
 --- a/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
 +++ b/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
-@@ -149,6 +149,12 @@ export class BullMQDriver
+@@ -149,6 +149,10 @@ export class BullMQDriver
          shouldStoreInCache: false,
        });
      });
 +
 +    this.workerMap[queueName].on('error', (error) => {
-+      this.logger.error(
-+        `Worker error on queue ${queueName}: ${error.message}`,
-+      );
++      this.logger.error(`Worker error on queue ${queueName}: ${error.message}`);
 +    });
    }
  
@@ -965,7 +963,7 @@ index c8aab18e95..161773f78e 100644
  
        return {
 diff --git a/packages/twenty-server/src/main.ts b/packages/twenty-server/src/main.ts
-index 0265aca64d..d434fed307 100644
+index 0265aca64d..c6abb07d91 100644
 --- a/packages/twenty-server/src/main.ts
 +++ b/packages/twenty-server/src/main.ts
 @@ -14,6 +14,8 @@ import { setPgDateTypeParser } from 'src/database/pg/set-pg-date-type-parser';
@@ -977,7 +975,7 @@ index 0265aca64d..d434fed307 100644
  import { UnhandledExceptionFilter } from 'src/filters/unhandled-exception.filter';
  
  import { AppModule } from './app.module';
-@@ -42,6 +44,26 @@ const bootstrap = async () => {
+@@ -42,6 +44,25 @@ const bootstrap = async () => {
    });
    const logger = app.get(LoggerService);
    const twentyConfigService = app.get(TwentyConfigService);
@@ -994,8 +992,7 @@ index 0265aca64d..d434fed307 100644
 +  process.on('unhandledRejection', (reason) => {
 +    logger.error(`Unhandled rejection: ${reason}`, 'UnhandledRejection');
 +
-+    const error =
-+      reason instanceof Error ? reason : new Error(String(reason));
++    const error = reason instanceof Error ? reason : new Error(String(reason));
 +
 +    if (shouldCaptureException(error)) {
 +      exceptionHandlerService.captureExceptions([error]);
