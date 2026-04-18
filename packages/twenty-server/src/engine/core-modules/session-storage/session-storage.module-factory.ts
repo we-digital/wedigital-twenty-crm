@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 
 import RedisStore from 'connect-redis';
-import IORedis from 'ioredis';
+import { createClient } from 'redis';
 
 import type session from 'express-session';
 
@@ -39,6 +39,13 @@ export const getSessionStorageOptions = (
   };
 
   switch (cacheStorageType) {
+    /* case CacheStorageType.Memory: {
+      Logger.warn(
+        'Memory session storage is not recommended for production. Prefer Redis.',
+      );
+
+      return sessionStorage;
+    }*/
     case CacheStorageType.Redis: {
       const connectionString = twentyConfigService.get('REDIS_URL');
 
@@ -48,13 +55,12 @@ export const getSessionStorageOptions = (
         );
       }
 
-      const redisClient = new IORedis(connectionString, {
-        maxRetriesPerRequest: null,
-        keepAlive: 60_000,
+      const redisClient = createClient({
+        url: connectionString,
       });
 
-      redisClient.on('error', (err) => {
-        console.error(`Redis session client error: ${err.message}`);
+      redisClient.connect().catch((err) => {
+        throw new Error(`Redis connection failed: ${err}`);
       });
 
       return {

@@ -5181,7 +5181,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@emotion/react@npm:^11.11.1, @emotion/react@npm:^11.14.0":
+"@emotion/react@npm:^11.14.0":
   version: 11.14.0
   resolution: "@emotion/react@npm:11.14.0"
   dependencies:
@@ -5222,7 +5222,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@emotion/styled@npm:^11.11.0, @emotion/styled@npm:^11.14.0":
+"@emotion/styled@npm:^11.14.0":
   version: 11.14.1
   resolution: "@emotion/styled@npm:11.14.1"
   dependencies:
@@ -60950,18 +60950,6 @@ __metadata:
     react-tooltip: "npm:^5.13.1"
     stripe: "npm:^20.3.1"
     twenty-ui: "workspace:*"
-  languageName: unknown
-  linkType: soft
-
-"twenty-widgets@workspace:packages/twenty-widgets":
-  version: 0.0.0-use.local
-  resolution: "twenty-widgets@workspace:packages/twenty-widgets"
-  dependencies:
-    "@emotion/react": "npm:^11.11.1"
-    "@emotion/styled": "npm:^11.11.0"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
-    twenty-shared: "workspace:*"
   languageName: unknown
   linkType: soft
 

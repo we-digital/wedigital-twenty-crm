@@ -1,12 +1,5 @@
 import { CACHE_MANAGER, Cache, CacheModule } from '@nestjs/cache-manager';
-import {
-  Global,
-  Inject,
-  Logger,
-  Module,
-  type OnModuleDestroy,
-  type OnModuleInit,
-} from '@nestjs/common';
+import { Global, Inject, Module, type OnModuleDestroy } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 import { cacheStorageModuleFactory } from 'src/engine/core-modules/cache-storage/cache-storage.module-factory';
@@ -37,20 +30,8 @@ import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twent
   ],
   exports: [...Object.values(CacheStorageNamespace), FlushCacheCommand],
 })
-export class CacheStorageModule implements OnModuleInit, OnModuleDestroy {
-  private readonly logger = new Logger(CacheStorageModule.name);
-
+export class CacheStorageModule implements OnModuleDestroy {
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
-
-  onModuleInit() {
-    const store = this.cacheManager.store as any;
-
-    if (store?.client?.on) {
-      store.client.on('error', (err: Error) => {
-        this.logger.error(`Cache Redis client error: ${err.message}`);
-      });
-    }
-  }
 
   async onModuleDestroy() {
     // oxlint-disable-next-line @typescripttypescript/no-explicit-any
