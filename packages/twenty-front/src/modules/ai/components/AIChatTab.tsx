@@ -10,7 +10,6 @@ import { currentAIChatThreadState } from '@/ai/states/currentAIChatThreadState';
 import { threadIdCreatedFromDraftState } from '@/ai/states/threadIdCreatedFromDraftState';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 
-import { AIChatQueuedMessages } from '@/ai/components/AIChatQueuedMessages';
 import { AIChatTabMessageList } from '@/ai/components/AIChatTabMessageList';
 
 const StyledContainer = styled.div<{ isDraggingFile: boolean }>`
@@ -52,7 +51,6 @@ export const AIChatTab = () => {
       {!isDraggingFile && (
         <>
           <AIChatTabMessageList />
-          <AIChatQueuedMessages />
           <AIChatEditorSection key={editorSectionKey} />
         </>
       )}

@@ -11,10 +11,11 @@ import {
 } from 'src/engine/metadata-modules/connected-account/connected-account.exception';
 import { ConnectedAccountDTO } from 'src/engine/metadata-modules/connected-account/dtos/connected-account.dto';
 import { ConnectedAccountEntity } from 'src/engine/metadata-modules/connected-account/entities/connected-account.entity';
-import { CalendarChannelEntity } from 'src/engine/metadata-modules/calendar-channel/entities/calendar-channel.entity';
-import { MessageChannelEntity } from 'src/engine/metadata-modules/message-channel/entities/message-channel.entity';
+import { CalendarChannelDataAccessService } from 'src/engine/metadata-modules/calendar-channel/data-access/services/calendar-channel-data-access.service';
+import { MessageChannelDataAccessService } from 'src/engine/metadata-modules/message-channel/data-access/services/message-channel-data-access.service';
 import { WorkspaceManyOrAllFlatEntityMapsCacheService } from 'src/engine/metadata-modules/flat-entity/services/workspace-many-or-all-flat-entity-maps-cache.service';
 import { findFlatEntityByUniversalIdentifierOrThrow } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-universal-identifier-or-throw.util';
+import { ConnectedAccountDataAccessService } from 'src/engine/metadata-modules/connected-account/data-access/services/connected-account-data-access.service';
 import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
 import { buildSystemAuthContext } from 'src/engine/twenty-orm/utils/build-system-auth-context.util';
 import { WorkspaceEventEmitter } from 'src/engine/workspace-event-emitter/workspace-event-emitter';
@@ -26,10 +27,9 @@ export class ConnectedAccountMetadataService {
   constructor(
     @InjectRepository(ConnectedAccountEntity)
     private readonly repository: Repository<ConnectedAccountEntity>,
-    @InjectRepository(CalendarChannelEntity)
-    private readonly calendarChannelRepository: Repository<CalendarChannelEntity>,
-    @InjectRepository(MessageChannelEntity)
-    private readonly messageChannelRepository: Repository<MessageChannelEntity>,
+    private readonly connectedAccountDataAccessService: ConnectedAccountDataAccessService,
+    private readonly calendarChannelDataAccessService: CalendarChannelDataAccessService,
+    private readonly messageChannelDataAccessService: MessageChannelDataAccessService,
     private readonly globalWorkspaceOrmManager: GlobalWorkspaceOrmManager,
     private readonly workspaceEventEmitter: WorkspaceEventEmitter,
     private readonly workspaceManyOrAllFlatEntityMapsCacheService: WorkspaceManyOrAllFlatEntityMapsCacheService,
@@ -164,15 +164,15 @@ export class ConnectedAccountMetadataService {
     const [messageChannels, calendarChannels] = await Promise.all([
       this.globalWorkspaceOrmManager.executeInWorkspaceContext(
         async () =>
-          this.messageChannelRepository.find({
-            where: { connectedAccountId: id, workspaceId },
+          this.messageChannelDataAccessService.find(workspaceId, {
+            connectedAccountId: id,
           }),
         authContext,
       ),
       this.globalWorkspaceOrmManager.executeInWorkspaceContext(
         async () =>
-          this.calendarChannelRepository.find({
-            where: { connectedAccountId: id, workspaceId },
+          this.calendarChannelDataAccessService.find(workspaceId, {
+            connectedAccountId: id,
           }),
         authContext,
       ),
@@ -181,13 +181,6 @@ export class ConnectedAccountMetadataService {
     this.logger.log(
       `WorkspaceId: ${workspaceId} Deleting connected account ${id} with ${messageChannels.length} message channel(s) and ${calendarChannels.length} calendar channel(s)`,
     );
-
-    await this.globalWorkspaceOrmManager.executeInWorkspaceContext(async () => {
-      await this.repository.delete({
-        id,
-        workspaceId,
-      });
-    }, authContext);
 
     const { flatObjectMetadataMaps } =
       await this.workspaceManyOrAllFlatEntityMapsCacheService.getOrRecomputeManyOrAllFlatEntityMaps(
@@ -240,6 +233,12 @@ export class ConnectedAccountMetadataService {
         workspaceId,
       });
     }
+
+    await this.globalWorkspaceOrmManager.executeInWorkspaceContext(async () => {
+      await this.connectedAccountDataAccessService.delete(workspaceId, {
+        id,
+      });
+    }, authContext);
 
     return connectedAccount;
   }

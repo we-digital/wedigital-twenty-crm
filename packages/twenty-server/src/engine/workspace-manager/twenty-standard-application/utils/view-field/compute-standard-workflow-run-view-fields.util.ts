@@ -122,7 +122,7 @@ export const computeStandardWorkflowRunViewFields = (
         position: 0,
         isVisible: true,
         size: 150,
-        viewFieldGroupName: 'system',
+        viewFieldGroupName: 'other',
       },
     }),
     workflowRunRecordPageFieldsCreatedBy: createStandardViewFieldFlatMetadata({
@@ -135,7 +135,7 @@ export const computeStandardWorkflowRunViewFields = (
         position: 1,
         isVisible: true,
         size: 150,
-        viewFieldGroupName: 'system',
+        viewFieldGroupName: 'other',
       },
     }),
     workflowRunRecordPageFieldsEnqueuedAt: createStandardViewFieldFlatMetadata({
@@ -145,10 +145,10 @@ export const computeStandardWorkflowRunViewFields = (
         viewName: 'workflowRunRecordPageFields',
         viewFieldName: 'enqueuedAt',
         fieldName: 'enqueuedAt',
-        position: 9,
+        position: 0,
         isVisible: false,
         size: 150,
-        viewFieldGroupName: 'general',
+        viewFieldGroupName: 'additional',
       },
     }),
     workflowRunRecordPageFieldsState: createStandardViewFieldFlatMetadata({
@@ -174,7 +174,7 @@ export const computeStandardWorkflowRunViewFields = (
         position: 2,
         isVisible: false,
         size: 150,
-        viewFieldGroupName: 'system',
+        viewFieldGroupName: 'other',
       },
     }),
     workflowRunRecordPageFieldsUpdatedBy: createStandardViewFieldFlatMetadata({
@@ -187,7 +187,7 @@ export const computeStandardWorkflowRunViewFields = (
         position: 3,
         isVisible: false,
         size: 150,
-        viewFieldGroupName: 'system',
+        viewFieldGroupName: 'other',
       },
     }),
     workflowRunRecordPageFieldsFavorites: createStandardViewFieldFlatMetadata({

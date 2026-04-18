@@ -11,7 +11,6 @@ export const buildDefaultObjectManifest = ({
   icon = 'IconTicket',
   additionalFields = [],
   universalIdentifier,
-  labelIdentifierFieldMetadataUniversalIdentifier,
 }: {
   nameSingular: string;
   namePlural: string;
@@ -21,15 +20,12 @@ export const buildDefaultObjectManifest = ({
   icon?: string;
   additionalFields?: ObjectManifest['fields'];
   universalIdentifier?: string;
-  labelIdentifierFieldMetadataUniversalIdentifier?: string;
 }): ObjectManifest => {
   const idFieldUniversalIdentifier = uuidv4();
 
   return {
     universalIdentifier: universalIdentifier ?? uuidv4(),
-    labelIdentifierFieldMetadataUniversalIdentifier:
-      labelIdentifierFieldMetadataUniversalIdentifier ??
-      idFieldUniversalIdentifier,
+    labelIdentifierFieldMetadataUniversalIdentifier: idFieldUniversalIdentifier,
     nameSingular,
     namePlural,
     labelSingular,

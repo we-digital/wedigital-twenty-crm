@@ -2,7 +2,6 @@ import { PageLayoutEditModeProvider } from '@/page-layout/components/PageLayoutE
 import { PageLayoutComponentInstanceContext } from '@/page-layout/states/contexts/PageLayoutComponentInstanceContext';
 import { pageLayoutPersistedComponentState } from '@/page-layout/states/pageLayoutPersistedComponentState';
 import { getTabListInstanceIdFromPageLayoutId } from '@/page-layout/utils/getTabListInstanceIdFromPageLayoutId';
-import { LayoutRenderingProvider } from '@/ui/layout/contexts/LayoutRenderingContext';
 import { TabListComponentInstanceContext } from '@/ui/layout/tab-list/states/contexts/TabListComponentInstanceContext';
 import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import {
@@ -34,20 +33,12 @@ const PageLayoutTestEditModeProvider = ({
     layoutType ?? pageLayoutPersisted?.type ?? PageLayoutType.DASHBOARD;
 
   return (
-    <LayoutRenderingProvider
-      value={{
-        isInSidePanel: false,
-        targetRecordIdentifier: undefined,
-        layoutType: resolvedLayoutType,
-      }}
+    <PageLayoutEditModeProvider
+      layoutType={resolvedLayoutType}
+      pageLayoutId={instanceId}
     >
-      <PageLayoutEditModeProvider
-        layoutType={resolvedLayoutType}
-        pageLayoutId={instanceId}
-      >
-        {children}
-      </PageLayoutEditModeProvider>
-    </LayoutRenderingProvider>
+      {children}
+    </PageLayoutEditModeProvider>
   );
 };
 

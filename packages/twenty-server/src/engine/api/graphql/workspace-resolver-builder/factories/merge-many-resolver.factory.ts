@@ -38,11 +38,10 @@ export class MergeManyResolverFactory
       });
 
       try {
-        const { results: record } =
-          await this.commonMergeManyQueryRunnerService.execute(
-            { ...args, selectedFields },
-            resolverContext,
-          );
+        const record = await this.commonMergeManyQueryRunnerService.execute(
+          { ...args, selectedFields },
+          resolverContext,
+        );
 
         const typeORMObjectRecordsParser =
           new ObjectRecordsToGraphqlConnectionHelper(

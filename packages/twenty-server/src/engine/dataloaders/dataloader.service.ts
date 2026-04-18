@@ -480,11 +480,7 @@ export class DataloaderService {
           flatEntityIds: flatView.viewFieldGroupIds,
           flatEntityMaps: flatViewFieldGroupMaps,
         })
-          .filter(
-            (flatViewFieldGroup) =>
-              flatViewFieldGroup.deletedAt === null &&
-              flatViewFieldGroup.isActive,
-          )
+          .filter((flatViewFieldGroup) => flatViewFieldGroup.deletedAt === null)
           .map(fromFlatViewFieldGroupToViewFieldGroupDto);
       });
     });
@@ -513,11 +509,7 @@ export class DataloaderService {
       for (const flatViewField of Object.values(
         flatViewFieldMaps.byUniversalIdentifier,
       )) {
-        if (
-          !isDefined(flatViewField) ||
-          flatViewField.deletedAt !== null ||
-          !flatViewField.isActive
-        ) {
+        if (!isDefined(flatViewField) || flatViewField.deletedAt !== null) {
           continue;
         }
 
@@ -583,10 +575,7 @@ export class DataloaderService {
           flatEntityIds: flatView.viewFieldIds,
           flatEntityMaps: flatViewFieldMaps,
         })
-          .filter(
-            (flatViewField) =>
-              flatViewField.deletedAt === null && flatViewField.isActive,
-          )
+          .filter((flatViewField) => flatViewField.deletedAt === null)
           .map(fromFlatViewFieldToViewFieldDto);
       });
     });

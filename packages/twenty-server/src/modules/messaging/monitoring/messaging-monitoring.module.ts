@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuditModule } from 'src/engine/core-modules/audit/audit.module';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
 import { DataSourceEntity } from 'src/engine/metadata-modules/data-source/data-source.entity';
-import { MessageChannelEntity } from 'src/engine/metadata-modules/message-channel/entities/message-channel.entity';
+import { MessageChannelDataAccessModule } from 'src/engine/metadata-modules/message-channel/data-access/message-channel-data-access.module';
 import { MessagingCommonModule } from 'src/modules/messaging/common/messaging-common.module';
 import { MessagingMessageChannelSyncStatusMonitoringCronCommand } from 'src/modules/messaging/monitoring/crons/commands/messaging-message-channel-sync-status-monitoring.cron.command';
 import { MessagingMessageChannelSyncStatusMonitoringCronJob } from 'src/modules/messaging/monitoring/crons/jobs/messaging-message-channel-sync-status-monitoring.cron.job';
@@ -13,12 +13,10 @@ import { MessagingMonitoringService } from 'src/modules/messaging/monitoring/ser
 @Module({
   imports: [
     AuditModule,
+    MessageChannelDataAccessModule,
     MessagingCommonModule,
-    TypeOrmModule.forFeature([
-      WorkspaceEntity,
-      DataSourceEntity,
-      MessageChannelEntity,
-    ]),
+    TypeOrmModule.forFeature([WorkspaceEntity]),
+    TypeOrmModule.forFeature([DataSourceEntity]),
   ],
   providers: [
     MessagingMessageChannelSyncStatusMonitoringCronCommand,

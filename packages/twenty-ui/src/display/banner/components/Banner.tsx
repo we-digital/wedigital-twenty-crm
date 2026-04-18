@@ -1,68 +1,43 @@
 import { styled } from '@linaria/react';
 import { themeCssVariables } from '@ui/theme-constants';
 
-const StyledBanner = styled.div<{
-  bannerColor: BannerColor;
-  bannerVariant: BannerVariant;
-}>`
+const StyledBanner = styled.div<{ variant?: BannerVariant }>`
   align-items: center;
-  backdrop-filter: ${({ bannerVariant }) =>
-    bannerVariant === 'primary' ? 'blur(5px)' : 'none'};
-  background: ${({ bannerColor, bannerVariant }) => {
-    if (bannerVariant === 'secondary') {
-      return bannerColor === 'danger'
-        ? themeCssVariables.background.transparent.danger
-        : themeCssVariables.background.transparent.blue;
-    }
-    return bannerColor === 'danger'
+  backdrop-filter: blur(5px);
+  background: ${({ variant }) =>
+    variant === 'danger'
       ? themeCssVariables.color.red
-      : themeCssVariables.color.blue;
-  }};
-  box-sizing: border-box;
-  color: ${({ bannerColor, bannerVariant }) => {
-    if (bannerVariant === 'secondary') {
-      return bannerColor === 'danger'
-        ? themeCssVariables.color.red
-        : themeCssVariables.color.blue;
-    }
-    return themeCssVariables.font.color.inverted;
-  }};
+      : themeCssVariables.color.blue};
   display: flex;
+  gap: ${themeCssVariables.spacing[3]};
+  min-height: 40px;
+  justify-content: center;
+  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]};
+  width: 100%;
+  color: ${themeCssVariables.font.color.inverted};
   font-family: Inter;
   font-size: ${themeCssVariables.font.size.md};
   font-style: normal;
   font-weight: ${themeCssVariables.font.weight.medium};
-  gap: ${themeCssVariables.spacing[3]};
-  justify-content: center;
   line-height: 150%;
-  min-height: 40px;
-  padding: ${themeCssVariables.spacing[2]};
-  width: 100%;
+  box-sizing: border-box;
 `;
 
-export type BannerColor = 'blue' | 'danger';
-
-export type BannerVariant = 'primary' | 'secondary';
+export type BannerVariant = 'danger' | 'default';
 
 type BannerProps = {
-  color?: BannerColor;
   variant?: BannerVariant;
   className?: string;
   children: React.ReactNode;
 } & React.HTMLAttributes<HTMLDivElement>;
 
 export const Banner = ({
-  color = 'blue',
-  variant = 'primary',
+  variant = 'default',
   className,
   children,
 }: BannerProps) => {
   return (
-    <StyledBanner
-      bannerColor={color}
-      bannerVariant={variant}
-      className={className}
-    >
+    <StyledBanner variant={variant} className={className}>
       {children}
     </StyledBanner>
   );

@@ -1,4 +1,5 @@
 import { gql } from '@apollo/client';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { act, renderHook } from '@testing-library/react';
 import fetchMock, { enableFetchMocks } from 'jest-fetch-mock';
 import { MemoryRouter, useLocation } from 'react-router-dom';
@@ -6,13 +7,6 @@ import { SnackBarComponentInstanceContext } from '@/ui/feedback/snack-bar-manage
 import { useApolloFactory } from '@/apollo/hooks/useApolloFactory';
 
 enableFetchMocks();
-
-jest.mock('@/apollo/utils/getTokenPair', () => ({
-  getTokenPair: jest.fn().mockReturnValue({
-    accessOrWorkspaceAgnosticToken: { token: 'testAccessToken', expiresAt: '' },
-    refreshToken: { token: 'testRefreshToken', expiresAt: '' },
-  }),
-}));
 
 const mockNavigate = jest.fn();
 
@@ -94,7 +88,10 @@ describe('useApolloFactory', () => {
         });
       });
     } catch (error) {
-      expect(error).toBeDefined();
+      expect(error).toBeInstanceOf(CombinedGraphQLErrors);
+      expect((error as CombinedGraphQLErrors).message).toBe(
+        'Error message not found.',
+      );
 
       expect(mockNavigate).toHaveBeenCalled();
       expect(mockNavigate).toHaveBeenCalledWith('/welcome');

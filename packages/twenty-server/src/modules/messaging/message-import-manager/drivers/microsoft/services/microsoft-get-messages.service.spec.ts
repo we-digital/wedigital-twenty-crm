@@ -69,7 +69,7 @@ describe('Microsoft get messages service', () => {
       accessToken: 'access-token',
       refreshToken: 'refresh-token',
       handle: 'John.l@outlook.fr',
-      handleAliases: [] as string[],
+      handleAliases: '',
     };
     const messages = service.formatBatchResponsesAsMessages(
       batchResponses,
@@ -170,7 +170,7 @@ describe('Microsoft get messages service', () => {
       accessToken: 'access-token',
       refreshToken: 'refresh-token',
       handle: 'John.l@outlook.fr',
-      handleAliases: [] as string[],
+      handleAliases: '',
     };
     const messages = service.formatBatchResponsesAsMessages(
       batchResponses,

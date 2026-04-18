@@ -39,7 +39,7 @@ export class FindDuplicatesResolverFactory
       });
 
       try {
-        const { results: paginatedDuplicates } =
+        const paginatedDuplicates =
           await this.commonFindDuplicatesQueryRunnerService.execute(
             { ...args, selectedFields },
             resolverContext,

@@ -29,24 +29,6 @@ export class AiModelPreferencesService {
     await this.togglePreferenceList(modelId, 'recommendedModels', recommended);
   }
 
-  async setModelsAdminEnabled(
-    modelIds: string[],
-    enabled: boolean,
-  ): Promise<void> {
-    await this.togglePreferenceListBulk(modelIds, 'disabledModels', !enabled);
-  }
-
-  async setModelsRecommended(
-    modelIds: string[],
-    recommended: boolean,
-  ): Promise<void> {
-    await this.togglePreferenceListBulk(
-      modelIds,
-      'recommendedModels',
-      recommended,
-    );
-  }
-
   async setDefaultModel(role: AiModelRole, modelId: string): Promise<void> {
     const prefs = { ...this.getPreferences() };
     const key =
@@ -65,25 +47,15 @@ export class AiModelPreferencesService {
     key: 'disabledModels' | 'recommendedModels',
     add: boolean,
   ): Promise<void> {
-    await this.togglePreferenceListBulk([modelId], key, add);
-  }
-
-  private async togglePreferenceListBulk(
-    modelIds: string[],
-    key: 'disabledModels' | 'recommendedModels',
-    add: boolean,
-  ): Promise<void> {
     const prefs = { ...this.getPreferences() };
     const current = prefs[key] ?? [];
-    const idSet = new Set(modelIds);
 
     if (add) {
-      const existing = new Set(current);
-      const toAdd = modelIds.filter((id) => !existing.has(id));
-
-      prefs[key] = [...current, ...toAdd];
+      if (!current.includes(modelId)) {
+        prefs[key] = [...current, modelId];
+      }
     } else {
-      prefs[key] = current.filter((id) => !idSet.has(id));
+      prefs[key] = current.filter((id) => id !== modelId);
     }
 
     await this.twentyConfigService.set('AI_MODEL_PREFERENCES', prefs);

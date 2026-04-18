@@ -30,7 +30,7 @@ interface RootProps {
 
 export function Root({ children }: RootProps) {
   return (
-    <StyledSection aria-label="Trusted by leading organizations">
+    <StyledSection>
       <StyledContainer>{children}</StyledContainer>
     </StyledSection>
   );

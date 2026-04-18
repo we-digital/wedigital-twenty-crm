@@ -1,5 +1,4 @@
 import { copyBaseApplicationProject } from '@/utils/app-template';
-import { downloadExample } from '@/utils/download-example';
 import { convertToLabel } from '@/utils/convert-to-label';
 import { install } from '@/utils/install';
 import { tryGitInit } from '@/utils/try-git-init';
@@ -11,18 +10,22 @@ import * as path from 'path';
 import { basename } from 'path';
 import {
   authLoginOAuth,
-  ConfigService,
   detectLocalServer,
   serverStart,
   type ServerStartResult,
 } from 'twenty-sdk/cli';
 import { isDefined } from 'twenty-shared/utils';
 
+import {
+  type ExampleOptions,
+  type ScaffoldingMode,
+} from '@/types/scaffolding-options';
+
 const CURRENT_EXECUTION_DIRECTORY = process.env.INIT_CWD || process.cwd();
 
 type CreateAppOptions = {
   directory?: string;
-  example?: string;
+  mode?: ScaffoldingMode;
   name?: string;
   displayName?: string;
   description?: string;
@@ -35,34 +38,23 @@ export class CreateAppCommand {
       await this.getAppInfos(options);
 
     try {
+      const exampleOptions = this.resolveExampleOptions(
+        options.mode ?? 'exhaustive',
+      );
+
       await this.validateDirectory(appDirectory);
 
       this.logCreationInfo({ appDirectory, appName });
 
       await fs.ensureDir(appDirectory);
 
-      if (options.example) {
-        const exampleSucceeded = await this.tryDownloadExample(
-          options.example,
-          appDirectory,
-        );
-
-        if (!exampleSucceeded) {
-          await copyBaseApplicationProject({
-            appName,
-            appDisplayName,
-            appDescription,
-            appDirectory,
-          });
-        }
-      } else {
-        await copyBaseApplicationProject({
-          appName,
-          appDisplayName,
-          appDescription,
-          appDirectory,
-        });
-      }
+      await copyBaseApplicationProject({
+        appName,
+        appDisplayName,
+        appDescription,
+        appDirectory,
+        exampleOptions,
+      });
 
       await install(appDirectory);
 
@@ -108,14 +100,13 @@ export class CreateAppCommand {
     const hasName = isDefined(options.name) || isDefined(directory);
     const hasDisplayName = isDefined(options.displayName);
     const hasDescription = isDefined(options.description);
-    const hasExample = isDefined(options.example);
 
     const { name, displayName, description } = await inquirer.prompt([
       {
         type: 'input',
         name: 'name',
         message: 'Application name:',
-        when: () => !hasName && !hasExample,
+        when: () => !hasName,
         default: 'my-twenty-app',
         validate: (input) => {
           if (input.length === 0) return 'Application name is required';
@@ -126,7 +117,7 @@ export class CreateAppCommand {
         type: 'input',
         name: 'displayName',
         message: 'Application display name:',
-        when: () => !hasDisplayName && !hasExample,
+        when: () => !hasDisplayName,
         default: (answers: { name?: string }) => {
           return convertToLabel(
             answers?.name ?? options.name ?? directory ?? '',
@@ -137,7 +128,7 @@ export class CreateAppCommand {
         type: 'input',
         name: 'description',
         message: 'Application description (optional):',
-        when: () => !hasDescription && !hasExample,
+        when: () => !hasDescription,
         default: '',
       },
     ]);
@@ -146,7 +137,6 @@ export class CreateAppCommand {
       options.name ??
       name ??
       directory ??
-      options.example ??
       'my-twenty-app'
     ).trim();
 
@@ -162,6 +152,34 @@ export class CreateAppCommand {
     return { appName, appDisplayName, appDirectory, appDescription };
   }
 
+  private resolveExampleOptions(mode: ScaffoldingMode): ExampleOptions {
+    if (mode === 'minimal') {
+      return {
+        includeExampleObject: false,
+        includeExampleField: false,
+        includeExampleLogicFunction: false,
+        includeExampleFrontComponent: false,
+        includeExampleView: false,
+        includeExampleNavigationMenuItem: false,
+        includeExampleSkill: false,
+        includeExampleAgent: false,
+        includeExampleIntegrationTest: false,
+      };
+    }
+
+    return {
+      includeExampleObject: true,
+      includeExampleField: true,
+      includeExampleLogicFunction: true,
+      includeExampleFrontComponent: true,
+      includeExampleView: true,
+      includeExampleNavigationMenuItem: true,
+      includeExampleSkill: true,
+      includeExampleIntegrationTest: true,
+      includeExampleAgent: true,
+    };
+  }
+
   private async validateDirectory(appDirectory: string): Promise<void> {
     if (!(await fs.pathExists(appDirectory))) {
       return;
@@ -172,41 +190,6 @@ export class CreateAppCommand {
       throw new Error(
         `Directory ${appDirectory} already exists and is not empty`,
       );
-    }
-  }
-
-  private async tryDownloadExample(
-    example: string,
-    appDirectory: string,
-  ): Promise<boolean> {
-    try {
-      await downloadExample(example, appDirectory);
-
-      return true;
-    } catch (error) {
-      console.error(
-        chalk.red(
-          `\n${error instanceof Error ? error.message : 'Failed to download example.'}`,
-        ),
-      );
-
-      const { useTemplate } = await inquirer.prompt([
-        {
-          type: 'confirm',
-          name: 'useTemplate',
-          message: 'Would you like to create a default template app instead?',
-          default: true,
-        },
-      ]);
-
-      if (!useTemplate) {
-        process.exit(1);
-      }
-
-      // Clean up any partial files from the failed download
-      await fs.emptyDir(appDirectory);
-
-      return false;
     }
   }
 
@@ -256,7 +239,7 @@ export class CreateAppCommand {
     if (!shouldAuthenticate) {
       console.log(
         chalk.gray(
-          'Authentication skipped. Run `yarn twenty remote add --local` manually.',
+          'Authentication skipped. Run `yarn twenty remote add` manually.',
         ),
       );
 
@@ -269,14 +252,10 @@ export class CreateAppCommand {
         remote: 'local',
       });
 
-      if (result.success) {
-        const configService = new ConfigService();
-
-        await configService.setDefaultRemote('local');
-      } else {
+      if (!result.success) {
         console.log(
           chalk.yellow(
-            'Authentication failed. Run `yarn twenty remote add --local` manually.',
+            'Authentication failed. Run `yarn twenty remote add` manually.',
           ),
         );
       }

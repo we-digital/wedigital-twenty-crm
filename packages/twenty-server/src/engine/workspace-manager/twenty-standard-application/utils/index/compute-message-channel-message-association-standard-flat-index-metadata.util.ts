@@ -25,7 +25,7 @@ export const buildMessageChannelMessageAssociationStandardFlatIndexMetadatas =
       workspaceId,
       context: {
         indexName: 'messageChannelIdIndex',
-        relatedFieldNames: ['messageChannelId'],
+        relatedFieldNames: ['messageChannel'],
       },
       standardObjectMetadataRelatedEntityIds,
       dependencyFlatEntityMaps,
@@ -49,7 +49,7 @@ export const buildMessageChannelMessageAssociationStandardFlatIndexMetadatas =
       workspaceId,
       context: {
         indexName: 'messageChannelIdMessageIdUniqueIndex',
-        relatedFieldNames: ['messageChannelId', 'message'],
+        relatedFieldNames: ['messageChannel', 'message'],
         isUnique: true,
         indexWhereClause: '"deletedAt" IS NULL',
       },

@@ -5,14 +5,15 @@ import { pageLayoutDraftComponentState } from '@/page-layout/states/pageLayoutDr
 import { pageLayoutEditingWidgetIdComponentState } from '@/page-layout/states/pageLayoutEditingWidgetIdComponentState';
 import { addWidgetToTab } from '@/page-layout/utils/addWidgetToTab';
 import { createDefaultFieldsWidget } from '@/page-layout/utils/createDefaultFieldsWidget';
-import { useCreateViewForFieldsWidget } from '@/page-layout/widgets/fields/hooks/useCreateViewForFieldsWidget';
 import { useNavigatePageLayoutSidePanel } from '@/side-panel/pages/page-layout/hooks/useNavigatePageLayoutSidePanel';
 import { useTargetRecord } from '@/ui/layout/contexts/useTargetRecord';
 import { useAtomComponentStateCallbackState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateCallbackState';
+import { usePerformViewAPIPersist } from '@/views/hooks/internal/usePerformViewAPIPersist';
 import { useStore } from 'jotai';
 import { useCallback } from 'react';
 import { SidePanelPages } from 'twenty-shared/types';
 import { v4 as uuidv4 } from 'uuid';
+import { ViewType } from '~/generated-metadata/graphql';
 
 export const useCreateRecordPageFieldsWidget = () => {
   const { tabId } = usePageLayoutContentContext();
@@ -25,7 +26,7 @@ export const useCreateRecordPageFieldsWidget = () => {
 
   const { currentPageLayout } = useCurrentPageLayoutOrThrow();
 
-  const { createViewForFieldsWidget } = useCreateViewForFieldsWidget();
+  const { performViewAPICreate } = usePerformViewAPIPersist();
 
   const pageLayoutDraftState = useAtomComponentStateCallbackState(
     pageLayoutDraftComponentState,
@@ -40,12 +41,22 @@ export const useCreateRecordPageFieldsWidget = () => {
   const store = useStore();
 
   const createRecordPageFieldsWidget = useCallback(async () => {
-    const viewId = await createViewForFieldsWidget({
-      objectMetadataId: objectMetadataItem.id,
-      viewName: `${objectMetadataItem.labelSingular} Fields`,
-    });
+    const viewId = uuidv4();
 
-    if (viewId === null) {
+    const result = await performViewAPICreate(
+      {
+        input: {
+          id: viewId,
+          name: `${objectMetadataItem.labelSingular} Fields`,
+          icon: 'IconList',
+          objectMetadataId: objectMetadataItem.id,
+          type: ViewType.FIELDS_WIDGET,
+        },
+      },
+      objectMetadataItem.id,
+    );
+
+    if (result.status === 'failed') {
       return;
     }
 
@@ -70,18 +81,18 @@ export const useCreateRecordPageFieldsWidget = () => {
     store.set(pageLayoutEditingWidgetIdState, widgetId);
 
     navigatePageLayoutSidePanel({
-      sidePanelPage: SidePanelPages.RecordPageFieldsSettings,
+      sidePanelPage: SidePanelPages.PageLayoutFieldsSettings,
       focusTitleInput: true,
       resetNavigationStack: true,
     });
   }, [
-    createViewForFieldsWidget,
     currentPageLayout.tabs,
     navigatePageLayoutSidePanel,
     objectMetadataItem.id,
     objectMetadataItem.labelSingular,
     pageLayoutDraftState,
     pageLayoutEditingWidgetIdState,
+    performViewAPICreate,
     store,
     tabId,
   ]);

@@ -43,7 +43,7 @@ export const DashboardWidgetPlaceholder = () => {
       setIsPageLayoutInEditMode(true);
     }
     navigatePageLayoutSidePanel({
-      sidePanelPage: SidePanelPages.PageLayoutDashboardWidgetTypeSelect,
+      sidePanelPage: SidePanelPages.PageLayoutWidgetTypeSelect,
       resetNavigationStack: true,
     });
   };

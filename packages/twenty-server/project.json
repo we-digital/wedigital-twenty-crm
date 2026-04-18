@@ -204,18 +204,29 @@
     },
     "database:migrate": {
       "executor": "nx:run-commands",
-      "dependsOn": ["build"],
+      "dependsOn": ["^build"],
       "options": {
         "cwd": "packages/twenty-server",
-        "command": "node dist/command/command.js run-instance-commands --force"
+        "commands": [
+          "nx typeorm -- migration:run -d src/database/typeorm/core/core.datasource"
+        ]
       }
     },
     "database:migrate:generate": {
       "executor": "nx:run-commands",
-      "dependsOn": ["build"],
       "options": {
         "cwd": "packages/twenty-server",
-        "command": "node dist/command/command.js generate:instance-command"
+        "command": "npx nx typeorm -- migration:generate src/database/typeorm/core/migrations/common/{args.migrationName} -d src/database/typeorm/core/core.datasource.ts"
+      }
+    },
+    "database:migrate:revert": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "options": {
+        "cwd": "packages/twenty-server",
+        "commands": [
+          "nx typeorm -- migration:revert -d src/database/typeorm/core/core.datasource"
+        ]
       }
     },
     "generate:integration-test": {

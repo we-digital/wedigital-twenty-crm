@@ -13,7 +13,7 @@ const BodyContainer = styled.div`
   width: 100%;
 
   &[data-page=${Pages.WhyTwenty}] {
-    color: ${theme.colors.secondary.text[60]};
+    color: ${theme.colors.secondary.text[100]};
   }
 
   @media (min-width: ${theme.breakpoints.md}px) {
@@ -35,10 +35,6 @@ const BodyContainer = styled.div`
 
     &[data-page=${Pages.WhyTwenty}] {
       max-width: 443px;
-    }
-
-    &[data-page=${Pages.ReleaseNotes}] {
-      max-width: 591px;
     }
   }
 `;

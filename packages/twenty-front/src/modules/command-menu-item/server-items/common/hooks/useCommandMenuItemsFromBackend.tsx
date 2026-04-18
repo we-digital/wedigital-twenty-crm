@@ -2,14 +2,13 @@ import { FrontComponentCommandMenuItem } from '@/command-menu-item/display/compo
 import { HeadlessCommandMenuItem } from '@/command-menu-item/display/components/HeadlessCommandMenuItem';
 import { commandMenuItemsSelector } from '@/command-menu-item/server-items/common/states/commandMenuItemsSelector';
 import { doesCommandMenuItemMatchObjectMetadataId } from '@/command-menu-item/server-items/common/utils/doesCommandMenuItemMatchObjectMetadataId';
-import { type CommandMenuItemConfig } from '@/command-menu-item/types/CommandMenuItemConfig';
 import { CommandMenuItemScope } from '@/command-menu-item/types/CommandMenuItemScope';
 import { CommandMenuItemType } from '@/command-menu-item/types/CommandMenuItemType';
 
 import { type CommandMenuContextApi } from 'twenty-shared/types';
 import {
   evaluateConditionalAvailabilityExpression,
-  interpolateCommandMenuItemTemplate,
+  interpolateCommandMenuItemLabel,
   isDefined,
 } from 'twenty-shared/utils';
 import { useIcons } from 'twenty-ui/display';
@@ -46,23 +45,18 @@ const buildCommandMenuItemFromFrontComponent = ({
   isPinned,
   getIcon,
   commandMenuContextApi,
-}: BuildCommandMenuItemFromFrontComponentParams): CommandMenuItemConfig => {
-  const displayLabel = interpolateCommandMenuItemTemplate({
+}: BuildCommandMenuItemFromFrontComponentParams) => {
+  const displayLabel = interpolateCommandMenuItemLabel({
     label: item.label,
     context: commandMenuContextApi,
   });
 
-  const displayShortLabel = interpolateCommandMenuItemTemplate({
+  const displayShortLabel = interpolateCommandMenuItemLabel({
     label: item.shortLabel,
     context: commandMenuContextApi,
   });
 
-  const interpolatedIcon = interpolateCommandMenuItemTemplate({
-    label: item.icon,
-    context: commandMenuContextApi,
-  });
-
-  const Icon = getIcon(interpolatedIcon, COMMAND_MENU_DEFAULT_ICON);
+  const Icon = getIcon(item.icon, COMMAND_MENU_DEFAULT_ICON);
 
   const isHeadless = item.frontComponent?.isHeadless === true;
 
@@ -77,6 +71,11 @@ const buildCommandMenuItemFromFrontComponent = ({
     isPinned,
     Icon,
     hotKeys: item.hotKeys,
+    shouldBeRegistered: () =>
+      evaluateConditionalAvailabilityExpression(
+        item.conditionalAvailabilityExpression,
+        commandMenuContextApi,
+      ),
     component: isHeadless ? (
       <HeadlessCommandMenuItem item={item} />
     ) : (
@@ -101,23 +100,19 @@ const buildCommandItemFromEngineKey = ({
   isPinned,
   getIcon,
   commandMenuContextApi,
-}: BuildCommandMenuItemFromStandardKeyParams): CommandMenuItemConfig => {
-  const interpolatedIcon = interpolateCommandMenuItemTemplate({
-    label: item.icon,
-    context: commandMenuContextApi,
-  });
-  const Icon = getIcon(interpolatedIcon, COMMAND_MENU_DEFAULT_ICON);
+}: BuildCommandMenuItemFromStandardKeyParams) => {
+  const Icon = getIcon(item.icon, COMMAND_MENU_DEFAULT_ICON);
 
   return {
     type,
     key: `command-menu-item-engine-${item.id}`,
     id: item.id,
     scope,
-    label: interpolateCommandMenuItemTemplate({
+    label: interpolateCommandMenuItemLabel({
       label: item.label,
       context: commandMenuContextApi,
     }),
-    shortLabel: interpolateCommandMenuItemTemplate({
+    shortLabel: interpolateCommandMenuItemLabel({
       label: item.shortLabel,
       context: commandMenuContextApi,
     }),
@@ -125,13 +120,18 @@ const buildCommandItemFromEngineKey = ({
     isPinned,
     Icon,
     hotKeys: item.hotKeys,
+    shouldBeRegistered: () =>
+      evaluateConditionalAvailabilityExpression(
+        item.conditionalAvailabilityExpression,
+        commandMenuContextApi,
+      ),
     component: <HeadlessCommandMenuItem item={item} />,
   };
 };
 
 export const useCommandMenuItemsFromBackend = (
   commandMenuContextApi: CommandMenuContextApi,
-): CommandMenuItemConfig[] => {
+) => {
   const { getIcon } = useIcons();
   const currentObjectMetadataItemId =
     commandMenuContextApi.objectMetadataItem.id;
@@ -142,12 +142,6 @@ export const useCommandMenuItemsFromBackend = (
 
   const itemsWithObjectMatches = commandMenuItems.filter(
     doesCommandMenuItemMatchObjectMetadataId(currentObjectMetadataItemId),
-  );
-  const availableItems = itemsWithObjectMatches.filter((item) =>
-    evaluateConditionalAvailabilityExpression(
-      item.conditionalAvailabilityExpression,
-      commandMenuContextApi,
-    ),
   );
 
   const buildCommandMenuItem = ({
@@ -160,18 +154,7 @@ export const useCommandMenuItemsFromBackend = (
     scope: CommandMenuItemScope;
     isPinned: boolean;
     typeOverride?: CommandMenuItemType;
-  }): CommandMenuItemConfig | null => {
-    if (isDefined(item.frontComponentId)) {
-      return buildCommandMenuItemFromFrontComponent({
-        item: item as CommandMenuItemWithFrontComponent,
-        type: typeOverride,
-        scope,
-        isPinned,
-        getIcon,
-        commandMenuContextApi,
-      });
-    }
-
+  }) => {
     if (isDefined(item.engineComponentKey)) {
       return buildCommandItemFromEngineKey({
         item,
@@ -183,20 +166,31 @@ export const useCommandMenuItemsFromBackend = (
       });
     }
 
+    if (isDefined(item.frontComponentId)) {
+      return buildCommandMenuItemFromFrontComponent({
+        item: item as CommandMenuItemWithFrontComponent,
+        type: typeOverride,
+        scope,
+        isPinned,
+        getIcon,
+        commandMenuContextApi,
+      });
+    }
+
     return null;
   };
 
-  const globalItems = availableItems.filter(
+  const globalItems = itemsWithObjectMatches.filter(
     (item) => item.availabilityType === CommandMenuItemAvailabilityType.GLOBAL,
   );
 
-  const recordScopedItems = availableItems.filter(
+  const recordScopedItems = itemsWithObjectMatches.filter(
     (item) =>
       item.availabilityType ===
       CommandMenuItemAvailabilityType.RECORD_SELECTION,
   );
 
-  const fallbackItems = availableItems.filter(
+  const fallbackItems = itemsWithObjectMatches.filter(
     (item) =>
       item.availabilityType === CommandMenuItemAvailabilityType.FALLBACK,
   );
@@ -238,5 +232,7 @@ export const useCommandMenuItemsFromBackend = (
     ...globalCommandMenuItems,
     ...recordScopedCommandMenuItems,
     ...fallbackCommandMenuItems,
-  ].sort((a, b) => a.position - b.position);
+  ]
+    .filter((item) => item.shouldBeRegistered())
+    .sort((a, b) => a.position - b.position);
 };

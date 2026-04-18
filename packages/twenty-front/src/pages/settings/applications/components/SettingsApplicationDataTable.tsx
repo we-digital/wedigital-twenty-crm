@@ -1,4 +1,3 @@
-import { SettingsEmptyPlaceholder } from '@/settings/components/SettingsEmptyPlaceholder';
 import { SETTINGS_OBJECT_TABLE_COLUMN_WIDTH } from '@/settings/data-model/object-details/components/SettingsObjectItemTableRowStyledComponents';
 import { Table } from '@/ui/layout/table/components/Table';
 import { TableHeader } from '@/ui/layout/table/components/TableHeader';
@@ -11,9 +10,15 @@ import { H2Title } from 'twenty-ui/display';
 import { SearchInput } from 'twenty-ui/input';
 import { Section } from 'twenty-ui/layout';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
-
 import { SettingsApplicationDataTableRow } from '~/pages/settings/applications/components/SettingsApplicationDataTableRow';
 import { normalizeSearchText } from '~/utils/normalizeSearchText';
+
+export type ApplicationDataTableFieldItem = {
+  key: string;
+  label: string;
+  icon?: string;
+  type: string;
+};
 
 export type ApplicationDataTableRow = {
   key: string;
@@ -21,6 +26,7 @@ export type ApplicationDataTableRow = {
   icon?: string;
   fieldsCount: number;
   link?: string;
+  fields?: ApplicationDataTableFieldItem[];
   tagItem: {
     isCustom?: boolean;
     isRemote?: boolean;
@@ -40,6 +46,12 @@ const StyledSearchInputContainer = styled.div`
   padding-bottom: ${themeCssVariables.spacing[2]};
 `;
 
+const StyledEmptyState = styled.div`
+  color: ${themeCssVariables.font.color.tertiary};
+  padding: ${themeCssVariables.spacing[8]};
+  text-align: center;
+`;
+
 export const SettingsApplicationDataTable = ({
   objectRows,
   fieldGroupRows,
@@ -48,6 +60,21 @@ export const SettingsApplicationDataTable = ({
   fieldGroupRows: ApplicationDataTableRow[];
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  const toggleRow = (key: string) => {
+    setExpandedRows((previous) => {
+      const next = new Set(previous);
+
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+
+      return next;
+    });
+  };
 
   const filteredObjectRows = useMemo(() => {
     const normalizedSearch = normalizeSearchText(searchTerm);
@@ -97,7 +124,7 @@ export const SettingsApplicationDataTable = ({
         />
       </StyledSearchInputContainer>
       {hasNoResults ? (
-        <SettingsEmptyPlaceholder>{t`No object found`}</SettingsEmptyPlaceholder>
+        <StyledEmptyState>{t`No object found`}</StyledEmptyState>
       ) : (
         <Table>
           <TableRow gridAutoColumns={MAIN_ROW_GRID_COLUMNS}>
@@ -111,14 +138,24 @@ export const SettingsApplicationDataTable = ({
           {shouldDisplayObjects && (
             <TableSection title={t`Objects`}>
               {filteredObjectRows.map((row) => (
-                <SettingsApplicationDataTableRow key={row.key} row={row} />
+                <SettingsApplicationDataTableRow
+                  key={row.key}
+                  row={row}
+                  isExpanded={expandedRows.has(row.key)}
+                  onToggle={() => toggleRow(row.key)}
+                />
               ))}
             </TableSection>
           )}
           {shouldDisplayFields && (
             <TableSection title={t`Fields`}>
               {filteredFieldGroupRows.map((row) => (
-                <SettingsApplicationDataTableRow key={row.key} row={row} />
+                <SettingsApplicationDataTableRow
+                  key={row.key}
+                  row={row}
+                  isExpanded={expandedRows.has(row.key)}
+                  onToggle={() => toggleRow(row.key)}
+                />
               ))}
             </TableSection>
           )}

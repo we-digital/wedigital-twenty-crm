@@ -10,7 +10,7 @@ import { Process } from 'src/engine/core-modules/message-queue/decorators/proces
 import { Processor } from 'src/engine/core-modules/message-queue/decorators/processor.decorator';
 import { MessageQueue } from 'src/engine/core-modules/message-queue/message-queue.constants';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
-import { MessageChannelEntity } from 'src/engine/metadata-modules/message-channel/entities/message-channel.entity';
+import { MessageChannelDataAccessService } from 'src/engine/metadata-modules/message-channel/data-access/services/message-channel-data-access.service';
 import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
 import { buildSystemAuthContext } from 'src/engine/twenty-orm/utils/build-system-auth-context.util';
 import { MessagingMonitoringService } from 'src/modules/messaging/monitoring/services/messaging-monitoring.service';
@@ -25,8 +25,7 @@ export class MessagingMessageChannelSyncStatusMonitoringCronJob {
     private readonly workspaceRepository: Repository<WorkspaceEntity>,
     private readonly messagingMonitoringService: MessagingMonitoringService,
     private readonly globalWorkspaceOrmManager: GlobalWorkspaceOrmManager,
-    @InjectRepository(MessageChannelEntity)
-    private readonly messageChannelRepository: Repository<MessageChannelEntity>,
+    private readonly messageChannelDataAccessService: MessageChannelDataAccessService,
     private readonly exceptionHandlerService: ExceptionHandlerService,
   ) {}
 
@@ -53,10 +52,13 @@ export class MessagingMessageChannelSyncStatusMonitoringCronJob {
 
         await this.globalWorkspaceOrmManager.executeInWorkspaceContext(
           async () => {
-            const messageChannels = await this.messageChannelRepository.find({
-              select: ['id', 'syncStatus', 'connectedAccountId'],
-              where: { workspaceId: activeWorkspace.id },
-            });
+            const messageChannels =
+              await this.messageChannelDataAccessService.findMany(
+                activeWorkspace.id,
+                {
+                  select: ['id', 'syncStatus', 'connectedAccountId'],
+                },
+              );
 
             for (const messageChannel of messageChannels) {
               if (!messageChannel.syncStatus) {

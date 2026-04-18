@@ -21,7 +21,7 @@ export const buildMessageFolderStandardFlatIndexMetadatas = ({
     workspaceId,
     context: {
       indexName: 'messageChannelIdIndex',
-      relatedFieldNames: ['messageChannelId'],
+      relatedFieldNames: ['messageChannel'],
     },
     standardObjectMetadataRelatedEntityIds,
     dependencyFlatEntityMaps,

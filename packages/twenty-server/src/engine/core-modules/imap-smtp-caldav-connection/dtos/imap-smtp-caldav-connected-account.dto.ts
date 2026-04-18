@@ -17,7 +17,7 @@ export class ConnectedImapSmtpCaldavAccountDTO {
   provider: ConnectedAccountProvider;
 
   @Field(() => UUIDScalarType)
-  userWorkspaceId: string;
+  accountOwnerId: string;
 
   @Field(() => ImapSmtpCaldavConnectionParametersDTO, { nullable: true })
   connectionParameters: ImapSmtpCaldavConnectionParametersDTO | null;

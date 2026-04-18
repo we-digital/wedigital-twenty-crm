@@ -151,10 +151,6 @@ export type EmailsConfiguration = {
   configurationType: 'EMAILS';
 };
 
-export type EmailThreadConfiguration = {
-  configurationType: 'EMAIL_THREAD';
-};
-
 export type CalendarConfiguration = {
   configurationType: 'CALENDAR';
 };
@@ -193,5 +189,4 @@ export type PageLayoutWidgetConfiguration =
   | CalendarConfiguration
   | WorkflowConfiguration
   | WorkflowVersionConfiguration
-  | WorkflowRunConfiguration
-  | EmailThreadConfiguration;
+  | WorkflowRunConfiguration;

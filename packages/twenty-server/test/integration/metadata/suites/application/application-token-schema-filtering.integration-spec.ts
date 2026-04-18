@@ -3,7 +3,6 @@ import { findManyApplications } from 'test/integration/graphql/utils/find-many-a
 import { generateApplicationToken } from 'test/integration/metadata/suites/application/utils/generate-application-token.util';
 
 import { TWENTY_STANDARD_APPLICATION } from 'src/engine/workspace-manager/twenty-standard-application/constants/twenty-standard-applications';
-import { getConnectionTypename, getEdgeTypename } from 'twenty-shared/utils';
 
 const INTROSPECTION_QUERY = `
   query IntrospectionQuery {
@@ -76,8 +75,8 @@ describe('Application token schema filtering', () => {
 
     for (const customTypeName of CUSTOM_OBJECT_TYPE_NAMES) {
       expect(typeNames).not.toContain(customTypeName);
-      expect(typeNames).not.toContain(getEdgeTypename(customTypeName));
-      expect(typeNames).not.toContain(getConnectionTypename(customTypeName));
+      expect(typeNames).not.toContain(`${customTypeName}Edge`);
+      expect(typeNames).not.toContain(`${customTypeName}Connection`);
     }
   });
 

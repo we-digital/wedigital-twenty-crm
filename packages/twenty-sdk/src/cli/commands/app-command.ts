@@ -1,26 +1,24 @@
 import { formatPath } from '@/cli/utilities/file/file-path';
 import chalk from 'chalk';
 import type { Command } from 'commander';
-import { SyncableEntity } from 'twenty-shared/application';
-import { EntityAddCommand } from './add';
 import { AppBuildCommand } from './build';
-import { CatalogSyncCommand } from './catalog-sync';
-import { DeployCommand } from './deploy';
 import { AppDevCommand } from './dev';
-import { LogicFunctionExecuteCommand } from './exec';
 import { AppInstallCommand } from './install';
-import { LogicFunctionLogsCommand } from './logs';
 import { AppPublishCommand } from './publish';
-import { registerRemoteCommands } from './remote';
-import { registerServerCommands } from './server';
-import { AppDevOnceCommand } from './dev-once';
 import { AppTypecheckCommand } from './typecheck';
 import { AppUninstallCommand } from './uninstall';
+import { CatalogSyncCommand } from './catalog-sync';
+import { DeployCommand } from './deploy';
+import { LogicFunctionExecuteCommand } from './exec';
+import { LogicFunctionLogsCommand } from './logs';
+import { EntityAddCommand } from './add';
+import { registerRemoteCommands } from './remote';
+import { registerServerCommands } from './server';
+import { SyncableEntity } from 'twenty-shared/application';
 
 export const registerCommands = (program: Command): void => {
   const buildCommand = new AppBuildCommand();
   const devCommand = new AppDevCommand();
-  const devOnceCommand = new AppDevOnceCommand();
   const installCommand = new AppInstallCommand();
   const publishCommand = new AppPublishCommand();
   const typecheckCommand = new AppTypecheckCommand();
@@ -33,40 +31,11 @@ export const registerCommands = (program: Command): void => {
 
   program
     .command('dev [appPath]')
-    .description(
-      'Build and sync local application changes (watches by default; use --once for a one-shot sync)',
-    )
-    .option(
-      '-w, --watch',
-      'Watch source files and re-sync on every change (default behavior)',
-    )
-    .option(
-      '-o, --once',
-      'Build and sync once, then exit (useful for CI, scripts, and pre-commit hooks)',
-    )
-    .option('-v, --verbose', 'Show detailed logs')
-    .option('-d, --debug', 'Show detailed logs (alias for --verbose)')
-    .action(async (appPath, options) => {
-      if (options.once && options.watch) {
-        console.error(
-          chalk.red(
-            'Error: --once and --watch are mutually exclusive. Watch mode is the default.',
-          ),
-        );
-        process.exit(1);
-      }
-
-      const commonOptions = {
+    .description('Watch and sync local application changes')
+    .action(async (appPath) => {
+      await devCommand.execute({
         appPath: formatPath(appPath),
-        verbose: options.verbose || options.debug,
-      };
-
-      if (options.once) {
-        await devOnceCommand.execute(commonOptions);
-        return;
-      }
-
-      await devCommand.execute(commonOptions);
+      });
     });
 
   program
@@ -163,7 +132,6 @@ export const registerCommands = (program: Command): void => {
 
   program
     .command('exec [appPath]')
-    .option('--preInstall', 'Execute pre-install logic function if defined')
     .option('--postInstall', 'Execute post-install logic function if defined')
     .option(
       '-p, --payload <payload>',
@@ -183,7 +151,6 @@ export const registerCommands = (program: Command): void => {
       async (
         appPath?: string,
         options?: {
-          preInstall?: boolean;
           postInstall?: boolean;
           payload?: string;
           functionUniversalIdentifier?: string;
@@ -191,14 +158,13 @@ export const registerCommands = (program: Command): void => {
         },
       ) => {
         if (
-          !options?.preInstall &&
           !options?.postInstall &&
           !options?.functionUniversalIdentifier &&
           !options?.functionName
         ) {
           console.error(
             chalk.red(
-              'Error: Either --preInstall, --postInstall, --functionName (-n), or --functionUniversalIdentifier (-u) is required.',
+              'Error: Either --postInstall or --functionName (-n) or --functionUniversalIdentifier (-u) is required.',
             ),
           );
           process.exit(1);

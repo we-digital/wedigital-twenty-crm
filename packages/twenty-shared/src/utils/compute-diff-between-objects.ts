@@ -5,7 +5,7 @@ type Diff<T extends { id: string }> = {
   toCreate: T[];
   toUpdate: T[];
   toRestoreAndUpdate: T[];
-  idsToRemove: string[];
+  idsToDelete: string[];
 };
 
 const extractProperties = <T extends { id: string }>(
@@ -27,17 +27,15 @@ type ComputeDiffBetweenObjectsParams<
   existingObjects: T[];
   receivedObjects: K[];
   propertiesToCompare: (keyof K & keyof T)[];
-  isEntityIncluded: (entity: NoInfer<T>) => boolean;
 };
 
 export const computeDiffBetweenObjects = <
-  T extends { id: string },
+  T extends { id: string; deletedAt: string | null },
   K extends { id: string },
 >({
   existingObjects,
   receivedObjects,
   propertiesToCompare,
-  isEntityIncluded,
 }: ComputeDiffBetweenObjectsParams<T, K>): Diff<K> => {
   const toCreate: K[] = [];
   const toUpdate: K[] = [];
@@ -54,7 +52,7 @@ export const computeDiffBetweenObjects = <
     const existingEntity = existingEntitiesMap.get(receivedObject.id);
 
     if (isDefined(existingEntity)) {
-      if (!isEntityIncluded(existingEntity)) {
+      if (isDefined(existingEntity.deletedAt)) {
         toRestoreAndUpdate.push(receivedObject);
       } else {
         const comparableExistingEntity = extractProperties(
@@ -76,8 +74,8 @@ export const computeDiffBetweenObjects = <
     }
   }
 
-  const idsToRemove = existingObjects
-    .filter((existingEntity) => isEntityIncluded(existingEntity))
+  const idsToDelete = existingObjects
+    .filter((existingEntity) => !isDefined(existingEntity.deletedAt))
     .filter((existingEntity) => !receivedEntitiesMap.has(existingEntity.id))
     .map((entity) => entity.id);
 
@@ -85,6 +83,6 @@ export const computeDiffBetweenObjects = <
     toCreate,
     toUpdate,
     toRestoreAndUpdate,
-    idsToRemove,
+    idsToDelete,
   };
 };

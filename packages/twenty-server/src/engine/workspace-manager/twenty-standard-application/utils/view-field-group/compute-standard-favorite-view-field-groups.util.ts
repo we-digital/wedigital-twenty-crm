@@ -19,13 +19,13 @@ export const computeStandardFavoriteViewFieldGroups = (
         isVisible: true,
       },
     }),
-    favoriteRecordPageFieldsSystem: createStandardViewFieldGroupFlatMetadata({
+    favoriteRecordPageFieldsOther: createStandardViewFieldGroupFlatMetadata({
       ...args,
       objectName: 'favorite',
       context: {
         viewName: 'favoriteRecordPageFields',
-        viewFieldGroupName: 'system',
-        name: 'System',
+        viewFieldGroupName: 'other',
+        name: 'Other',
         position: 1,
         isVisible: true,
       },

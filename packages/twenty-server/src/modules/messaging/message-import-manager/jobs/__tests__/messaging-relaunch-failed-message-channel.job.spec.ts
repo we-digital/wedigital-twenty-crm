@@ -1,14 +1,14 @@
 import { type Provider } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
 
+import { MessageChannelDataAccessService } from 'src/engine/metadata-modules/message-channel/data-access/services/message-channel-data-access.service';
+import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
 import {
   MessageChannelSyncStage,
   MessageChannelSyncStatus,
-} from 'twenty-shared/types';
-import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
+  type MessageChannelWorkspaceEntity,
+} from 'src/modules/messaging/common/standard-objects/message-channel.workspace-entity';
 import { MessagingRelaunchFailedMessageChannelJob } from 'src/modules/messaging/message-import-manager/jobs/messaging-relaunch-failed-message-channel.job';
-import { MessageChannelEntity } from 'src/engine/metadata-modules/message-channel/entities/message-channel.entity';
 
 describe('MessagingRelaunchFailedMessageChannelJob', () => {
   let job: MessagingRelaunchFailedMessageChannelJob;
@@ -33,7 +33,7 @@ describe('MessagingRelaunchFailedMessageChannelJob', () => {
         },
       },
       {
-        provide: getRepositoryToken(MessageChannelEntity),
+        provide: MessageChannelDataAccessService,
         useValue: {
           findOne: mockFindOne,
           update: mockUpdate,
@@ -56,12 +56,13 @@ describe('MessagingRelaunchFailedMessageChannelJob', () => {
       throttleFailureCount: 5,
       throttleRetryAfter: '2026-03-19T06:49:34.295Z',
       syncStageStartedAt: '2026-03-19T06:34:34.000Z',
-    } as unknown as Partial<MessageChannelEntity>);
+    } as Partial<MessageChannelWorkspaceEntity>);
 
     await job.handle({ workspaceId, messageChannelId });
 
     expect(mockUpdate).toHaveBeenCalledWith(
-      { id: messageChannelId, workspaceId },
+      workspaceId,
+      { id: messageChannelId },
       {
         syncStage: MessageChannelSyncStage.MESSAGE_LIST_FETCH_PENDING,
         syncStatus: MessageChannelSyncStatus.ACTIVE,

@@ -29,10 +29,15 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:18
+        image: twentycrm/twenty-postgres-spilo
+        credentials:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          PGUSER_SUPERUSER: postgres
+          PGPASSWORD_SUPERUSER: postgres
+          ALLOW_NOSSL: 'true'
+          SPILO_PROVIDER: 'local'
         ports:
           - 5432:5432
         options: >-
@@ -42,6 +47,9 @@ jobs:
           --health-retries 5
       redis:
         image: redis
+        credentials:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
         ports:
           - 6379:6379
     steps:

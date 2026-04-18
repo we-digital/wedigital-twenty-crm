@@ -23,7 +23,6 @@ import { SettingsApplicationDetailAboutTab } from '~/pages/settings/applications
 import { SettingsApplicationDetailSettingsTab } from '~/pages/settings/applications/tabs/SettingsApplicationDetailSettingsTab';
 import { SettingsApplicationPermissionsTab } from '~/pages/settings/applications/tabs/SettingsApplicationPermissionsTab';
 import { SettingsApplicationCustomTab } from '~/pages/settings/applications/tabs/SettingsApplicationCustomTab';
-import type { SingleTabProps } from '@/ui/layout/tab-list/types/SingleTabProps';
 
 const APPLICATION_DETAIL_ID = 'application-detail-id';
 
@@ -44,23 +43,15 @@ export const SettingsApplicationDetails = () => {
 
   const applicationName = application?.name ?? t`Application details`;
   const applicationDescription = application?.description ?? undefined;
-  const applicationLogoUrl =
-    application?.applicationRegistration?.logoUrl ?? undefined;
 
   const settingsCustomTabFrontComponentId =
     application?.settingsCustomTabFrontComponentId;
 
-  const tabs: SingleTabProps[] = [
+  const tabs = [
     { id: 'about', title: t`About`, Icon: IconInfoCircle },
     { id: 'content', title: t`Content`, Icon: IconBox },
     { id: 'permissions', title: t`Permissions`, Icon: IconLock },
-    {
-      id: 'settings',
-      title: t`Settings`,
-      Icon: IconSettings,
-      tooltipContent: t`No variables to set for this application`,
-      disabled: (application?.applicationVariables ?? []).length === 0,
-    },
+    { id: 'settings', title: t`Settings`, Icon: IconSettings },
     ...(isDefined(settingsCustomTabFrontComponentId)
       ? [{ id: 'custom', title: t`Custom`, Icon: IconApps }]
       : []),
@@ -105,7 +96,6 @@ export const SettingsApplicationDetails = () => {
         <SettingsApplicationDetailTitle
           displayName={applicationName}
           description={applicationDescription}
-          logoUrl={applicationLogoUrl}
         />
       }
       links={[

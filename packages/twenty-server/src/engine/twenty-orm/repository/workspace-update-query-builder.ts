@@ -136,9 +136,7 @@ export class WorkspaceUpdateQueryBuilder<
         objectMetadata.isCustom,
       );
 
-      const before = await eventSelectQueryBuilder.getMany({
-        noFormatting: true,
-      });
+      const before = await eventSelectQueryBuilder.getMany();
 
       if (before.length > QUERY_MAX_RECORDS) {
         throw new TwentyORMException(
@@ -238,9 +236,7 @@ export class WorkspaceUpdateQueryBuilder<
         await this.filesFieldSync.updateFileEntityRecords(filesFieldFileIds);
       }
 
-      const after = await eventSelectQueryBuilder.getMany({
-        noFormatting: true,
-      });
+      const after = await eventSelectQueryBuilder.getMany();
 
       const formattedAfter = formatResult<T[]>(
         after,
@@ -342,9 +338,7 @@ export class WorkspaceUpdateQueryBuilder<
         this.manyInputs.map((input) => input.criteria),
       );
 
-      const beforeRecords = await eventSelectQueryBuilder.getMany({
-        noFormatting: true,
-      });
+      const beforeRecords = await eventSelectQueryBuilder.getMany();
 
       const formattedBefore = formatResult<T[]>(
         beforeRecords,
@@ -453,9 +447,7 @@ export class WorkspaceUpdateQueryBuilder<
         await this.filesFieldSync.updateFileEntityRecords(filesFieldFileIds);
       }
 
-      const afterRecords = await eventSelectQueryBuilder.getMany({
-        noFormatting: true,
-      });
+      const afterRecords = await eventSelectQueryBuilder.getMany();
 
       const formattedAfter = formatResult<T[]>(
         afterRecords,

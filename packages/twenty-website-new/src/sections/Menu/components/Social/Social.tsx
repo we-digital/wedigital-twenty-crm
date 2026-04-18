@@ -115,13 +115,11 @@ export function Social({ scheme, socialLinks }: SocialProps) {
                   aria-hidden="true"
                 />
                 {item.label}
-                {item.label && (
-                  <ArrowRightUpIcon
-                    size={8}
-                    strokeColor={theme.colors.highlight[100]}
-                    aria-hidden="true"
-                  />
-                )}
+                <ArrowRightUpIcon
+                  size={8}
+                  strokeColor={theme.colors.highlight[100]}
+                  aria-hidden="true"
+                />
               </SocialLink>
             </SocialLinkItem>
           );

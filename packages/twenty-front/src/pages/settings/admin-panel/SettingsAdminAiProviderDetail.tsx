@@ -26,15 +26,14 @@ import { RoundedLink, UndecoratedLink } from 'twenty-ui/navigation';
 
 import { useClientConfig } from '@/client-config/hooks/useClientConfig';
 import { SettingsSkeletonLoader } from '@/settings/components/SettingsSkeletonLoader';
-import { SettingsAiModelsTable } from '@/settings/ai/components/SettingsAiModelsTable';
+import { SettingsAdminAiModelsTable } from '@/settings/admin-panel/ai/components/SettingsAdminAiModelsTable';
 import { REMOVE_AI_PROVIDER } from '@/settings/admin-panel/ai/graphql/mutations/removeAiProvider';
-import { SET_ADMIN_AI_MODELS_ENABLED } from '@/settings/admin-panel/ai/graphql/mutations/setAdminAiModelsEnabled';
 import { REMOVE_MODEL_FROM_PROVIDER } from '@/settings/admin-panel/ai/graphql/mutations/removeModelFromProvider';
 import { GET_ADMIN_AI_MODELS } from '@/settings/admin-panel/ai/graphql/queries/getAdminAiModels';
 import { GET_AI_PROVIDERS } from '@/settings/admin-panel/ai/graphql/queries/getAiProviders';
 import { type GetAiProvidersResult } from '@/settings/admin-panel/ai/types/GetAiProvidersResult';
-import { getDataResidencyDisplay } from '@/settings/ai/utils/getDataResidencyDisplay';
-import { SettingsTableCard } from '@/settings/components/SettingsTableCard';
+import { getDataResidencyDisplay } from '@/settings/admin-panel/ai/utils/getDataResidencyDisplay';
+import { SettingsAdminTableCard } from '@/settings/admin-panel/components/SettingsAdminTableCard';
 import { SettingsPageContainer } from '@/settings/components/SettingsPageContainer';
 import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
 import { ConfirmationModal } from '@/ui/layout/modal/components/ConfirmationModal';
@@ -64,18 +63,13 @@ export const SettingsAdminAiProviderDetail = () => {
   const { data: providersData, loading: isLoadingProviders } =
     useQuery<GetAiProvidersResult>(GET_AI_PROVIDERS);
 
-  const {
-    data: modelsData,
-    loading: isLoadingModels,
-    refetch: refetchModels,
-  } = useQuery<{
+  const { data: modelsData, loading: isLoadingModels } = useQuery<{
     getAdminAiModels: {
       models: AdminAiModelConfig[];
     };
   }>(GET_ADMIN_AI_MODELS);
 
   const [setModelEnabled] = useMutation(SetAdminAiModelEnabledDocument);
-  const [setModelsEnabled] = useMutation(SET_ADMIN_AI_MODELS_ENABLED);
   const [removeAiProvider] = useMutation(REMOVE_AI_PROVIDER);
   const [removeModelFromProvider] = useMutation(REMOVE_MODEL_FROM_PROVIDER);
 
@@ -318,7 +312,7 @@ export const SettingsAdminAiProviderDetail = () => {
           />
 
           {provider && (
-            <SettingsTableCard
+            <SettingsAdminTableCard
               rounded
               items={providerInfoItems}
               gridAutoColumns="120px 1fr"
@@ -345,43 +339,13 @@ export const SettingsAdminAiProviderDetail = () => {
           )}
 
           {filteredModels.length > 0 && (
-            <SettingsAiModelsTable
+            <SettingsAdminAiModelsTable
               models={filteredModels}
-              isChecked={(model) => model.isAdminEnabled}
-              isDisabled={(model) =>
-                !model.isAvailable || model.isDeprecated === true
-              }
               onToggle={handleModelToggle}
-              showProviderColumn={false}
-              onToggleAll={async (shouldCheckAll) => {
-                const modelIds = filteredModels
-                  .filter(
-                    (model) =>
-                      model.isAvailable &&
-                      model.isDeprecated !== true &&
-                      model.isAdminEnabled !== shouldCheckAll,
-                  )
-                  .map((model) => model.modelId);
-
-                if (modelIds.length === 0) return;
-
-                try {
-                  await setModelsEnabled({
-                    variables: {
-                      modelIds,
-                      enabled: shouldCheckAll,
-                    },
-                  });
-                } catch {
-                  enqueueErrorSnackBar({
-                    message: t`Failed to update model availability`,
-                  });
-                } finally {
-                  await refetchModels();
-                  await refetchClientConfig();
-                }
-              }}
+              checkedField="isAdminEnabled"
               anchorPrefix="provider-model-row"
+              showDisabledState
+              secondaryColumn="cost"
               onRemove={isCustomProvider ? handleModelRemoveClick : undefined}
             />
           )}

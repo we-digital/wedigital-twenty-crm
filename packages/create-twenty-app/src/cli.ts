@@ -2,6 +2,7 @@
 import chalk from 'chalk';
 import { Command, CommanderError } from 'commander';
 import { CreateAppCommand } from '@/create-app.command';
+import { type ScaffoldingMode } from '@/types/scaffolding-options';
 import packageJson from '../package.json';
 
 const program = new Command(packageJson.name)
@@ -12,7 +13,11 @@ const program = new Command(packageJson.name)
     'Output the current version of create-twenty-app.',
   )
   .argument('[directory]')
-  .option('--example <name>', 'Initialize from an example')
+  .option('-e, --exhaustive', 'Create all example entities (default)')
+  .option(
+    '-m, --minimal',
+    'Create only core entities (application-config and default-role)',
+  )
   .option('-n, --name <name>', 'Application name (skips prompt)')
   .option(
     '-d, --display-name <displayName>',
@@ -31,13 +36,25 @@ const program = new Command(packageJson.name)
     async (
       directory?: string,
       options?: {
-        example?: string;
+        exhaustive?: boolean;
+        minimal?: boolean;
         name?: string;
         displayName?: string;
         description?: string;
         skipLocalInstance?: boolean;
       },
     ) => {
+      const modeFlags = [options?.exhaustive, options?.minimal].filter(Boolean);
+
+      if (modeFlags.length > 1) {
+        console.error(
+          chalk.red(
+            'Error: --exhaustive and --minimal are mutually exclusive.',
+          ),
+        );
+        process.exit(1);
+      }
+
       if (directory && !/^[a-z0-9-]+$/.test(directory)) {
         console.error(
           chalk.red(
@@ -52,9 +69,11 @@ const program = new Command(packageJson.name)
         process.exit(1);
       }
 
+      const mode: ScaffoldingMode = options?.minimal ? 'minimal' : 'exhaustive';
+
       await new CreateAppCommand().execute({
         directory,
-        example: options?.example,
+        mode,
         name: options?.name,
         displayName: options?.displayName,
         description: options?.description,

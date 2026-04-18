@@ -12,14 +12,13 @@ import { type ActorMetadata } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 import { type Repository } from 'typeorm';
 
-import { type ToolProviderContext } from 'src/engine/core-modules/tool-provider/interfaces/tool-provider-context.type';
+import { type ToolProviderContext } from 'src/engine/core-modules/tool-provider/interfaces/tool-provider.interface';
 
 import { isUserAuthContext } from 'src/engine/core-modules/auth/guards/is-user-auth-context.guard';
 import { type WorkspaceAuthContext } from 'src/engine/core-modules/auth/types/workspace-auth-context.type';
-import { ToolCategory } from 'twenty-shared/ai';
+import { ToolCategory } from 'src/engine/core-modules/tool-provider/enums/tool-category.enum';
 import { ToolRegistryService } from 'src/engine/core-modules/tool-provider/services/tool-registry.service';
 import { type AgentExecutionResult } from 'src/engine/metadata-modules/ai/ai-agent-execution/types/agent-execution-result.type';
-import { countNativeWebSearchCallsFromSteps } from 'src/engine/metadata-modules/ai/ai-billing/utils/count-native-web-search-calls-from-steps.util';
 import { extractCacheCreationTokensFromSteps } from 'src/engine/metadata-modules/ai/ai-billing/utils/extract-cache-creation-tokens.util';
 import { mergeLanguageModelUsage } from 'src/engine/metadata-modules/ai/ai-billing/utils/merge-language-model-usage.util';
 import {
@@ -208,10 +207,6 @@ export class AgentAsyncExecutorService {
         textResponse.steps,
       );
 
-      const nativeWebSearchCallCount = countNativeWebSearchCallsFromSteps(
-        textResponse.steps,
-      );
-
       const agentSchema =
         agent?.responseFormat?.type === 'json'
           ? agent.responseFormat.schema
@@ -222,7 +217,6 @@ export class AgentAsyncExecutorService {
           result: { response: textResponse.text },
           usage: textResponse.usage,
           cacheCreationTokens,
-          nativeWebSearchCallCount,
         };
       }
 
@@ -252,7 +246,6 @@ export class AgentAsyncExecutorService {
           structuredResult.usage,
         ),
         cacheCreationTokens,
-        nativeWebSearchCallCount,
       };
     } catch (error) {
       if (error instanceof AgentException) {

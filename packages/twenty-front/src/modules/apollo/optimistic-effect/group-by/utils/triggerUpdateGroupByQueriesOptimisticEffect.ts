@@ -11,7 +11,7 @@ import { type RecordGqlGroupByConnection } from '@/object-record/graphql/types/R
 import { type RecordGqlOperationGroupByVariables } from '@/object-record/graphql/types/RecordGqlOperationGroupByVariables';
 import { isRecordMatchingFilter } from '@/object-record/record-filter/utils/isRecordMatchingFilter';
 import { isArray } from '@sniptt/guards';
-import { getGroupByConnectionTypename, isDefined } from 'twenty-shared/utils';
+import { isDefined } from 'twenty-shared/utils';
 import { parseApolloStoreFieldName } from '~/utils/parseApolloStoreFieldName';
 
 type TriggerUpdateGroupByQueriesOptimisticEffectArgs = {
@@ -199,9 +199,7 @@ export const triggerUpdateGroupByQueriesOptimisticEffect = ({
           for (const [_, groupData] of recordsToAddToNewGroups) {
             if (groupData.edges.length > 0) {
               const newGroupConnection = {
-                __typename: getGroupByConnectionTypename(
-                  objectMetadataItem.nameSingular,
-                ),
+                __typename: `${objectMetadataItem.nameSingular}Connection`,
                 edges: groupData.edges,
                 pageInfo: {
                   hasNextPage: false,

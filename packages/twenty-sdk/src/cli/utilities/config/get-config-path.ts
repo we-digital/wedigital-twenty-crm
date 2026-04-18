@@ -1,12 +1,12 @@
 import * as os from 'os';
 import * as path from 'path';
 
-const TWENTY_DIR = path.join(os.homedir(), '.twenty');
+const TEST_CONFIG_DIR = path.join(os.tmpdir(), '.twenty-sdk-test');
 
-export const getConfigPath = (test = false): string => {
-  if (test || process.env.NODE_ENV === 'test') {
-    return path.join(TWENTY_DIR, 'config.test.json');
+export const getConfigPath = (): string => {
+  if (process.env.NODE_ENV === 'test') {
+    return path.join(TEST_CONFIG_DIR, 'config.json');
   }
 
-  return path.join(TWENTY_DIR, 'config.json');
+  return path.join(os.homedir(), '.twenty', 'config.json');
 };

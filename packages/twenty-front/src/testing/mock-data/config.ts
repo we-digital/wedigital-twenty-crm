@@ -58,5 +58,4 @@ export const mockedClientConfig: ClientConfig = {
   allowRequestsToTwentyIcons: true,
   isCloudflareIntegrationEnabled: false,
   isClickHouseConfigured: false,
-  isWorkspaceSchemaDDLLocked: false,
 };

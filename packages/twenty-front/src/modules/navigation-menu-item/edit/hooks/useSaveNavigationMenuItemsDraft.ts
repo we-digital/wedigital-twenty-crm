@@ -10,6 +10,7 @@ import { filterWorkspaceNavigationMenuItems } from '@/navigation-menu-item/commo
 import { buildUpdateInputsFromDraft } from '@/navigation-menu-item/edit/utils/buildUpdateInputsFromDraft';
 import { getObjectMetadataColorUpdates } from '@/navigation-menu-item/edit/utils/getObjectMetadataColorUpdates';
 import { useUpdateOneObjectMetadataItem } from '@/object-metadata/hooks/useUpdateOneObjectMetadataItem';
+import { objectMetadataItemsSelector } from '@/object-metadata/states/objectMetadataItemsSelector';
 import { useStore } from 'jotai';
 
 export const useSaveNavigationMenuItemsDraft = () => {
@@ -28,9 +29,11 @@ export const useSaveNavigationMenuItemsDraft = () => {
       return;
     }
 
+    const objectMetadataItems = store.get(objectMetadataItemsSelector.atom);
+
     const colorUpdates = getObjectMetadataColorUpdates({
       draft,
-      currentItems,
+      objectMetadataItems,
     });
 
     for (const { idToUpdate, color } of colorUpdates) {

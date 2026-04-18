@@ -1,9 +1,9 @@
-import { type MessageFolderEntity } from 'src/engine/metadata-modules/message-folder/entities/message-folder.entity';
+import { type MessageFolderWorkspaceEntity } from 'src/modules/messaging/common/standard-objects/message-folder.workspace-entity';
 
 const MAXIMUM_GMAIL_FOLDER_DEPTH = 50;
 
 type FolderInput = Pick<
-  MessageFolderEntity,
+  MessageFolderWorkspaceEntity,
   'externalId' | 'name' | 'parentFolderId'
 >;
 

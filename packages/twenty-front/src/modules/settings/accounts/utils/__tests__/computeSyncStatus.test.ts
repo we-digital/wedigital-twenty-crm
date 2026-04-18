@@ -1,11 +1,13 @@
-import { SyncStatus } from '@/settings/accounts/constants/SyncStatus';
-import { computeSyncStatus } from '@/settings/accounts/utils/computeSyncStatus';
 import {
   CalendarChannelSyncStage,
   CalendarChannelSyncStatus,
+} from '@/accounts/types/CalendarChannel';
+import {
   MessageChannelSyncStage,
   MessageChannelSyncStatus,
-} from 'twenty-shared/types';
+} from '@/accounts/types/MessageChannel';
+import { SyncStatus } from '@/settings/accounts/constants/SyncStatus';
+import { computeSyncStatus } from '@/settings/accounts/utils/computeSyncStatus';
 
 describe('computeSyncStatus', () => {
   test('should return PENDING_CONFIGURATION when message channel sync stage is PENDING_CONFIGURATION', () => {

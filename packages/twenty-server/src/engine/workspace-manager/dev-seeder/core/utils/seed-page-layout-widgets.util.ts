@@ -11,13 +11,13 @@ export const seedPageLayoutWidgets = async ({
   schemaName,
   workspaceId,
   objectMetadataItems,
-  applicationId,
+  workspaceCustomApplicationId,
 }: {
   dataSource: DataSource;
   schemaName: string;
   workspaceId: string;
   objectMetadataItems: ObjectMetadataEntity[];
-  applicationId: string;
+  workspaceCustomApplicationId: string;
 }) => {
   const widgetSeeds = getPageLayoutWidgetDataSeeds(
     workspaceId,
@@ -38,7 +38,7 @@ export const seedPageLayoutWidgets = async ({
       position: widget.position,
       configuration: widget.configuration,
       universalIdentifier: v4(),
-      applicationId,
+      applicationId: workspaceCustomApplicationId,
       overrides: widget.overrides ?? null,
     };
   });

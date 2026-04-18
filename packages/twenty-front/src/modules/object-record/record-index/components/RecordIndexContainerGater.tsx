@@ -30,7 +30,6 @@ const StyledIndexContainer = styled.div`
 
 export const RecordIndexContainerGater = () => {
   const store = useStore();
-
   const { recordIndexId, objectMetadataItem } =
     useRecordIndexIdFromCurrentContextStore();
 

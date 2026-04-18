@@ -6,7 +6,6 @@ import { type EachTestingContext } from 'twenty-shared/testing';
 
 describe('settingsDataModelObjectAboutFormSchema', () => {
   const validInput: SettingsDataModelObjectAboutFormValues = {
-    color: 'gray',
     description: 'A valid description',
     icon: 'IconName',
     labelPlural: 'Labels Plural',
@@ -145,16 +144,6 @@ describe('settingsDataModelObjectAboutFormSchema', () => {
           ...validInput,
           description: 123,
           icon: true,
-        },
-        expectedSuccess: false,
-      },
-    },
-    {
-      title: 'fails when color is not a valid theme color',
-      context: {
-        input: {
-          ...validInput,
-          color: 'not-a-color',
         },
         expectedSuccess: false,
       },

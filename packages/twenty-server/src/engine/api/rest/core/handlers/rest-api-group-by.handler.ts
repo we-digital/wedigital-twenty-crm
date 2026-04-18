@@ -41,7 +41,7 @@ export class RestApiGroupByHandler extends RestApiBaseHandler {
         limit,
       } = await this.parseRequestArgs(request);
 
-      const { results } = await this.commonGroupByQueryRunnerService.execute(
+      return await this.commonGroupByQueryRunnerService.execute(
         {
           filter,
           orderBy,
@@ -60,8 +60,6 @@ export class RestApiGroupByHandler extends RestApiBaseHandler {
           objectIdByNameSingular,
         },
       );
-
-      return results;
     } catch (error) {
       return workspaceQueryRunnerRestApiExceptionHandler(error);
     }

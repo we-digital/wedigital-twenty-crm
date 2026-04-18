@@ -8,6 +8,6 @@ export type ProductStepperContentProps = {
   body: BodyType;
   eyebrow: EyebrowType;
   heading: HeadingType[];
-  localProgress: number;
+  onStepSelect: (index: number) => void;
   steps: ProductStepperContentStepType[];
 };

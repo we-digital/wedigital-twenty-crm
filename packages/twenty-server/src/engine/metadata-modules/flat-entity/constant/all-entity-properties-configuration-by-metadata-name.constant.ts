@@ -227,7 +227,7 @@ export const ALL_ENTITY_PROPERTIES_CONFIGURATION_BY_METADATA_NAME = {
       universalProperty: undefined,
     },
     isSearchable: {
-      toCompare: true,
+      toCompare: false,
       toStringify: false,
       universalProperty: undefined,
     },
@@ -373,12 +373,6 @@ export const ALL_ENTITY_PROPERTIES_CONFIGURATION_BY_METADATA_NAME = {
       toCompare: true,
       isOverridable: true,
     },
-    isActive: {
-      toCompare: true,
-      toStringify: false,
-      universalProperty: undefined,
-      isOverridable: false,
-    },
     deletedAt: {
       toStringify: false,
       universalProperty: undefined,
@@ -460,12 +454,6 @@ export const ALL_ENTITY_PROPERTIES_CONFIGURATION_BY_METADATA_NAME = {
       toCompare: false,
       toStringify: false,
       universalProperty: 'viewUniversalIdentifier',
-    },
-    isActive: {
-      toCompare: true,
-      toStringify: false,
-      universalProperty: undefined,
-      isOverridable: false,
     },
     overrides: {
       toCompare: true,
@@ -921,7 +909,6 @@ export const ALL_ENTITY_PROPERTIES_CONFIGURATION_BY_METADATA_NAME = {
       toCompare: false,
       toStringify: false,
       universalProperty: 'pageLayoutTabUniversalIdentifier',
-      isOverridable: true,
     },
     conditionalDisplay: {
       toCompare: true,
@@ -929,16 +916,10 @@ export const ALL_ENTITY_PROPERTIES_CONFIGURATION_BY_METADATA_NAME = {
       universalProperty: undefined,
       isOverridable: true,
     },
-    isActive: {
-      toCompare: true,
-      toStringify: false,
-      universalProperty: undefined,
-      isOverridable: false,
-    },
     overrides: {
       toCompare: true,
       toStringify: true,
-      universalProperty: 'universalOverrides',
+      universalProperty: undefined,
     },
   },
   pageLayoutTab: {
@@ -984,12 +965,6 @@ export const ALL_ENTITY_PROPERTIES_CONFIGURATION_BY_METADATA_NAME = {
       toCompare: false,
       toStringify: false,
       universalProperty: undefined,
-    },
-    isActive: {
-      toCompare: true,
-      toStringify: false,
-      universalProperty: undefined,
-      isOverridable: false,
     },
     overrides: {
       toCompare: true,
@@ -1091,11 +1066,6 @@ export const ALL_ENTITY_PROPERTIES_CONFIGURATION_BY_METADATA_NAME = {
     engineComponentKey: {
       toCompare: true,
       toStringify: false,
-      universalProperty: undefined,
-    },
-    payload: {
-      toCompare: true,
-      toStringify: true,
       universalProperty: undefined,
     },
     hotKeys: {

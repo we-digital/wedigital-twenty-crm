@@ -25,7 +25,7 @@ type MessageAccumulator = {
     | 'text'
     | 'messageThreadId'
   >;
-  threadToCreate?: Pick<MessageThreadWorkspaceEntity, 'id' | 'subject'>;
+  threadToCreate?: Pick<MessageThreadWorkspaceEntity, 'id'>;
   messageChannelMessageAssociationToCreate?: Pick<
     MessageChannelMessageAssociationWorkspaceEntity,
     | 'id'
@@ -199,54 +199,10 @@ export class MessagingMessageService {
           .map((accumulator) => accumulator.threadToCreate)
           .filter(isDefined);
 
-        const threadSubjectUpdates = new Map<
-          string,
-          { subject: string; receivedAt: number }
-        >();
-
-        for (const message of messages) {
-          const messageAccumulator = messageAccumulatorMap.get(
-            message.externalId,
-          );
-
-          if (!isDefined(messageAccumulator)) {
-            continue;
-          }
-
-          if (
-            isDefined(messageAccumulator.existingThreadInDB) &&
-            isDefined(messageAccumulator.messageToCreate) &&
-            isDefined(message.subject)
-          ) {
-            const threadId = messageAccumulator.existingThreadInDB.id;
-            const existing = threadSubjectUpdates.get(threadId);
-            const receivedAt = message.receivedAt?.getTime() ?? 0;
-
-            if (!isDefined(existing) || receivedAt > existing.receivedAt) {
-              threadSubjectUpdates.set(threadId, {
-                subject: message.subject,
-                receivedAt,
-              });
-            }
-          }
-        }
-
-        if (messageThreadsToCreate.length > 0) {
-          await messageThreadRepository.insert(
-            messageThreadsToCreate,
-            transactionManager,
-          );
-        }
-
-        if (threadSubjectUpdates.size > 0) {
-          await messageThreadRepository.upsert(
-            Array.from(threadSubjectUpdates.entries()).map(
-              ([id, { subject }]) => ({ id, subject }),
-            ),
-            ['id'],
-            transactionManager,
-          );
-        }
+        await messageThreadRepository.insert(
+          messageThreadsToCreate,
+          transactionManager,
+        );
 
         const messagesToCreate = Array.from(messageAccumulatorMap.values())
           .map((accumulator) => accumulator.messageToCreate)
@@ -435,8 +391,11 @@ export class MessagingMessageService {
         );
 
       if (existingMessageChannelMessageAssociation) {
-        messageAccumulator.existingMessageChannelMessageAssociationInDB =
-          existingMessageChannelMessageAssociation;
+        messageAccumulatorMap.set(message.externalId, {
+          existingMessageInDB: existingMessage,
+          existingMessageChannelMessageAssociationInDB:
+            existingMessageChannelMessageAssociation,
+        });
       }
     }
   }
@@ -492,7 +451,6 @@ export class MessagingMessageService {
 
         messageAccumulator.threadToCreate = {
           id: newOrExistingMessageThreadId,
-          subject: message.subject,
         };
       }
 

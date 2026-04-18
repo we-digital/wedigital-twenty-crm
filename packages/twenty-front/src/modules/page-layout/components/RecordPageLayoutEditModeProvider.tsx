@@ -1,6 +1,5 @@
 import { isLayoutCustomizationModeEnabledState } from '@/layout-customization/states/isLayoutCustomizationModeEnabledState';
 import { PageLayoutEditModeProviderContext } from '@/page-layout/contexts/PageLayoutEditModeContext';
-import { useLayoutRenderingContext } from '@/ui/layout/contexts/LayoutRenderingContext';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { type ReactNode } from 'react';
 
@@ -15,13 +14,9 @@ export const RecordPageLayoutEditModeProvider = ({
     isLayoutCustomizationModeEnabledState,
   );
 
-  const { isInSidePanel } = useLayoutRenderingContext();
-
   return (
     <PageLayoutEditModeProviderContext
-      value={{
-        isInEditMode: isLayoutCustomizationModeEnabled && !isInSidePanel,
-      }}
+      value={{ isInEditMode: isLayoutCustomizationModeEnabled }}
     >
       {children}
     </PageLayoutEditModeProviderContext>

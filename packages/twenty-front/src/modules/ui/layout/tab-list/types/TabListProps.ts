@@ -1,5 +1,3 @@
-import { type ReactNode } from 'react';
-
 import { type SingleTabProps } from '@/ui/layout/tab-list/types/SingleTabProps';
 
 export type TabListProps = {
@@ -10,5 +8,4 @@ export type TabListProps = {
   isInSidePanel?: boolean;
   componentInstanceId: string;
   onChangeTab?: (tabId: string) => void;
-  rightComponent?: ReactNode;
 };

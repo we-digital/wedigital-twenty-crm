@@ -18,7 +18,6 @@ export const APPLICATION_FRAGMENT = gql`
       id
       latestAvailableVersion
       sourceType
-      logoUrl
     }
     canBeUninstalled
     defaultRoleId

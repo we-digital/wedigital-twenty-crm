@@ -11,7 +11,7 @@ import { type JsonValue } from 'type-fest';
 export type FormRelationToOneFieldInputProps = {
   label?: string;
   objectNameSingular?: string;
-  defaultValue?: FieldRelationValue<FieldRelationToOneValue> | string | null;
+  defaultValue?: FieldRelationValue<FieldRelationToOneValue> | string;
   onChange: (value: JsonValue) => void;
   onClear?: () => void;
   readonly?: boolean;

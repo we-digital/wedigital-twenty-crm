@@ -20,11 +20,6 @@ export enum AgentMessageRole {
   ASSISTANT = 'assistant',
 }
 
-export enum AgentMessageStatus {
-  QUEUED = 'queued',
-  SENT = 'sent',
-}
-
 @Entity('agentMessage')
 export class AgentMessageEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -40,16 +35,15 @@ export class AgentMessageEntity {
   @JoinColumn({ name: 'threadId' })
   thread: Relation<AgentChatThreadEntity>;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column('uuid')
   @Index()
-  turnId: string | null;
+  turnId: string;
 
   @ManyToOne(() => AgentTurnEntity, {
     onDelete: 'CASCADE',
-    nullable: true,
   })
   @JoinColumn({ name: 'turnId' })
-  turn: Relation<AgentTurnEntity> | null;
+  turn: Relation<AgentTurnEntity>;
 
   @Column({ type: 'uuid', nullable: true })
   @Index()
@@ -58,18 +52,8 @@ export class AgentMessageEntity {
   @Column({ type: 'enum', enum: AgentMessageRole })
   role: AgentMessageRole;
 
-  @Column({
-    type: 'enum',
-    enum: AgentMessageStatus,
-    default: AgentMessageStatus.SENT,
-  })
-  status: AgentMessageStatus;
-
   @OneToMany(() => AgentMessagePartEntity, (part) => part.message)
   parts: Relation<AgentMessagePartEntity[]>;
-
-  @Column({ type: 'timestamptz', nullable: true })
-  processedAt: Date | null;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;

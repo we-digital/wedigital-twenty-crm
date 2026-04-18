@@ -59,14 +59,13 @@ export class CreateManyRecordsService {
         createdBy: actorMetadata,
       }));
 
-      const { results: createdRecords } =
-        await this.commonCreateManyRunner.execute(
-          {
-            data: cleanedRecords,
-            selectedFields,
-          },
-          queryRunnerContext,
-        );
+      const createdRecords = await this.commonCreateManyRunner.execute(
+        {
+          data: cleanedRecords,
+          selectedFields,
+        },
+        queryRunnerContext,
+      );
 
       this.logger.log(
         `Created ${createdRecords.length} records in ${objectName}`,

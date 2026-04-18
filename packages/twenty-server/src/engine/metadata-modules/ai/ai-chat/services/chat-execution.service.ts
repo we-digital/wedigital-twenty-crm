@@ -17,9 +17,8 @@ import { getAppPath, isDefined } from 'twenty-shared/utils';
 
 import { UsageOperationType } from 'src/engine/core-modules/usage/enums/usage-operation-type.enum';
 
-import { type CodeExecutionStreamEmitter } from 'src/engine/core-modules/tool-provider/interfaces/code-execution-stream-emitter.type';
+import { type CodeExecutionStreamEmitter } from 'src/engine/core-modules/tool-provider/interfaces/tool-provider.interface';
 
-import { CodeInterpreterService } from 'src/engine/core-modules/code-interpreter/code-interpreter.service';
 import { WorkspaceDomainsService } from 'src/engine/core-modules/domain/workspace-domains/services/workspace-domains.service';
 import { ExceptionHandlerService } from 'src/engine/core-modules/exception-handler/exception-handler.service';
 import { COMMON_PRELOAD_TOOLS } from 'src/engine/core-modules/tool-provider/constants/common-preload-tools.const';
@@ -39,9 +38,7 @@ import { AGENT_CONFIG } from 'src/engine/metadata-modules/ai/ai-agent/constants/
 import { type BrowsingContextType } from 'src/engine/metadata-modules/ai/ai-agent/types/browsingContext.type';
 import { repairToolCall } from 'src/engine/metadata-modules/ai/ai-agent/utils/repair-tool-call.util';
 import { AiBillingService } from 'src/engine/metadata-modules/ai/ai-billing/services/ai-billing.service';
-import { countNativeWebSearchCallsFromSteps } from 'src/engine/metadata-modules/ai/ai-billing/utils/count-native-web-search-calls-from-steps.util';
 import { extractCacheCreationTokensFromSteps } from 'src/engine/metadata-modules/ai/ai-billing/utils/extract-cache-creation-tokens.util';
-import { MessagePruningService } from 'src/engine/metadata-modules/ai/ai-chat/services/message-pruning.service';
 import { SystemPromptBuilderService } from 'src/engine/metadata-modules/ai/ai-chat/services/system-prompt-builder.service';
 import {
   extractCodeInterpreterFiles,
@@ -53,13 +50,12 @@ import {
   AI_SDK_OPENAI,
 } from 'src/engine/metadata-modules/ai/ai-models/constants/ai-sdk-package.const';
 import { AI_TELEMETRY_CONFIG } from 'src/engine/metadata-modules/ai/ai-models/constants/ai-telemetry.const';
+import { type AIModelConfig } from 'src/engine/metadata-modules/ai/ai-models/types/ai-model-config.type';
 import {
   AiModelRegistryService,
   type RegisteredAIModel,
 } from 'src/engine/metadata-modules/ai/ai-models/services/ai-model-registry.service';
 import { SdkProviderFactoryService } from 'src/engine/metadata-modules/ai/ai-models/services/sdk-provider-factory.service';
-import { type AIModelConfig } from 'src/engine/metadata-modules/ai/ai-models/types/ai-model-config.type';
-import { WebSearchService } from 'src/engine/core-modules/web-search/web-search.service';
 import { SkillService } from 'src/engine/metadata-modules/skill/skill.service';
 
 export type ChatExecutionOptions = {
@@ -68,10 +64,8 @@ export type ChatExecutionOptions = {
   messages: UIMessage<unknown, UIDataTypes, UITools>[];
   browsingContext: BrowsingContextType | null;
   onCodeExecutionUpdate?: CodeExecutionStreamEmitter;
-  onCompaction?: () => void;
   modelId?: string;
   abortSignal?: AbortSignal;
-  conversationSizeTokens: number;
 };
 
 export type ChatExecutionResult = {
@@ -90,12 +84,9 @@ export class ChatExecutionService {
     private readonly aiBillingService: AiBillingService,
     private readonly agentActorContextService: AgentActorContextService,
     private readonly workspaceDomainsService: WorkspaceDomainsService,
-    private readonly codeInterpreterService: CodeInterpreterService,
     private readonly systemPromptBuilder: SystemPromptBuilderService,
     private readonly exceptionHandlerService: ExceptionHandlerService,
     private readonly sdkProviderFactory: SdkProviderFactoryService,
-    private readonly messagePruningService: MessagePruningService,
-    private readonly webSearchService: WebSearchService,
   ) {}
 
   async streamChat({
@@ -104,10 +95,8 @@ export class ChatExecutionService {
     messages,
     browsingContext,
     onCodeExecutionUpdate,
-    onCompaction,
     modelId,
     abortSignal,
-    conversationSizeTokens,
   }: ChatExecutionOptions): Promise<ChatExecutionResult> {
     const { actorContext, roleId, userId, userContext } =
       await this.agentActorContextService.buildUserAndAgentActorContext(
@@ -142,15 +131,8 @@ export class ChatExecutionService {
       `Built tool catalog with ${toolCatalog.length} tools, ${skillCatalog.length} skills available`,
     );
 
-    const useNativeSearch = this.webSearchService.shouldUseNativeSearch();
-
-    const toolNamesToPreload = [
-      ...COMMON_PRELOAD_TOOLS,
-      ...(useNativeSearch ? [] : ['web_search']),
-    ];
-
     const preloadedTools = await this.toolRegistry.getToolsByName(
-      toolNamesToPreload,
+      COMMON_PRELOAD_TOOLS,
       toolContext,
     );
 
@@ -171,9 +153,7 @@ export class ChatExecutionService {
     );
 
     const { tools: nativeSearchTools, callableToolNames: searchToolNames } =
-      useNativeSearch
-        ? this.getNativeWebSearchTools(registeredModel)
-        : { tools: {}, callableToolNames: [] };
+      this.getNativeWebSearchTools(registeredModel);
 
     // Direct tools: native provider tools + preloaded tools.
     // These are callable directly AND as fallback through execute_tool.
@@ -205,24 +185,19 @@ export class ChatExecutionService {
       ),
     };
 
-    let processedMessages: UIMessage[] = messages;
+    const { processedMessages, extractedFiles } =
+      extractCodeInterpreterFiles(messages);
 
     let storedFiles: Array<{
       filename: string;
       fileId: string;
     }> = [];
 
-    if (this.codeInterpreterService.isEnabled()) {
-      const extracted = extractCodeInterpreterFiles(messages);
-
-      processedMessages = extracted.processedMessages;
-
-      if (extracted.extractedFiles.length > 0) {
-        storedFiles = await this.storeExtractedFiles(
-          extracted.extractedFiles,
-          workspace.id,
-        );
-      }
+    if (extractedFiles.length > 0) {
+      storedFiles = await this.storeExtractedFiles(
+        extractedFiles,
+        workspace.id,
+      );
     }
 
     const systemPrompt = this.systemPromptBuilder.buildFullPrompt(
@@ -250,26 +225,7 @@ export class ChatExecutionService {
             : undefined,
     };
 
-    const rawModelMessages = await convertToModelMessages(processedMessages);
-
-    const pruningResult =
-      this.messagePruningService.pruneIfOverContextWindowLimit(
-        rawModelMessages,
-        modelConfig.contextWindowTokens,
-        conversationSizeTokens,
-      );
-
-    if (pruningResult.isStillOverLimit) {
-      throw new Error(
-        'This conversation is too long for the model to process. Please start a new thread.',
-      );
-    }
-
-    if (pruningResult.wasPruned) {
-      onCompaction?.();
-    }
-
-    const modelMessages = pruningResult.messages;
+    const modelMessages = await convertToModelMessages(processedMessages);
 
     const billUsageFromSteps = (steps: StepResult<ToolSet>[]) => {
       const usage = steps.reduce<LanguageModelUsage>(
@@ -321,17 +277,6 @@ export class ChatExecutionService {
         null,
         userWorkspaceId,
       );
-
-      if (useNativeSearch) {
-        const nativeWebSearchCallCount =
-          countNativeWebSearchCallsFromSteps(steps);
-
-        this.aiBillingService.billNativeWebSearchUsage(
-          nativeWebSearchCallCount,
-          workspace.id,
-          userWorkspaceId,
-        );
-      }
     };
 
     const stream = streamText({
@@ -472,8 +417,21 @@ export class ChatExecutionService {
           callableToolNames: ['web_search'],
         };
       }
-      case AI_SDK_BEDROCK:
-        return empty;
+      case AI_SDK_BEDROCK: {
+        const provider =
+          this.sdkProviderFactory.getRawBedrockProvider(providerName);
+
+        if (!provider) {
+          return empty;
+        }
+
+        return {
+          tools: {
+            web_search: provider.tools.webSearch_20250305() as ToolSet[string],
+          },
+          callableToolNames: ['web_search'],
+        };
+      }
       case AI_SDK_OPENAI: {
         const provider =
           this.sdkProviderFactory.getRawOpenAIProvider(providerName);

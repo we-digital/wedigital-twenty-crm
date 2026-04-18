@@ -1,5 +1,5 @@
 import { isDefined } from 'twenty-shared/utils';
-import { SettingsTableCard } from '@/settings/components/SettingsTableCard';
+import { SettingsAdminTableCard } from '@/settings/admin-panel/components/SettingsAdminTableCard';
 import { SettingsAdminWorkerMetricsTooltip } from '@/settings/admin-panel/health-status/components/SettingsAdminWorkerMetricsTooltip';
 import { useSnackBarOnQueryError } from '@/apollo/hooks/useSnackBarOnQueryError';
 import { styled } from '@linaria/react';
@@ -31,7 +31,7 @@ const StyledNoDataMessage = styled.div`
   justify-content: center;
 `;
 
-const StyledSettingsTableCardContainer = styled.div`
+const StyledSettingsAdminTableCardContainer = styled.div`
   > * {
     padding-left: ${themeCssVariables.spacing[2]};
     padding-right: ${themeCssVariables.spacing[2]};
@@ -199,8 +199,8 @@ export const SettingsAdminWorkerMetricsGraph = ({
         )}
       </StyledGraphContainer>
       {isDefined(metricsDetails) && (
-        <StyledSettingsTableCardContainer>
-          <SettingsTableCard
+        <StyledSettingsAdminTableCardContainer>
+          <SettingsAdminTableCard
             rounded
             items={Object.entries(metricsDetails)
               .filter(([key]) => key !== '__typename')
@@ -217,7 +217,7 @@ export const SettingsAdminWorkerMetricsGraph = ({
             labelAlign="left"
             valueAlign="right"
           />
-        </StyledSettingsTableCardContainer>
+        </StyledSettingsAdminTableCardContainer>
       )}
     </>
   );

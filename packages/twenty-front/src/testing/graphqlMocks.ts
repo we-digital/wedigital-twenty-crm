@@ -17,20 +17,17 @@ import { mockedUserData } from '~/testing/mock-data/users';
 import { GET_PUBLIC_WORKSPACE_DATA_BY_DOMAIN } from '@/auth/graphql/queries/getPublicWorkspaceDataByDomain';
 import { LIST_PLANS } from '@/settings/billing/graphql/queries/listPlans';
 import { GET_ROLES } from '@/settings/roles/graphql/queries/getRolesQuery';
+import { isDefined } from 'twenty-shared/utils';
 import { mockBillingPlans } from '~/testing/mock-data/billing-plans';
 import { mockedCompanyRecords } from '~/testing/mock-data/generated/data/companies/mock-companies-data';
 import { mockedTaskRecords } from '~/testing/mock-data/generated/data/tasks/mock-tasks-data';
 import { mockedStandardObjectMetadataQueryResult } from '~/testing/mock-data/generated/metadata/objects/mock-objects-metadata';
 import { mockedRoles } from '~/testing/mock-data/generated/metadata/roles/mock-roles-data';
-import { mockedBackendCommandMenuItems } from '~/testing/mock-data/command-menu-items';
 
 import { type Task } from '@/activities/types/Task';
 import { FIND_MINIMAL_METADATA } from '@/metadata-store/graphql/queries/findMinimalMetadata';
-import {
-  getConnectionTypename,
-  getEdgeTypename,
-  isDefined,
-} from 'twenty-shared/utils';
+import { getConnectionTypename } from '@/object-record/cache/utils/getConnectionTypename';
+import { getEdgeTypename } from '@/object-record/cache/utils/getEdgeTypename';
 import { getEmptyPageInfo } from '@/object-record/cache/utils/getEmptyPageInfo';
 import { getRecordFromRecordNode } from '@/object-record/cache/utils/getRecordFromRecordNode';
 import { mockedApiKeys } from '~/testing/mock-data/generated/metadata/api-keys/mock-api-keys-data';
@@ -212,7 +209,7 @@ export const graphqlMocks = {
     }),
     metadataGraphql.query('FindManyCommandMenuItems', () => {
       return HttpResponse.json({
-        data: { commandMenuItems: mockedBackendCommandMenuItems },
+        data: { commandMenuItems: [] },
       });
     }),
     graphql.query('SearchPeople', () => {

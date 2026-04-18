@@ -31,10 +31,6 @@ export const EventLogTableSelector = ({
       value: EventLogTable.USAGE_EVENT,
       label: t`Usage Events`,
     },
-    {
-      value: EventLogTable.APPLICATION_LOG,
-      label: t`Application Logs`,
-    },
   ];
 
   return (

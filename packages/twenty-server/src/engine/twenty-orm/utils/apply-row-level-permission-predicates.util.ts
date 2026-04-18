@@ -30,7 +30,7 @@ export const applyRowLevelPermissionPredicates = <T extends ObjectLiteral>({
   objectMetadata,
   internalContext,
   authContext,
-  featureFlagMap: _featureFlagMap,
+  featureFlagMap,
 }: ApplyRowLevelPermissionPredicatesArgs<T>): void => {
   const userWorkspaceId = isUserAuthContext(authContext)
     ? authContext.userWorkspaceId

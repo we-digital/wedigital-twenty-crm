@@ -1,4 +1,4 @@
-import { AgentChatStreamSubscriptionEffect } from '@/ai/components/AgentChatStreamSubscriptionEffect';
+import { AgentChatAiSdkStreamEffect } from '@/ai/components/AgentChatAiSdkStreamEffect';
 import { AgentChatMessagesFetchEffect } from '@/ai/components/AgentChatMessagesFetchEffect';
 import { AgentChatSessionStartTimeEffect } from '@/ai/components/AgentChatSessionStartTimeEffect';
 
@@ -20,7 +20,7 @@ export const AgentChatProviderContent = ({
       >
         <AgentChatThreadInitializationEffect />
         <AgentChatMessagesFetchEffect />
-        <AgentChatStreamSubscriptionEffect />
+        <AgentChatAiSdkStreamEffect />
         <AgentChatStreamingPartsDiffSyncEffect />
         <AgentChatSessionStartTimeEffect />
         <AgentChatStreamingAutoScrollEffect />

@@ -123,7 +123,7 @@ export const computeStandardWorkflowVersionViewFields = (
           position: 0,
           isVisible: true,
           size: 150,
-          viewFieldGroupName: 'system',
+          viewFieldGroupName: 'other',
         },
       }),
     workflowVersionRecordPageFieldsSteps: createStandardViewFieldFlatMetadata({
@@ -133,10 +133,10 @@ export const computeStandardWorkflowVersionViewFields = (
         viewName: 'workflowVersionRecordPageFields',
         viewFieldName: 'steps',
         fieldName: 'steps',
-        position: 7,
+        position: 0,
         isVisible: false,
         size: 150,
-        viewFieldGroupName: 'general',
+        viewFieldGroupName: 'additional',
       },
     }),
     workflowVersionRecordPageFieldsCreatedBy:
@@ -150,7 +150,7 @@ export const computeStandardWorkflowVersionViewFields = (
           position: 1,
           isVisible: false,
           size: 150,
-          viewFieldGroupName: 'system',
+          viewFieldGroupName: 'other',
         },
       }),
     workflowVersionRecordPageFieldsUpdatedAt:
@@ -164,7 +164,7 @@ export const computeStandardWorkflowVersionViewFields = (
           position: 2,
           isVisible: false,
           size: 150,
-          viewFieldGroupName: 'system',
+          viewFieldGroupName: 'other',
         },
       }),
     workflowVersionRecordPageFieldsUpdatedBy:
@@ -178,7 +178,7 @@ export const computeStandardWorkflowVersionViewFields = (
           position: 3,
           isVisible: false,
           size: 150,
-          viewFieldGroupName: 'system',
+          viewFieldGroupName: 'other',
         },
       }),
     workflowVersionRecordPageFieldsRuns: createStandardViewFieldFlatMetadata({

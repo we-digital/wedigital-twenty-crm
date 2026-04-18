@@ -9,6 +9,7 @@ exports[`failing create phone field metadata test suite it should fail to create
       "userFriendlyMessage": "Provided country code and calling code are conflicting",
     },
     "message": "Provided country code and calling code are conflicting",
+    "name": "UserInputError",
   },
 ]
 `;
@@ -22,6 +23,7 @@ exports[`failing create phone field metadata test suite it should fail to create
       "userFriendlyMessage": "Provided country code and calling code are conflicting",
     },
     "message": "Provided country code and calling code are conflicting",
+    "name": "UserInputError",
   },
 ]
 `;
@@ -35,6 +37,7 @@ exports[`failing create phone field metadata test suite it should fail to create
       "userFriendlyMessage": "Provided and inferred calling code are conflicting",
     },
     "message": "Provided and inferred calling code are conflicting",
+    "name": "UserInputError",
   },
 ]
 `;
@@ -48,6 +51,7 @@ exports[`failing create phone field metadata test suite it should fail to create
       "userFriendlyMessage": "Provided and inferred calling code are conflicting",
     },
     "message": "Provided and inferred calling code are conflicting",
+    "name": "UserInputError",
   },
 ]
 `;
@@ -61,6 +65,7 @@ exports[`failing create phone field metadata test suite it should fail to create
       "userFriendlyMessage": "Provided and inferred country code are conflicting",
     },
     "message": "Provided and inferred country code are conflicting",
+    "name": "UserInputError",
   },
 ]
 `;
@@ -74,6 +79,7 @@ exports[`failing create phone field metadata test suite it should fail to create
       "userFriendlyMessage": "Provided and inferred country code are conflicting",
     },
     "message": "Provided and inferred country code are conflicting",
+    "name": "UserInputError",
   },
 ]
 `;
@@ -87,6 +93,7 @@ exports[`failing create phone field metadata test suite it should fail to create
       "userFriendlyMessage": "Invalid calling code +999",
     },
     "message": "Invalid calling code +999",
+    "name": "UserInputError",
   },
 ]
 `;
@@ -100,6 +107,7 @@ exports[`failing create phone field metadata test suite it should fail to create
       "userFriendlyMessage": "Invalid calling code +999",
     },
     "message": "Invalid calling code +999",
+    "name": "UserInputError",
   },
 ]
 `;
@@ -113,6 +121,7 @@ exports[`failing create phone field metadata test suite it should fail to create
       "userFriendlyMessage": "Invalid country code XX",
     },
     "message": "Invalid country code XX",
+    "name": "UserInputError",
   },
 ]
 `;
@@ -126,6 +135,7 @@ exports[`failing create phone field metadata test suite it should fail to create
       "userFriendlyMessage": "Invalid country code XX",
     },
     "message": "Invalid country code XX",
+    "name": "UserInputError",
   },
 ]
 `;
@@ -139,6 +149,7 @@ exports[`failing create phone field metadata test suite it should fail to create
       "userFriendlyMessage": "Provided phone number is invalid not-a-number",
     },
     "message": "Provided phone number is invalid not-a-number",
+    "name": "UserInputError",
   },
 ]
 `;
@@ -152,6 +163,7 @@ exports[`failing create phone field metadata test suite it should fail to create
       "userFriendlyMessage": "Provided phone number is invalid not-a-number",
     },
     "message": "Provided phone number is invalid not-a-number",
+    "name": "UserInputError",
   },
 ]
 `;
@@ -165,6 +177,7 @@ exports[`failing create phone field metadata test suite it should fail to create
       "userFriendlyMessage": "Provided phone number is invalid 123456789",
     },
     "message": "Provided phone number is invalid 123456789",
+    "name": "UserInputError",
   },
 ]
 `;
@@ -178,6 +191,7 @@ exports[`failing create phone field metadata test suite it should fail to create
       "userFriendlyMessage": "Provided phone number is invalid 123456789",
     },
     "message": "Provided phone number is invalid 123456789",
+    "name": "UserInputError",
   },
 ]
 `;

@@ -114,7 +114,6 @@ export const generateCsv: GenerateExport = ({
   return json2csv(sanitizedRows, {
     keys,
     emptyFieldValue: '',
-    excelBOM: true,
     // Note: We handle CSV injection prevention manually with ZWJ approach above
     // This preserves original which the csvSecurity option does not do
   });

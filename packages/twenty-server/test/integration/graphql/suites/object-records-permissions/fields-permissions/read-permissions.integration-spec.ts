@@ -117,7 +117,7 @@ describe('Field permissions restrictions', () => {
         {
           objectMetadataId: companyObjectId,
           fieldMetadataId: restrictedCompanyFieldId,
-          canUpdateFieldValue: false,
+          canReadFieldValue: false,
         },
       ],
     });
@@ -134,7 +134,7 @@ describe('Field permissions restrictions', () => {
         {
           objectMetadataId: personObjectId,
           fieldMetadataId: restrictedPersonFieldId,
-          canUpdateFieldValue: false,
+          canReadFieldValue: false,
         },
       ],
     });
@@ -321,8 +321,6 @@ describe('Field permissions restrictions', () => {
         objectMetadataSingularName: 'company',
         objectMetadataPluralName: 'companies',
         gqlFields: COMPANY_GQL_FIELDS_WITH_EMPLOYEES,
-        filter: { id: { eq: companyId } },
-        data: { name: 'TestUpdate' },
       });
 
       const response =
@@ -336,7 +334,6 @@ describe('Field permissions restrictions', () => {
         objectMetadataSingularName: 'company',
         gqlFields: COMPANY_GQL_FIELDS_WITH_EMPLOYEES,
         recordId: companyId,
-        data: { name: 'TestUpdate' },
       });
 
       const response =
@@ -380,7 +377,6 @@ describe('Field permissions restrictions', () => {
         objectMetadataSingularName: 'company',
         objectMetadataPluralName: 'companies',
         gqlFields: COMPANY_GQL_FIELDS_WITH_EMPLOYEES,
-        filter: { id: { eq: companyId } },
       });
 
       const response =

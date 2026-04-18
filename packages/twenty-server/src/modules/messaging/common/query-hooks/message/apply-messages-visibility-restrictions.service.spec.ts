@@ -1,13 +1,10 @@
 import { Test, type TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
 
 import { FIELD_RESTRICTED_ADDITIONAL_PERMISSIONS_REQUIRED } from 'twenty-shared/constants';
 
-import { MessageChannelVisibility } from 'twenty-shared/types';
-import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
-import { ConnectedAccountEntity } from 'src/engine/metadata-modules/connected-account/entities/connected-account.entity';
-import { MessageChannelEntity } from 'src/engine/metadata-modules/message-channel/entities/message-channel.entity';
+import { ConnectedAccountDataAccessService } from 'src/engine/metadata-modules/connected-account/data-access/services/connected-account-data-access.service';
 import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
+import { MessageChannelVisibility } from 'src/modules/messaging/common/standard-objects/message-channel.workspace-entity';
 import { type MessageWorkspaceEntity } from 'src/modules/messaging/common/standard-objects/message.workspace-entity';
 
 import { ApplyMessagesVisibilityRestrictionsService } from './apply-messages-visibility-restrictions.service';
@@ -42,15 +39,7 @@ describe('ApplyMessagesVisibilityRestrictionsService', () => {
     findOneByOrFail: jest.fn(),
   };
 
-  const mockConnectedAccountRepository = {
-    find: jest.fn(),
-  };
-
-  const mockUserWorkspaceRepository = {
-    findOne: jest.fn(),
-  };
-
-  const mockMessageChannelRepository = {
+  const mockConnectedAccountDataAccessService = {
     find: jest.fn(),
   };
 
@@ -77,16 +66,8 @@ describe('ApplyMessagesVisibilityRestrictionsService', () => {
           useValue: mockGlobalWorkspaceOrmManager,
         },
         {
-          provide: getRepositoryToken(ConnectedAccountEntity),
-          useValue: mockConnectedAccountRepository,
-        },
-        {
-          provide: getRepositoryToken(UserWorkspaceEntity),
-          useValue: mockUserWorkspaceRepository,
-        },
-        {
-          provide: getRepositoryToken(MessageChannelEntity),
-          useValue: mockMessageChannelRepository,
+          provide: ConnectedAccountDataAccessService,
+          useValue: mockConnectedAccountDataAccessService,
         },
       ],
     }).compile();
@@ -106,14 +87,10 @@ describe('ApplyMessagesVisibilityRestrictionsService', () => {
     mockMessageChannelMessageAssociationRepository.find.mockResolvedValue([
       {
         messageId: 'messageId',
-        messageChannelId: 'messageChannelId',
-      },
-    ]);
-
-    mockMessageChannelRepository.find.mockResolvedValue([
-      {
-        id: 'messageChannelId',
-        visibility: MessageChannelVisibility.SHARE_EVERYTHING,
+        messageChannel: {
+          id: 'messageChannelId',
+          visibility: MessageChannelVisibility.SHARE_EVERYTHING,
+        },
       },
     ]);
 
@@ -130,7 +107,7 @@ describe('ApplyMessagesVisibilityRestrictionsService', () => {
           item.subject === 'Test Subject' && item.text === 'Test Message',
       ),
     ).toBe(true);
-    expect(mockConnectedAccountRepository.find).not.toHaveBeenCalled();
+    expect(mockConnectedAccountDataAccessService.find).not.toHaveBeenCalled();
   });
 
   it('should return message without obfuscated subject and with obfuscated text if the visibility is SUBJECT', async () => {
@@ -141,27 +118,17 @@ describe('ApplyMessagesVisibilityRestrictionsService', () => {
     mockMessageChannelMessageAssociationRepository.find.mockResolvedValue([
       {
         messageId: 'messageId',
-        messageChannelId: 'messageChannelId',
+        messageChannel: {
+          id: 'messageChannelId',
+          visibility: MessageChannelVisibility.SUBJECT,
+        },
       },
     ]);
 
-    mockMessageChannelRepository.find.mockResolvedValue([
-      {
-        id: 'messageChannelId',
-        visibility: MessageChannelVisibility.SUBJECT,
-      },
-    ]);
-
-    mockConnectedAccountRepository.find.mockResolvedValue([]);
+    mockConnectedAccountDataAccessService.find.mockResolvedValue([]);
 
     mockWorkspaceMemberRepository.findOneByOrFail.mockResolvedValue({
       id: 'workspace-member-id',
-      userId: 'user-id',
-    });
-
-    mockUserWorkspaceRepository.findOne.mockResolvedValue({
-      id: 'user-workspace-id',
-      userId: 'user-id',
     });
 
     const result = await service.applyMessagesVisibilityRestrictions(
@@ -186,27 +153,17 @@ describe('ApplyMessagesVisibilityRestrictionsService', () => {
     mockMessageChannelMessageAssociationRepository.find.mockResolvedValue([
       {
         messageId: 'messageId',
-        messageChannelId: 'messageChannelId',
+        messageChannel: {
+          id: 'messageChannelId',
+          visibility: MessageChannelVisibility.METADATA,
+        },
       },
     ]);
 
-    mockMessageChannelRepository.find.mockResolvedValue([
-      {
-        id: 'messageChannelId',
-        visibility: MessageChannelVisibility.METADATA,
-      },
-    ]);
-
-    mockConnectedAccountRepository.find.mockResolvedValue([]);
+    mockConnectedAccountDataAccessService.find.mockResolvedValue([]);
 
     mockWorkspaceMemberRepository.findOneByOrFail.mockResolvedValue({
       id: 'workspace-member-id',
-      userId: 'user-id',
-    });
-
-    mockUserWorkspaceRepository.findOne.mockResolvedValue({
-      id: 'user-workspace-id',
-      userId: 'user-id',
     });
 
     const result = await service.applyMessagesVisibilityRestrictions(
@@ -232,28 +189,18 @@ describe('ApplyMessagesVisibilityRestrictionsService', () => {
     mockMessageChannelMessageAssociationRepository.find.mockResolvedValue([
       {
         messageId: 'messageId',
-        messageChannelId: 'messageChannelId',
-      },
-    ]);
-
-    mockMessageChannelRepository.find.mockResolvedValue([
-      {
-        id: 'messageChannelId',
-        visibility: MessageChannelVisibility.METADATA,
+        messageChannel: {
+          id: 'messageChannelId',
+          visibility: MessageChannelVisibility.METADATA,
+        },
       },
     ]);
 
     mockWorkspaceMemberRepository.findOneByOrFail.mockResolvedValue({
       id: 'workspace-member-account-owner-id',
-      userId: 'user-id',
     });
 
-    mockUserWorkspaceRepository.findOne.mockResolvedValue({
-      id: 'user-workspace-id',
-      userId: 'user-id',
-    });
-
-    mockConnectedAccountRepository.find.mockResolvedValue([{ id: '1' }]);
+    mockConnectedAccountDataAccessService.find.mockResolvedValue([{ id: '1' }]);
 
     const result = await service.applyMessagesVisibilityRestrictions(
       messages,
@@ -278,27 +225,17 @@ describe('ApplyMessagesVisibilityRestrictionsService', () => {
     mockMessageChannelMessageAssociationRepository.find.mockResolvedValue([
       {
         messageId: 'messageId',
-        messageChannelId: 'messageChannelId',
-      },
-    ]);
-
-    mockMessageChannelRepository.find.mockResolvedValue([
-      {
-        id: 'messageChannelId',
+        messageChannel: {
+          id: 'messageChannelId',
+        },
       },
     ]);
 
     mockWorkspaceMemberRepository.findOneByOrFail.mockResolvedValue({
       id: 'workspace-member-not-account-owner-id',
-      userId: 'user-id',
     });
 
-    mockUserWorkspaceRepository.findOne.mockResolvedValue({
-      id: 'user-workspace-id',
-      userId: 'user-id',
-    });
-
-    mockConnectedAccountRepository.find.mockResolvedValue([]);
+    mockConnectedAccountDataAccessService.find.mockResolvedValue([]);
 
     const result = await service.applyMessagesVisibilityRestrictions(
       messages,
@@ -317,28 +254,34 @@ describe('ApplyMessagesVisibilityRestrictionsService', () => {
     ];
 
     mockMessageChannelMessageAssociationRepository.find.mockResolvedValue([
-      { messageId: '1', messageChannelId: '1' },
-      { messageId: '2', messageChannelId: '2' },
-      { messageId: '3', messageChannelId: '3' },
-    ]);
-
-    mockMessageChannelRepository.find.mockResolvedValue([
-      { id: '1', visibility: MessageChannelVisibility.SHARE_EVERYTHING },
-      { id: '2', visibility: MessageChannelVisibility.SUBJECT },
-      { id: '3', visibility: MessageChannelVisibility.METADATA },
+      {
+        messageId: '1',
+        messageChannel: {
+          id: '1',
+          visibility: MessageChannelVisibility.SHARE_EVERYTHING,
+        },
+      },
+      {
+        messageId: '2',
+        messageChannel: {
+          id: '2',
+          visibility: MessageChannelVisibility.SUBJECT,
+        },
+      },
+      {
+        messageId: '3',
+        messageChannel: {
+          id: '3',
+          visibility: MessageChannelVisibility.METADATA,
+        },
+      },
     ]);
 
     mockWorkspaceMemberRepository.findOneByOrFail.mockResolvedValue({
       id: 'workspace-member-id',
-      userId: 'user-id',
     });
 
-    mockUserWorkspaceRepository.findOne.mockResolvedValue({
-      id: 'user-workspace-id',
-      userId: 'user-id',
-    });
-
-    mockConnectedAccountRepository.find
+    mockConnectedAccountDataAccessService.find
       .mockResolvedValueOnce([]) // request for message 3
       .mockResolvedValueOnce([]); // request for message 2
 
@@ -370,22 +313,34 @@ describe('ApplyMessagesVisibilityRestrictionsService', () => {
     ];
 
     mockMessageChannelMessageAssociationRepository.find.mockResolvedValue([
-      { messageId: '1', messageChannelId: '1' },
-      { messageId: '2', messageChannelId: '2' },
-      { messageId: '3', messageChannelId: '3' },
-    ]);
-
-    mockMessageChannelRepository.find.mockResolvedValue([
-      { id: '1', visibility: MessageChannelVisibility.SHARE_EVERYTHING },
-      { id: '2', visibility: MessageChannelVisibility.SUBJECT },
-      { id: '3', visibility: MessageChannelVisibility.METADATA },
+      {
+        messageId: '1',
+        messageChannel: {
+          id: '1',
+          visibility: MessageChannelVisibility.SHARE_EVERYTHING,
+        },
+      },
+      {
+        messageId: '2',
+        messageChannel: {
+          id: '2',
+          visibility: MessageChannelVisibility.SUBJECT,
+        },
+      },
+      {
+        messageId: '3',
+        messageChannel: {
+          id: '3',
+          visibility: MessageChannelVisibility.METADATA,
+        },
+      },
     ]);
 
     mockWorkspaceMemberRepository.findOneByOrFail.mockResolvedValue({
       id: 'workspace-member-id',
     });
 
-    mockConnectedAccountRepository.find
+    mockConnectedAccountDataAccessService.find
       .mockResolvedValueOnce([]) // request for message 3
       .mockResolvedValueOnce([]); // request for message 2
 

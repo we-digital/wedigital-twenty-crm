@@ -39,11 +39,10 @@ export class UpdateManyResolverFactory
       });
 
       try {
-        const { results: records } =
-          await this.commonUpdateManyQueryRunnerService.execute(
-            { ...args, selectedFields },
-            resolverContext,
-          );
+        const records = await this.commonUpdateManyQueryRunnerService.execute(
+          { ...args, selectedFields },
+          resolverContext,
+        );
 
         const typeORMObjectRecordsParser =
           new ObjectRecordsToGraphqlConnectionHelper(
