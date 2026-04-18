@@ -51,4 +51,8 @@ export const TESTIMONIALS_DATA: TestimonialsDataType = {
       },
     },
   ],
+  illustration: {
+    src: '/illustrations/partner/testimonials/testimonials.glb',
+    title: 'Partner testimonials illustration',
+  },
 };

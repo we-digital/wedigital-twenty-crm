@@ -7,14 +7,13 @@ import { SidePanelAskAIPage } from '@/side-panel/pages/ask-ai/components/SidePan
 import { SidePanelCalendarEventPage } from '@/side-panel/pages/calendar-event/components/SidePanelCalendarEventPage';
 import { SidePanelComposeEmailPage } from '@/side-panel/pages/compose-email/components/SidePanelComposeEmailPage';
 import { SidePanelFrontComponentPage } from '@/side-panel/pages/front-component/components/SidePanelFrontComponentPage';
-import { SidePanelDashboardChartSettings } from '@/side-panel/pages/page-layout/components/dashboard/SidePanelDashboardChartSettings';
-import { SidePanelDashboardIframeSettings } from '@/side-panel/pages/page-layout/components/dashboard/SidePanelDashboardIframeSettings';
-import { SidePanelDashboardRecordTableSettings } from '@/side-panel/pages/page-layout/components/dashboard/SidePanelDashboardRecordTableSettings';
-import { SidePanelRecordPageFieldSettings } from '@/side-panel/pages/page-layout/components/record-page/SidePanelRecordPageFieldSettings';
-import { SidePanelRecordPageFieldsSettings } from '@/side-panel/pages/page-layout/components/record-page/SidePanelRecordPageFieldsSettings';
-import { SidePanelPageLayoutDashboardWidgetTypeSelect } from '@/side-panel/pages/page-layout/components/SidePanelPageLayoutDashboardWidgetTypeSelect';
-import { SidePanelPageLayoutRecordPageWidgetTypeSelect } from '@/side-panel/pages/page-layout/components/SidePanelPageLayoutRecordPageWidgetTypeSelect';
+import { SidePanelPageLayoutChartSettings } from '@/side-panel/pages/page-layout/components/SidePanelPageLayoutChartSettings';
+import { SidePanelPageLayoutFieldSettings } from '@/side-panel/pages/page-layout/components/SidePanelPageLayoutFieldSettings';
+import { SidePanelPageLayoutFieldsSettings } from '@/side-panel/pages/page-layout/components/SidePanelPageLayoutFieldsSettings';
+import { SidePanelPageLayoutIframeSettings } from '@/side-panel/pages/page-layout/components/SidePanelPageLayoutIframeSettings';
+import { SidePanelPageLayoutRecordTableSettings } from '@/side-panel/pages/page-layout/components/SidePanelPageLayoutRecordTableSettings';
 import { SidePanelPageLayoutTabSettings } from '@/side-panel/pages/page-layout/components/SidePanelPageLayoutTabSettings';
+import { SidePanelPageLayoutWidgetTypeSelect } from '@/side-panel/pages/page-layout/components/SidePanelPageLayoutWidgetTypeSelect';
 import { SidePanelMergeRecordPage } from '@/side-panel/pages/record-page/components/SidePanelMergeRecordPage';
 import { SidePanelRecordPage } from '@/side-panel/pages/record-page/components/SidePanelRecordPage';
 import { SidePanelUpdateMultipleRecords } from '@/side-panel/pages/record-page/components/SidePanelUpdateMultipleRecords';
@@ -52,35 +51,31 @@ export const SIDE_PANEL_PAGES_CONFIG = new Map<SidePanelPages, React.ReactNode>(
     [SidePanelPages.AskAI, <SidePanelAskAIPage />],
     [SidePanelPages.ViewPreviousAIChats, <SidePanelAIChatThreadsPage />],
     [
-      SidePanelPages.PageLayoutDashboardWidgetTypeSelect,
-      <SidePanelPageLayoutDashboardWidgetTypeSelect />,
+      SidePanelPages.PageLayoutWidgetTypeSelect,
+      <SidePanelPageLayoutWidgetTypeSelect />,
     ],
     [
-      SidePanelPages.DashboardChartSettings,
-      <SidePanelDashboardChartSettings />,
+      SidePanelPages.PageLayoutGraphTypeSelect,
+      <SidePanelPageLayoutChartSettings />,
     ],
     [
-      SidePanelPages.DashboardIframeSettings,
-      <SidePanelDashboardIframeSettings />,
+      SidePanelPages.PageLayoutIframeSettings,
+      <SidePanelPageLayoutIframeSettings />,
     ],
     [SidePanelPages.PageLayoutTabSettings, <SidePanelPageLayoutTabSettings />],
     [
-      SidePanelPages.DashboardRecordTableSettings,
-      <SidePanelDashboardRecordTableSettings />,
+      SidePanelPages.PageLayoutFieldsSettings,
+      <SidePanelPageLayoutFieldsSettings />,
     ],
     [
-      SidePanelPages.RecordPageFieldsSettings,
-      <SidePanelRecordPageFieldsSettings />,
+      SidePanelPages.PageLayoutFieldSettings,
+      <SidePanelPageLayoutFieldSettings />,
     ],
     [
-      SidePanelPages.RecordPageFieldSettings,
-      <SidePanelRecordPageFieldSettings />,
+      SidePanelPages.PageLayoutRecordTableSettings,
+      <SidePanelPageLayoutRecordTableSettings />,
     ],
     [SidePanelPages.ViewFrontComponent, <SidePanelFrontComponentPage />],
-    [
-      SidePanelPages.PageLayoutRecordPageWidgetTypeSelect,
-      <SidePanelPageLayoutRecordPageWidgetTypeSelect />,
-    ],
     [
       SidePanelPages.NavigationMenuItemEdit,
       <SidePanelNavigationMenuItemEditPage />,

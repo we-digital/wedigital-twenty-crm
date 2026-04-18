@@ -1,13 +1,5 @@
-import { HeadlessFrontComponentRendererEngineCommand } from '@/command-menu-item/engine-command/components/HeadlessFrontComponentRendererEngineCommand';
 import { HeadlessNavigateEngineCommand } from '@/command-menu-item/engine-command/components/HeadlessNavigateEngineCommand';
 import { HeadlessOpenSidePanelPageEngineCommand } from '@/command-menu-item/engine-command/components/HeadlessOpenSidePanelPageEngineCommand';
-import { NavigationEngineCommand } from '@/command-menu-item/engine-command/components/NavigationEngineCommand';
-import { ComposeEmailCommand } from '@/command-menu-item/engine-command/global/components/ComposeEmailCommand';
-import { DeleteRecordsCommand } from '@/command-menu-item/engine-command/record/components/DeleteRecordsCommand';
-import { DestroyRecordsCommand } from '@/command-menu-item/engine-command/record/components/DestroyRecordsCommand';
-import { ExportRecordsCommand } from '@/command-menu-item/engine-command/record/components/ExportRecordsCommand';
-import { RestoreRecordsCommand } from '@/command-menu-item/engine-command/record/components/RestoreRecordsCommand';
-import { TriggerWorkflowVersionEngineCommand } from '@/command-menu-item/engine-command/record/components/TriggerWorkflowVersionEngineCommand';
 import { MergeMultipleRecordsCommand } from '@/command-menu-item/engine-command/record/multiple-records/components/MergeMultipleRecordsCommand';
 import { UpdateMultipleRecordsCommand } from '@/command-menu-item/engine-command/record/multiple-records/components/UpdateMultipleRecordsCommand';
 import { CreateNewIndexRecordNoSelectionRecordCommand } from '@/command-menu-item/engine-command/record/no-selection/components/CreateNewIndexRecordNoSelectionRecordCommand';
@@ -15,6 +7,10 @@ import { CreateNewViewNoSelectionRecordCommand } from '@/command-menu-item/engin
 import { HideDeletedRecordsNoSelectionRecordCommand } from '@/command-menu-item/engine-command/record/no-selection/components/HideDeletedRecordsNoSelectionRecordCommand';
 import { ImportRecordsNoSelectionRecordCommand } from '@/command-menu-item/engine-command/record/no-selection/components/ImportRecordsNoSelectionRecordCommand';
 import { SeeDeletedRecordsNoSelectionRecordCommand } from '@/command-menu-item/engine-command/record/no-selection/components/SeeDeletedRecordsNoSelectionRecordCommand';
+import { DeleteRecordsCommand } from '@/command-menu-item/engine-command/record/components/DeleteRecordsCommand';
+import { DestroyRecordsCommand } from '@/command-menu-item/engine-command/record/components/DestroyRecordsCommand';
+import { ExportRecordsCommand } from '@/command-menu-item/engine-command/record/components/ExportRecordsCommand';
+import { RestoreRecordsCommand } from '@/command-menu-item/engine-command/record/components/RestoreRecordsCommand';
 import { AddToFavoritesSingleRecordCommand } from '@/command-menu-item/engine-command/record/single-record/components/AddToFavoritesSingleRecordCommand';
 import { ExportNoteSingleRecordCommand } from '@/command-menu-item/engine-command/record/single-record/components/ExportNoteSingleRecordCommand';
 import { NavigateToNextRecordSingleRecordCommand } from '@/command-menu-item/engine-command/record/single-record/components/NavigateToNextRecordSingleRecordCommand';
@@ -24,7 +20,6 @@ import { CancelDashboardSingleRecordCommand } from '@/command-menu-item/engine-c
 import { DuplicateDashboardSingleRecordCommand } from '@/command-menu-item/engine-command/record/single-record/dashboard/components/DuplicateDashboardSingleRecordCommand';
 import { EditDashboardSingleRecordCommand } from '@/command-menu-item/engine-command/record/single-record/dashboard/components/EditDashboardSingleRecordCommand';
 import { SaveDashboardSingleRecordCommand } from '@/command-menu-item/engine-command/record/single-record/dashboard/components/SaveDashboardSingleRecordCommand';
-import { ReplyToEmailThreadCommand } from '@/command-menu-item/engine-command/record/single-record/message-thread/components/ReplyToEmailThreadCommand';
 import { EditRecordPageLayoutSingleRecordCommand } from '@/command-menu-item/engine-command/record/single-record/record-page-layout/components/EditRecordPageLayoutSingleRecordCommand';
 import { SeeVersionWorkflowRunSingleRecordCommand } from '@/command-menu-item/engine-command/record/single-record/workflow-runs/components/SeeVersionWorkflowRunSingleRecordCommand';
 import { SeeWorkflowWorkflowRunSingleRecordCommand } from '@/command-menu-item/engine-command/record/single-record/workflow-runs/components/SeeWorkflowWorkflowRunSingleRecordCommand';
@@ -43,6 +38,10 @@ import { SeeRunsWorkflowSingleRecordCommand } from '@/command-menu-item/engine-c
 import { SeeVersionsWorkflowSingleRecordCommand } from '@/command-menu-item/engine-command/record/single-record/workflow/components/SeeVersionsWorkflowSingleRecordCommand';
 import { TestWorkflowSingleRecordCommand } from '@/command-menu-item/engine-command/record/single-record/workflow/components/TestWorkflowSingleRecordCommand';
 import { TidyUpWorkflowSingleRecordCommand } from '@/command-menu-item/engine-command/record/single-record/workflow/components/TidyUpWorkflowSingleRecordCommand';
+import { HeadlessFrontComponentRendererEngineCommand } from '@/command-menu-item/engine-command/components/HeadlessFrontComponentRendererEngineCommand';
+import { TriggerWorkflowVersionEngineCommand } from '@/command-menu-item/engine-command/record/components/TriggerWorkflowVersionEngineCommand';
+import { ComposeEmailCommand } from '@/command-menu-item/engine-command/global/components/ComposeEmailCommand';
+import { ReplyToEmailThreadCommand } from '@/command-menu-item/engine-command/record/single-record/message-thread/components/ReplyToEmailThreadCommand';
 import { CoreObjectNamePlural } from '@/object-metadata/types/CoreObjectNamePlural';
 import { msg } from '@lingui/core/macro';
 import { AppPath, SettingsPath, SidePanelPages } from 'twenty-shared/types';
@@ -123,9 +122,6 @@ export const ENGINE_COMPONENT_KEY_COMPONENT_MAP: Record<
   [EngineComponentKey.CANCEL_DASHBOARD_LAYOUT]: (
     <CancelDashboardSingleRecordCommand />
   ),
-  [EngineComponentKey.NAVIGATION]: <NavigationEngineCommand />,
-  // TODO: Remove these keys once we have ran the migration command `upgrade:1-21:refactor-navigation-commands`
-  // These keys are kept for backward compatibility during migration
   [EngineComponentKey.GO_TO_PEOPLE]: (
     <HeadlessNavigateEngineCommand
       to={AppPath.RecordIndexPage}

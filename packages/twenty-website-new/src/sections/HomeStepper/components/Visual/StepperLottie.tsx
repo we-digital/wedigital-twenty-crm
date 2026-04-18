@@ -1,19 +1,11 @@
 'use client';
 
-import { styled } from '@linaria/react';
-import { DotLottieReact, type DotLottie } from '@lottiefiles/dotlottie-react';
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
-
-import { scrollProgressToHomeStepperLottieFrame } from '@/sections/HomeStepper/utils/home-stepper-lottie-frame-map';
 import { theme } from '@/theme';
+import { styled } from '@linaria/react';
+import Lottie from 'lottie-react';
+import { useEffect, useState } from 'react';
 
-export const HOME_STEPPER_LOTTIE_SRC = '/lottie/stepper/stepper.lottie';
+export const HOME_STEPPER_LOTTIE_SRC = '/images/home/stepper/lottie.json';
 
 const LottieSlot = styled.div`
   box-sizing: border-box;
@@ -24,72 +16,49 @@ const LottieSlot = styled.div`
   width: 100%;
 `;
 
-type StepperLottieProps = {
-  scrollProgress: number;
-};
+type LottieAnimationData = Record<string, unknown>;
 
-function applyScrollToDotLottie(
-  dotLottie: DotLottie | null,
-  scrollProgress: number,
-  totalFrames: number,
-) {
-  if (!dotLottie?.isLoaded || totalFrames <= 0) {
-    return;
-  }
-  const frame = scrollProgressToHomeStepperLottieFrame(
-    scrollProgress,
-    totalFrames,
+export function StepperLottie() {
+  const [animationData, setAnimationData] = useState<LottieAnimationData | null>(
+    null,
   );
-  dotLottie.setFrame(frame);
-}
-
-export function StepperLottie({ scrollProgress }: StepperLottieProps) {
-  const [player, setPlayer] = useState<DotLottie | null>(null);
-  const [totalFrames, setTotalFrames] = useState(0);
-  const scrollProgressRef = useRef(scrollProgress);
-  scrollProgressRef.current = scrollProgress;
-
-  const dotLottieRefCallback = useCallback((instance: DotLottie | null) => {
-    setPlayer(instance);
-  }, []);
 
   useEffect(() => {
-    if (!player) {
-      setTotalFrames(0);
-      return;
-    }
+    let cancelled = false;
 
-    const onReady = () => {
-      const frames = player.totalFrames;
-      setTotalFrames(frames);
-      applyScrollToDotLottie(player, scrollProgressRef.current, frames);
-    };
+    fetch(HOME_STEPPER_LOTTIE_SRC)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Lottie fetch failed: ${response.status}`);
+        }
+        return response.json() as Promise<LottieAnimationData>;
+      })
+      .then((data) => {
+        if (!cancelled) {
+          setAnimationData(data);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAnimationData(null);
+        }
+      });
 
-    if (player.isLoaded) {
-      onReady();
-      return;
-    }
-
-    player.addEventListener('load', onReady);
     return () => {
-      player.removeEventListener('load', onReady);
+      cancelled = true;
     };
-  }, [player]);
+  }, []);
 
-  useLayoutEffect(() => {
-    applyScrollToDotLottie(player, scrollProgress, totalFrames);
-  }, [player, scrollProgress, totalFrames]);
+  if (!animationData) {
+    return <LottieSlot aria-hidden />;
+  }
 
   return (
     <LottieSlot aria-hidden>
-      <DotLottieReact
-        autoplay={false}
-        dotLottieRefCallback={dotLottieRefCallback}
-        layout={{ align: [0.5, 0.5], fit: 'contain' }}
-        loop={false}
-        src={HOME_STEPPER_LOTTIE_SRC}
+      <Lottie
+        animationData={animationData}
+        loop
         style={{ height: '100%', maxWidth: '100%', width: '100%' }}
-        useFrameInterpolation
       />
     </LottieSlot>
   );

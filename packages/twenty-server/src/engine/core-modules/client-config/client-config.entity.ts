@@ -56,11 +56,11 @@ export class ClientAIModelConfig {
   @Field(() => String, { nullable: true })
   sdkPackage: AiSdkPackage | null;
 
-  @Field(() => Number, { nullable: true })
-  inputCostPerMillionTokens?: number;
+  @Field(() => Number)
+  inputCostPerMillionTokensInCredits: number;
 
-  @Field(() => Number, { nullable: true })
-  outputCostPerMillionTokens?: number;
+  @Field(() => Number)
+  outputCostPerMillionTokensInCredits: number;
 
   @Field(() => NativeModelCapabilities, { nullable: true })
   nativeCapabilities?: NativeModelCapabilities;
@@ -73,15 +73,6 @@ export class ClientAIModelConfig {
 
   @Field(() => String, { nullable: true })
   providerName?: string;
-
-  @Field(() => String, { nullable: true })
-  providerLabel?: string;
-
-  @Field(() => Number, { nullable: true })
-  contextWindowTokens?: number;
-
-  @Field(() => Number, { nullable: true })
-  maxOutputTokens?: number;
 
   @Field(() => String, { nullable: true })
   dataResidency?: string;

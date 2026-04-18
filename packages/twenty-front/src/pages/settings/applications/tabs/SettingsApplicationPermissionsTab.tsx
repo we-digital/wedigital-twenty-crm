@@ -153,14 +153,12 @@ const buildSyntheticRole = (
     canReadFieldValue: permission.canReadFieldValue,
     canUpdateFieldValue: permission.canUpdateFieldValue,
   })),
-  permissionFlags: (defaultRole.permissionFlags ?? []).map(
-    (permissionFlag) => ({
-      __typename: 'PermissionFlag' as const,
-      id: uuidv4(),
-      roleId: defaultRole.universalIdentifier,
-      flag: permissionFlag.flag,
-    }),
-  ),
+  permissionFlags: (defaultRole.permissionFlags ?? []).map((flag) => ({
+    __typename: 'PermissionFlag' as const,
+    id: uuidv4(),
+    roleId: defaultRole.universalIdentifier,
+    flag: flag as PermissionFlagType,
+  })),
 });
 
 const buildFieldMetadataItemFromMarketplaceField = (

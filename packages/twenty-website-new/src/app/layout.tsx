@@ -1,4 +1,5 @@
 import { FOOTER_DATA } from '@/app/_constants/footer';
+import { GlbWarmCache } from '@/constants/glb-warm-cache.component';
 import { fetchCommunityStats } from '@/lib/community/fetch-community-stats';
 import { mergeSocialLinkLabels } from '@/lib/community/merge-social-link-labels';
 import { Footer } from '@/sections/Footer/components';
@@ -8,6 +9,7 @@ import { css } from '@linaria/core';
 import { styled } from '@linaria/react';
 import type { Metadata } from 'next';
 import { Aleo, Azeret_Mono, Host_Grotesk, VT323 } from 'next/font/google';
+import '../../../twenty-ui/dist/theme-light.css';
 
 const hostGrotesk = Host_Grotesk({
   subsets: ['latin'],
@@ -84,6 +86,7 @@ export default async function RootLayout({
       <body
         className={`${cssVariables} ${hostGrotesk.variable} ${aleo.variable} ${azeretMono.variable} ${vt323.variable}`}
       >
+        <GlbWarmCache />
         <StyledMain>{children}</StyledMain>
         <Footer.Root illustration={FOOTER_DATA.illustration}>
           <Footer.Logo />

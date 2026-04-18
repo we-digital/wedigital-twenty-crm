@@ -33,7 +33,7 @@ export function Flow({ scrollContainerRef, steps }: FlowProps) {
         steps={steps}
       />
       <RightColumn>
-        <Visual scrollProgress={scrollProgress} />
+        <Visual />
       </RightColumn>
     </>
   );

@@ -1,28 +1,19 @@
-import { PageLayoutComponentInstanceContext } from '@/page-layout/states/contexts/PageLayoutComponentInstanceContext';
+import { useNavigatePageLayoutSidePanel } from '@/side-panel/pages/page-layout/hooks/useNavigatePageLayoutSidePanel';
 import { pageLayoutDraggedAreaComponentState } from '@/page-layout/states/pageLayoutDraggedAreaComponentState';
 import { pageLayoutEditingWidgetIdComponentState } from '@/page-layout/states/pageLayoutEditingWidgetIdComponentState';
 import { parseCellIdToCoordinates } from '@/page-layout/utils/parseCellIdToCoordinates';
-import { useNavigatePageLayoutSidePanel } from '@/side-panel/pages/page-layout/hooks/useNavigatePageLayoutSidePanel';
-import { useAvailableComponentInstanceIdOrThrow } from '@/ui/utilities/state/component-state/hooks/useAvailableComponentInstanceIdOrThrow';
 import { useAtomComponentStateCallbackState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateCallbackState';
 import { useStore } from 'jotai';
 import { useCallback } from 'react';
 import { SidePanelPages } from 'twenty-shared/types';
 
-export const useCreateWidgetFromClick = (pageLayoutIdFromProps?: string) => {
-  const pageLayoutId = useAvailableComponentInstanceIdOrThrow(
-    PageLayoutComponentInstanceContext,
-    pageLayoutIdFromProps,
-  );
-
+export const useCreateWidgetFromClick = () => {
   const pageLayoutDraggedAreaState = useAtomComponentStateCallbackState(
     pageLayoutDraggedAreaComponentState,
-    pageLayoutId,
   );
 
   const pageLayoutEditingWidgetIdState = useAtomComponentStateCallbackState(
     pageLayoutEditingWidgetIdComponentState,
-    pageLayoutId,
   );
 
   const { navigatePageLayoutSidePanel } = useNavigatePageLayoutSidePanel();
@@ -38,7 +29,7 @@ export const useCreateWidgetFromClick = (pageLayoutIdFromProps?: string) => {
       store.set(pageLayoutEditingWidgetIdState, null);
 
       navigatePageLayoutSidePanel({
-        sidePanelPage: SidePanelPages.PageLayoutDashboardWidgetTypeSelect,
+        sidePanelPage: SidePanelPages.PageLayoutWidgetTypeSelect,
         resetNavigationStack: true,
       });
     },

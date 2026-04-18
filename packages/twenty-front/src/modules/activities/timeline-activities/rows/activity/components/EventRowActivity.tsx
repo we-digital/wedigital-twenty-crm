@@ -1,8 +1,11 @@
 import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
 
-import { type EventRowDynamicComponentProps } from '@/activities/timeline-activities/rows/components/EventRowDynamicComponent.types';
-import { EventRowItem } from '@/activities/timeline-activities/rows/components/EventRowItem';
+import {
+  type EventRowDynamicComponentProps,
+  StyledEventRowItemAction,
+  StyledEventRowItemColumn,
+} from '@/activities/timeline-activities/rows/components/EventRowDynamicComponent';
 import { isTimelineActivityWithLinkedRecord } from '@/activities/timeline-activities/types/TimelineActivity';
 import { useOpenRecordInSidePanel } from '@/side-panel/hooks/useOpenRecordInSidePanel';
 import { type CoreObjectNameSingular } from 'twenty-shared/types';
@@ -99,10 +102,10 @@ export const EventRowActivity = ({
     <StyledEventRow>
       <StyledRowContainer>
         <StyledRow>
-          <EventRowItem>{authorFullName}</EventRowItem>
-          <EventRowItem variant="action">
+          <StyledEventRowItemColumn>{authorFullName}</StyledEventRowItemColumn>
+          <StyledEventRowItemAction>
             {t`${eventAction} a related ${eventObject}`}
-          </EventRowItem>
+          </StyledEventRowItemAction>
           <StyledLinkedActivity
             onClick={() =>
               openRecordInSidePanel({

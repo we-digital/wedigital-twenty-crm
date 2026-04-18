@@ -11,9 +11,11 @@ import { type MessageFolderEntity } from 'src/engine/metadata-modules/message-fo
 export const computeFoldersToUpdate = ({
   discoveredFolders,
   existingFolders,
+  externalIdToUuidMap,
 }: {
   discoveredFolders: DiscoveredMessageFolder[];
   existingFolders: MessageFolder[];
+  externalIdToUuidMap: Map<string, string>;
 }): Map<string, Partial<MessageFolderEntity>> => {
   const existingFoldersByExternalId = new Map(
     existingFolders.map((folder) => [folder.externalId, folder]),
@@ -30,14 +32,16 @@ export const computeFoldersToUpdate = ({
       continue;
     }
 
-    const parentFolderId = isNonEmptyString(discoveredFolder.parentFolderId)
-      ? discoveredFolder.parentFolderId
+    const resolvedParentFolderId = isNonEmptyString(
+      discoveredFolder.parentFolderId,
+    )
+      ? (externalIdToUuidMap.get(discoveredFolder.parentFolderId) ?? null)
       : null;
 
     const discoveredFolderData = {
       name: discoveredFolder.name,
       isSentFolder: discoveredFolder.isSentFolder,
-      parentFolderId,
+      parentFolderId: resolvedParentFolderId,
     };
 
     const existingFolderData = {

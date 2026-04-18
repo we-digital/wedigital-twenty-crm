@@ -1,11 +1,8 @@
-import { styled } from '@linaria/react';
-
-import { Body, Heading, LinkButton } from '@/design-system/components';
+import { Body, Heading, LazyEmbed, LinkButton } from '@/design-system/components';
 import { CheckIcon } from '@/icons/informative/Check';
-import { IllustrationMount } from '@/illustrations';
 import type { PlanCardType } from '@/sections/Plans/types';
 import { theme } from '@/theme';
-import { css } from '@linaria/core';
+import { styled } from '@linaria/react';
 
 const FIXED_ROWS = 4;
 
@@ -22,68 +19,57 @@ const StyledCard = styled.div`
   padding-right: ${theme.spacing(4)};
   padding-top: ${theme.spacing(4)};
   row-gap: ${theme.spacing(4)};
+  transition:
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   z-index: 1;
+
+  &:hover {
+    border-color: ${theme.colors.highlight[100]};
+    transform: translateY(-12px) scale(1.02);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.12);
+    z-index: 10;
+  }
 `;
 
 const CardHeader = styled.div`
-  display: flex;
-  flex-direction: column;
-  overflow: visible;
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-content: space-between;
+  overflow: hidden;
 
   @media (min-width: ${theme.breakpoints.md}px) {
-    align-items: flex-start;
-    flex-direction: row;
-    justify-content: space-between;
+    grid-template-columns: 1fr auto;
   }
 `;
 
 const CardHeaderInfo = styled.div`
-  display: flex;
-  flex: 1;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   min-width: 0;
   overflow: hidden;
-  gap: ${theme.spacing(4)};
-`;
-
-const cardPlanTitleClassName = css`
-  &[data-size='xs'] {
-    line-height: ${theme.lineHeight(5)};
-  }
-
-  @media (min-width: ${theme.breakpoints.md}px) {
-    &[data-size='xs'] {
-      line-height: ${theme.lineHeight(6)};
-    }
-  }
-`;
-
-const priceBodyClassName = css`
-  color: ${theme.colors.primary.text[60]};
+  row-gap: ${theme.spacing(4)};
 `;
 
 const PriceLine = styled.div`
   align-items: baseline;
   display: flex;
-  gap: ${theme.spacing(1)};
   white-space: nowrap;
 `;
 
-const CardIllustrationEmbed = styled.div`
+const CardIllustration = styled(LazyEmbed)`
   background-color: ${theme.colors.primary.background[100]};
   border: none;
-  border-radius: ${theme.radius(2)};
-  display: block;
+  display: none;
   flex-shrink: 0;
-  height: 80px;
+  height: 112px;
   overflow: hidden;
   width: 197px;
 
   @media (min-width: ${theme.breakpoints.md}px) {
     display: block;
-    margin-left: auto;
-    transform: translateX(${theme.spacing(4)});
   }
 `;
 
@@ -127,9 +113,8 @@ export function Card({ card, highlighted = false, maxBullets }: CardProps) {
         <CardHeaderInfo>
           <Heading
             as="h3"
-            className={cardPlanTitleClassName}
             segments={card.heading}
-            size="xs"
+            size="md"
             weight="light"
           />
           <PriceLine>
@@ -142,14 +127,16 @@ export function Card({ card, highlighted = false, maxBullets }: CardProps) {
             <Body
               as="span"
               body={card.price.body}
-              className={priceBodyClassName}
               size="sm"
             />
           </PriceLine>
         </CardHeaderInfo>
-        <CardIllustrationEmbed>
-          <IllustrationMount illustration={card.illustration} />
-        </CardIllustrationEmbed>
+        <CardIllustration
+          allow="clipboard-write; encrypted-media; gyroscope; web-share"
+          referrerPolicy="strict-origin-when-cross-origin"
+          src={card.illustration.src}
+          title={card.illustration.title}
+        />
       </CardHeader>
 
       <LinkButton

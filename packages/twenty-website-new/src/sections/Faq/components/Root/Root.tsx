@@ -1,5 +1,5 @@
-import { Container } from '@/design-system/components';
-import { IllustrationMount, type IllustrationId } from '@/illustrations';
+import { Container, LazyEmbed } from '@/design-system/components';
+import type { IllustrationType } from '@/design-system/components/Illustration/types/Illustration';
 import { theme } from '@/theme';
 import { styled } from '@linaria/react';
 import type { ReactNode } from 'react';
@@ -15,10 +15,30 @@ const StyledSection = styled.section`
 
 const IllustrationLayer = styled.div`
   inset: 0;
+  opacity: 0.45;
   overflow: hidden;
   pointer-events: none;
   position: absolute;
   z-index: 0;
+`;
+
+const FaqIllustrationEmbed = styled(LazyEmbed)`
+  border: none;
+  top: -15%;
+  right: -5%;
+  left: auto;
+  transform: none;
+  display: block;
+  height: min(60vh, 550px);
+  position: absolute;
+  width: min(70vw, 750px);
+
+  @media (min-width: ${theme.breakpoints.md}px) {
+    top: -20%;
+    right: -10%;
+    height: min(70vh, 700px);
+    width: min(60vw, 900px);
+  }
 `;
 
 const StyledContainer = styled(Container)`
@@ -40,14 +60,22 @@ const StyledContainer = styled(Container)`
 
 type RootProps = {
   children: ReactNode;
-  illustration: IllustrationId;
+  illustration: IllustrationType;
 };
 
 export function Root({ children, illustration }: RootProps) {
   return (
     <StyledSection>
       <IllustrationLayer aria-hidden>
-        <IllustrationMount illustration={illustration} />
+        <FaqIllustrationEmbed
+          allow="clipboard-write; encrypted-media; gyroscope; web-share"
+          allowFullScreen
+          eager
+          referrerPolicy="strict-origin-when-cross-origin"
+          rootMargin="400px 0px"
+          src={illustration.src}
+          title={illustration.title}
+        />
       </IllustrationLayer>
       <StyledContainer>{children}</StyledContainer>
     </StyledSection>

@@ -5,22 +5,20 @@ import { assertUnreachable } from 'twenty-shared/utils';
 
 export const getPageLayoutPageTitle = (page: PageLayoutSidePanelPage) => {
   switch (page) {
-    case SidePanelPages.PageLayoutDashboardWidgetTypeSelect:
+    case SidePanelPages.PageLayoutWidgetTypeSelect:
       return t`Add Widget`;
-    case SidePanelPages.DashboardChartSettings:
+    case SidePanelPages.PageLayoutGraphTypeSelect:
       return t`Select Graph Type`;
-    case SidePanelPages.DashboardIframeSettings:
+    case SidePanelPages.PageLayoutIframeSettings:
       return t`iFrame Settings`;
     case SidePanelPages.PageLayoutTabSettings:
       return t`Tab Settings`;
-    case SidePanelPages.RecordPageFieldsSettings:
+    case SidePanelPages.PageLayoutFieldsSettings:
       return t`Fields Settings`;
-    case SidePanelPages.RecordPageFieldSettings:
+    case SidePanelPages.PageLayoutFieldSettings:
       return t`Field widget`;
-    case SidePanelPages.DashboardRecordTableSettings:
+    case SidePanelPages.PageLayoutRecordTableSettings:
       return t`Record Table Settings`;
-    case SidePanelPages.PageLayoutRecordPageWidgetTypeSelect:
-      return t`New widget`;
     default:
       assertUnreachable(page);
   }

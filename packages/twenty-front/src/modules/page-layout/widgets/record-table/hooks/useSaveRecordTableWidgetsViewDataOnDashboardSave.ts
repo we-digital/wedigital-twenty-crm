@@ -186,12 +186,10 @@ export const useSaveRecordTableWidgetsViewDataOnDashboardSave = () => {
           mapRecordFieldToViewFieldWithCurrentAggregateOperation,
         );
 
-        const existingViewFields = currentView.viewFields ?? [];
-
         const { viewFieldsToCreate, viewFieldsToUpdate } =
           computeViewFieldsToCreateAndUpdate({
             newViewFields,
-            existingViewFields,
+            existingViewFields: currentView.viewFields ?? [],
             viewId,
           });
 

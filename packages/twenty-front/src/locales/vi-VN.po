@@ -158,16 +158,6 @@ msgstr "{0, plural, other {Bạn không có quyền truy cập vào trường {f
 msgid "{0} credits"
 msgstr "{0} tín dụng"
 
-#. js-lingui-id: peiknr
-#. placeholder {0}: activeVisibleFieldLabels.length
-#. placeholder {0}: activeFilterLabels.length
-#. placeholder {0}: activeSortLabels.length
-#: src/modules/side-panel/pages/page-layout/hooks/useRecordTableSettingsDescriptions.ts
-#: src/modules/side-panel/pages/page-layout/hooks/useRecordTableSettingsDescriptions.ts
-#: src/modules/side-panel/pages/page-layout/hooks/useRecordTableSettingsDescriptions.ts
-msgid "{0} shown"
-msgstr ""
-
 #. js-lingui-id: r4l/MK
 #. placeholder {0}: formatUsageValue(totalCredits)
 #: src/pages/settings/SettingsUsageUserDetail.tsx
@@ -439,7 +429,7 @@ msgid "{totalCount} selected"
 msgstr "{totalCount} được chọn"
 
 #. js-lingui-id: WwbakM
-#: src/modules/side-panel/pages/page-layout/components/record-page/SidePanelRecordPageFieldsSettings.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutFieldsSettings.tsx
 msgid "{totalFieldsCount} fields"
 msgstr "{totalFieldsCount} trường"
 
@@ -466,13 +456,11 @@ msgstr "{workspaceMemberName} sẽ không còn được phân công vào vai tr�
 msgid "••••••••"
 msgstr "••••••••"
 
-#. js-lingui-id: SMgdEJ
+#. js-lingui-id: tD9raa
 #. placeholder {0}: formatNumber(preview.estimatedTokenCount, { abbreviate: true, decimals: 1, })
-#. placeholder {0}: formatNumber( section.estimatedTokenCount, { abbreviate: true, decimals: 1, }, )
 #: src/pages/settings/ai/SettingsAIPrompts.tsx
-#: src/pages/settings/ai/SettingsAIPrompts.tsx
-msgid "~ {0} tokens"
-msgstr ""
+msgid "~{0} tokens"
+msgstr "~{0} token"
 
 #. js-lingui-id: Cx0xl3
 #: src/modules/workflow/workflow-steps/workflow-actions/delay-actions/components/WorkflowEditActionDelay.tsx
@@ -1158,16 +1146,6 @@ msgstr "Thêm tiện ích"
 msgid "Add Widget"
 msgstr "Thêm Widget"
 
-#. js-lingui-id: 8zCitC
-#: src/modules/side-panel/pages/page-layout/components/WidgetSettingsPlacementSection.tsx
-msgid "Add widget above"
-msgstr ""
-
-#. js-lingui-id: yy7F6M
-#: src/modules/side-panel/pages/page-layout/components/WidgetSettingsPlacementSection.tsx
-msgid "Add widget below"
-msgstr ""
-
 #. js-lingui-id: m2qDV8
 #: src/modules/object-record/record-table/empty-state/utils/getEmptyStateTitle.ts
 msgid "Add your first {objectLabel}"
@@ -1729,8 +1707,6 @@ msgstr "Đã xảy ra lỗi khi tải lên ảnh."
 #: src/modules/views/hooks/internal/usePerformViewAPIPersist.ts
 #: src/modules/ui/feedback/snack-bar-manager/hooks/useSnackBar.ts
 #: src/modules/page-layout/hooks/useUpdatePageLayoutWithTabsAndWidgets.ts
-#: src/modules/page-layout/hooks/useResetPageLayoutWidgetToDefault.ts
-#: src/modules/page-layout/hooks/useResetPageLayoutTabToDefault.ts
 #: src/modules/object-metadata/hooks/useUpdateOneObjectMetadataItem.ts
 #: src/modules/object-metadata/hooks/useUpdateOneFieldMetadataItem.ts
 #: src/modules/object-metadata/hooks/useDeleteOneObjectMetadataItem.ts
@@ -1976,6 +1952,8 @@ msgstr "Đã nâng cấp ứng dụng thành công."
 #. js-lingui-id: fL7WXr
 #: src/pages/settings/logic-functions/SettingsLogicFunctionDetail.tsx
 #: src/pages/settings/applications/SettingsAvailableApplicationDetails.tsx
+#: src/pages/settings/applications/SettingsApplications.tsx
+#: src/pages/settings/applications/SettingsApplications.tsx
 #: src/pages/settings/applications/SettingsApplications.tsx
 #: src/pages/settings/applications/SettingsApplications.tsx
 #: src/pages/settings/applications/SettingsApplicationRegistrationDetails.tsx
@@ -2851,7 +2829,7 @@ msgid "Captcha (anti-bot check) is still loading, try again"
 msgstr "Captcha (kiểm tra chống bot) vẫn đang tải, thử lại"
 
 #. js-lingui-id: kryGs+
-#: src/modules/side-panel/pages/page-layout/components/record-page/SidePanelRecordPageFieldSettings.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutFieldSettings.tsx
 #: src/modules/side-panel/pages/page-layout/components/dropdown-content/FieldWidgetLayoutDropdownContent.tsx
 msgid "Card"
 msgstr ""
@@ -2930,7 +2908,7 @@ msgid "Change to Yearly?"
 msgstr "Chuyển sang hàng năm?"
 
 #. js-lingui-id: nuBbBr
-#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutDashboardWidgetTypeSelect.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutWidgetTypeSelect.tsx
 #: src/modules/side-panel/components/hooks/usePageLayoutHeaderInfo.ts
 msgid "Chart"
 msgstr "Biểu đồ"
@@ -3345,6 +3323,11 @@ msgstr "Cấu hình cài đặt CalDAV để đồng bộ sự kiện lịch c�
 msgid "Configure date, time, number, timezone, and calendar start day"
 msgstr "Cấu hình ngày, giờ, số, múi giờ, và ngày bắt đầu của lịch"
 
+#. js-lingui-id: +SQwHr
+#: src/pages/settings/ai/components/SettingsAIModelsTab.tsx
+msgid "Configure default AI models and availability"
+msgstr "Cấu hình các mô hình AI mặc định và trạng thái khả dụng"
+
 #. js-lingui-id: utsXG8
 #: src/pages/settings/security/SettingsSecurity.tsx
 msgid "Configure fallback login methods for users with SSO bypass permissions"
@@ -3389,11 +3372,6 @@ msgstr "Cấu hình tiện ích này để hiển thị các trường"
 #: src/modules/settings/logic-functions/components/tabs/SettingsLogicFunctionTriggersTab.tsx
 msgid "Configure when this function should be executed"
 msgstr "Cấu hình thời điểm thực thi hàm này"
-
-#. js-lingui-id: hzDiM0
-#: src/pages/settings/ai/components/SettingsAIModelsTab.tsx
-msgid "Configure your default AI model"
-msgstr ""
 
 #. js-lingui-id: Bh4GBD
 #: src/modules/settings/accounts/components/SettingsAccountsSettingsSection.tsx
@@ -3523,7 +3501,7 @@ msgstr "Nội dung"
 
 #. js-lingui-id: M73whl
 #: src/modules/side-panel/pages/root/components/SidePanelRootPage.tsx
-#: src/modules/settings/ai/components/SettingsAiModelHoverCard.tsx
+#: src/modules/settings/admin-panel/ai/components/SettingsAdminAiModelHoverCard.tsx
 #: src/modules/command-menu-item/server-items/display/components/SidePanelCommandMenuItemDisplayPage.tsx
 #: src/modules/ai/components/RoutingDebugDisplay.tsx
 msgid "Context"
@@ -3721,15 +3699,20 @@ msgstr "Đối tượng cốt lõi"
 msgid "Cost"
 msgstr "Chi phí"
 
+#. js-lingui-id: Iw/ard
+#: src/modules/settings/admin-panel/ai/components/SettingsAdminAiModelHoverCard.tsx
+msgid "Cost / 1M"
+msgstr "Chi phí / 1M"
+
+#. js-lingui-id: 3kzLg2
+#: src/modules/settings/admin-panel/ai/components/SettingsAdminAiModelsTable.tsx
+msgid "Cost / 1M tokens"
+msgstr "Chi phí / 1M token"
+
 #. js-lingui-id: iX2opZ
 #: src/modules/settings/billing/components/SettingsBillingCreditsSection.tsx
 msgid "Cost per 1k Extra Credits"
 msgstr "Chi phí cho 1k Tín Dụng Thêm"
-
-#. js-lingui-id: Z9Z9PX
-#: src/modules/settings/ai/components/SettingsAiModelHoverCard.tsx
-msgid "Cost per 1M tokens"
-msgstr ""
 
 #. js-lingui-id: 3X5ngu
 #: src/pages/settings/admin-panel/SettingsAdminNewAiModel.tsx
@@ -4268,13 +4251,14 @@ msgstr "Nhân bản thành công bảng điều khiển"
 #: src/modules/side-panel/pages/workflow/trigger-type/components/SidePanelWorkflowSelectTriggerTypeContent.tsx
 #: src/modules/side-panel/pages/workflow/action/components/SidePanelWorkflowSelectAction.tsx
 #: src/modules/side-panel/pages/page-layout/constants/ChartSettingsHeadings.ts
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutRecordTableSettings.tsx
 #: src/modules/navigation-menu-item/edit/side-panel/components/SidePanelNewSidebarItemMainMenu.tsx
 msgid "Data"
 msgstr "Dữ liệu"
 
 #. js-lingui-id: nxnCld
-#: src/modules/side-panel/pages/page-layout/components/record-page/SidePanelRecordPageFieldsSettings.tsx
-#: src/modules/side-panel/pages/page-layout/components/record-page/SidePanelRecordPageFieldSettings.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutFieldsSettings.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutFieldSettings.tsx
 msgid "Data and display"
 msgstr "Dữ liệu và hiển thị"
 
@@ -4320,7 +4304,7 @@ msgid "Data on display"
 msgstr "Dữ liệu hiển thị"
 
 #. js-lingui-id: Ix/CMz
-#: src/modules/settings/ai/components/SettingsAiModelHoverCard.tsx
+#: src/modules/settings/admin-panel/ai/components/SettingsAdminAiModelHoverCard.tsx
 msgid "Data residency"
 msgstr "Khu vực lưu trữ dữ liệu"
 
@@ -4483,7 +4467,6 @@ msgid "default"
 msgstr ""
 
 #. js-lingui-id: ovBPCi
-#: src/pages/settings/ai/components/SettingsAIModelsTab.tsx
 #: src/modules/settings/data-model/fields/forms/date/utils/getDisplayFormatLabel.ts
 #: src/modules/settings/data-model/fields/forms/address/components/MultiSelectAddressFields.tsx
 msgid "Default"
@@ -4789,8 +4772,8 @@ msgid "Delete webhook"
 msgstr "Xóa Webhooks"
 
 #. js-lingui-id: tWD0z0
-#: src/modules/side-panel/pages/page-layout/components/WidgetSettingsManageSection.tsx
 #: src/modules/side-panel/pages/page-layout/components/WidgetSettingsFooter.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutFieldsSettings.tsx
 msgid "Delete widget"
 msgstr "Xóa tiện ích"
 
@@ -4821,11 +4804,6 @@ msgstr "Bản ghi đã xóa"
 #: src/modules/settings/two-factor-authentication/components/DeleteTwoFactorAuthenticationMethod.tsx
 msgid "Deleting this method will remove it permanently from your account."
 msgstr "Xóa phương thức này sẽ xóa vĩnh viễn khỏi tài khoản của bạn."
-
-#. js-lingui-id: Ssdrw4
-#: src/modules/settings/ai/components/SettingsAiModelsTable.tsx
-msgid "Deprecated"
-msgstr ""
 
 #. js-lingui-id: O3LJh6
 #: src/modules/side-panel/pages/page-layout/utils/getSortLabelSuffixForFieldType.ts
@@ -4905,7 +4883,7 @@ msgid "Display"
 msgstr "Hiển thị"
 
 #. js-lingui-id: Ldgs6e
-#: src/modules/side-panel/pages/page-layout/components/record-page/SidePanelRecordPageFieldsSettings.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutFieldsSettings.tsx
 msgid "Display \"More fields\" button"
 msgstr "Hiển thị nút \"Xem thêm trường\""
 
@@ -5245,8 +5223,8 @@ msgid "Edit field values"
 msgstr "Chỉnh sửa giá trị trường"
 
 #. js-lingui-id: oKQ7ls
-#: src/modules/side-panel/hooks/useOpenWidgetSettingsInSidePanel.ts
 #: src/modules/settings/roles/role-permissions/object-level-permissions/components/SettingsRolePermissionsObjectLevelTableHeader.tsx
+#: src/modules/page-layout/hooks/useEditPageLayoutWidget.ts
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownHiddenFieldsContent.tsx
 msgid "Edit Fields"
 msgstr "Chỉnh sửa trường"
@@ -5259,12 +5237,12 @@ msgid "Edit folder"
 msgstr "Chỉnh sửa thư mục"
 
 #. js-lingui-id: JTcEch
-#: src/modules/side-panel/hooks/useOpenWidgetSettingsInSidePanel.ts
+#: src/modules/page-layout/hooks/useEditPageLayoutWidget.ts
 msgid "Edit Graph"
 msgstr "Chỉnh sửa đồ thị"
 
 #. js-lingui-id: WXPnsc
-#: src/modules/side-panel/hooks/useOpenWidgetSettingsInSidePanel.ts
+#: src/modules/page-layout/hooks/useEditPageLayoutWidget.ts
 msgid "Edit iFrame"
 msgstr "Chỉnh sửa iFrame"
 
@@ -5293,7 +5271,7 @@ msgid "Edit Profile"
 msgstr ""
 
 #. js-lingui-id: 19vPbj
-#: src/modules/side-panel/hooks/useOpenWidgetSettingsInSidePanel.ts
+#: src/modules/page-layout/hooks/useEditPageLayoutWidget.ts
 msgid "Edit Record Table"
 msgstr "Chỉnh sửa bảng bản ghi"
 
@@ -6523,8 +6501,6 @@ msgstr "Cập nhật mô hình thất bại"
 
 #. js-lingui-id: W7Ff/4
 #: src/pages/settings/ai/components/SettingsAIModelsTab.tsx
-#: src/pages/settings/ai/components/SettingsAIModelsTab.tsx
-#: src/pages/settings/admin-panel/SettingsAdminAiProviderDetail.tsx
 #: src/pages/settings/admin-panel/SettingsAdminAiProviderDetail.tsx
 msgid "Failed to update model availability"
 msgstr "Cập nhật trạng thái khả dụng của mô hình thất bại"
@@ -6533,11 +6509,6 @@ msgstr "Cập nhật trạng thái khả dụng của mô hình thất bại"
 #: src/modules/settings/admin-panel/ai/components/SettingsAdminAI.tsx
 msgid "Failed to update model recommendation"
 msgstr "Cập nhật đề xuất mô hình thất bại"
-
-#. js-lingui-id: q1MtjM
-#: src/modules/settings/admin-panel/ai/components/SettingsAdminAI.tsx
-msgid "Failed to update model recommendations"
-msgstr ""
 
 #. js-lingui-id: rCUG3c
 #: src/pages/settings/ai/components/SettingsAIModelsTab.tsx
@@ -6657,9 +6628,8 @@ msgstr "trường"
 #. js-lingui-id: AXjA78
 #: src/modules/workflow/workflow-steps/workflow-actions/form-action/components/WorkflowFormFieldSettingsSelect.tsx
 #: src/modules/side-panel/pages/page-layout/utils/getFieldLabelWithSubField.ts
-#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutRecordPageWidgetTypeSelect.tsx
-#: src/modules/side-panel/pages/page-layout/components/record-page/SidePanelRecordPageFieldSettings.tsx
-#: src/modules/side-panel/pages/page-layout/components/record-page/SidePanelRecordPageFieldSettings.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutFieldSettings.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutFieldSettings.tsx
 #: src/modules/side-panel/pages/page-layout/components/dropdown-content/FieldWidgetLayoutDropdownContent.tsx
 #: src/modules/settings/developers/components/WebhookEntitySelect.tsx
 #: src/modules/page-layout/widgets/components/RecordPageAddWidgetSection.tsx
@@ -6688,7 +6658,7 @@ msgstr ""
 
 #. js-lingui-id: lcNTiF
 #: src/modules/side-panel/pages/page-layout/utils/getPageLayoutPageTitle.ts
-#: src/modules/side-panel/hooks/useOpenWidgetSettingsInSidePanel.ts
+#: src/modules/page-layout/hooks/useEditPageLayoutWidget.ts
 msgid "Field widget"
 msgstr ""
 
@@ -6708,8 +6678,7 @@ msgstr "trường"
 #: src/pages/settings/data-model/constants/SettingsObjectTableMetadata.ts
 #: src/pages/settings/applications/components/SettingsApplicationDataTable.tsx
 #: src/pages/settings/applications/components/SettingsApplicationDataTable.tsx
-#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutRecordPageWidgetTypeSelect.tsx
-#: src/modules/side-panel/pages/page-layout/components/dashboard/SidePanelDashboardRecordTableSettings.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutRecordTableSettings.tsx
 #: src/modules/settings/roles/role-permissions/object-level-permissions/record-level-permissions/components/SettingsRolePermissionsObjectLevelRecordLevelPermissionFieldSelectFieldMenu.tsx
 #: src/modules/settings/data-model/object-details/components/tabs/ObjectFields.tsx
 #: src/modules/settings/data-model/new-object/components/SettingsAvailableStandardObjectsSection.tsx
@@ -6811,7 +6780,7 @@ msgstr "Tập tin"
 #: src/modules/views/components/ViewBarFilterDropdownFieldSelectMenu.tsx
 #: src/modules/views/components/ViewBarFilterButton.tsx
 #: src/modules/side-panel/pages/page-layout/constants/settings/ChartConfigurationSettingLabels.ts
-#: src/modules/side-panel/pages/page-layout/components/dashboard/SidePanelDashboardRecordTableSettings.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutRecordTableSettings.tsx
 #: src/modules/settings/roles/components/SettingsRolesList.tsx
 #: src/modules/settings/data-model/object-details/components/SettingsObjectRelationsTable.tsx
 #: src/modules/object-record/record-table/record-table-header/components/RecordTableColumnHeadDropdownMenu.tsx
@@ -7018,8 +6987,7 @@ msgid "Front components"
 msgstr "Các thành phần giao diện"
 
 #. js-lingui-id: xf0TNb
-#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutRecordPageWidgetTypeSelect.tsx
-#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutDashboardWidgetTypeSelect.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutWidgetTypeSelect.tsx
 msgid "Front Components"
 msgstr "Các thành phần giao diện"
 
@@ -7033,6 +7001,11 @@ msgstr "\\"
 #: src/modules/settings/logic-functions/components/SettingsLogicFunctionLabelContainer.tsx
 msgid "Function name"
 msgstr "Tên hàm"
+
+#. js-lingui-id: xANKBj
+#: src/pages/settings/applications/tabs/SettingsApplicationDetailContentTab.tsx
+msgid "Functions"
+msgstr "Chức năng"
 
 #. js-lingui-id: tkr79G
 #: src/utils/title-utils.ts
@@ -7433,7 +7406,7 @@ msgid "https://example.com/callback"
 msgstr "https://example.com/callback"
 
 #. js-lingui-id: yhVtER
-#: src/modules/side-panel/pages/page-layout/components/dashboard/SidePanelDashboardIframeSettings.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutIframeSettings.tsx
 msgid "https://example.com/embed"
 msgstr "https://example.com/embed"
 
@@ -7536,7 +7509,7 @@ msgid "If you’ve lost this key, you can regenerate it, but be aware that any s
 msgstr "Nếu bạn đã mất khóa này, bạn có thể tạo lại, nhưng hãy nhớ rằng bất kỳ script nào sử dụng khóa này cũng cần được cập nhật. Vui lòng gõ \"{confirmationValue}\" để xác nhận."
 
 #. js-lingui-id: KDMdBi
-#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutDashboardWidgetTypeSelect.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutWidgetTypeSelect.tsx
 msgid "iFrame"
 msgstr "iFrame"
 
@@ -8377,9 +8350,8 @@ msgstr "Khởi chạy thủ công"
 #. js-lingui-id: rdU729
 #: src/pages/settings/data-model/SettingsObjectDetailPage.tsx
 #: src/modules/side-panel/utils/getSidePanelSubPageTitle.ts
-#: src/modules/side-panel/pages/page-layout/components/record-page/SidePanelRecordPageFieldsSettings.tsx
-#: src/modules/side-panel/pages/page-layout/components/record-page/SidePanelRecordPageFieldSettings.tsx
-#: src/modules/side-panel/pages/page-layout/components/dashboard/SidePanelDashboardRecordTableSettings.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutFieldsSettings.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutFieldSettings.tsx
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownLayoutContent.tsx
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownCustomView.tsx
 msgid "Layout"
@@ -8690,11 +8662,6 @@ msgstr "Thời gian lưu giữ nhật ký"
 msgid "Logged in as {impersonatedUser}"
 msgstr "Đăng nhập là {impersonatedUser}"
 
-#. js-lingui-id: wuCnq1
-#: src/pages/settings/applications/tabs/SettingsApplicationDetailContentTab.tsx
-msgid "Logic"
-msgstr ""
-
 #. js-lingui-id: sTlKkx
 #: src/pages/settings/applications/SettingsAvailableApplicationDetails.tsx
 #: src/modules/metadata-error-handler/hooks/useMetadataErrorHandler.ts
@@ -8775,7 +8742,7 @@ msgid "Make HTTP requests to external APIs"
 msgstr ""
 
 #. js-lingui-id: wckWOP
-#: src/modules/side-panel/pages/page-layout/components/WidgetSettingsManageSection.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutFieldsSettings.tsx
 msgid "Manage"
 msgstr ""
 
@@ -8887,7 +8854,7 @@ msgstr "Dung lượng nhập tối đa: {formatSpreadsheetMaxRecordImportCapacit
 
 #. js-lingui-id: S8w4XA
 #: src/pages/settings/admin-panel/SettingsAdminNewAiModel.tsx
-#: src/modules/settings/ai/components/SettingsAiModelHoverCard.tsx
+#: src/modules/settings/admin-panel/ai/components/SettingsAdminAiModelHoverCard.tsx
 msgid "Max output"
 msgstr "Đầu ra tối đa"
 
@@ -9123,6 +9090,7 @@ msgstr "ID mô hình là bắt buộc"
 
 #. js-lingui-id: //nm2/
 #: src/pages/settings/ai/SettingsAI.tsx
+#: src/pages/settings/ai/components/SettingsAIModelsTab.tsx
 #: src/pages/settings/admin-panel/SettingsAdminAiProviderDetail.tsx
 msgid "Models"
 msgstr "Mô hình"
@@ -9233,11 +9201,6 @@ msgstr "Phiên bản được cài đặt nhiều nhất"
 msgid "Move down"
 msgstr "Di chuyển xuống"
 
-#. js-lingui-id: bAvovP
-#: src/modules/side-panel/pages/page-layout/components/WidgetSettingsPlacementSection.tsx
-msgid "Move Down"
-msgstr ""
-
 #. js-lingui-id: iSLA/r
 #: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutTabSettingsContent.tsx
 #: src/modules/object-record/record-table/record-table-header/components/RecordTableColumnHeadDropdownMenu.tsx
@@ -9257,11 +9220,6 @@ msgstr "Di chuyển sang phải"
 msgid "Move to a folder"
 msgstr "Di chuyển đến một thư mục"
 
-#. js-lingui-id: TH+XKl
-#: src/modules/side-panel/pages/page-layout/components/WidgetSettingsPlacementSection.tsx
-msgid "Move to another tab"
-msgstr ""
-
 #. js-lingui-id: JCPOml
 #: src/modules/navigation-menu-item/edit/side-panel/components/SidePanelEditOrganizeActions.tsx
 msgid "Move to folder"
@@ -9271,11 +9229,6 @@ msgstr "Di chuyển đến thư mục"
 #: src/modules/navigation-menu-item/edit/side-panel/components/SidePanelEditOrganizeActions.tsx
 msgid "Move up"
 msgstr "Di chuyển lên"
-
-#. js-lingui-id: Bpglf1
-#: src/modules/side-panel/pages/page-layout/components/WidgetSettingsPlacementSection.tsx
-msgid "Move Up"
-msgstr ""
 
 #. js-lingui-id: asWVA5
 #: src/modules/object-record/spreadsheet-import/utils/getSpreadSheetFieldValidationDefinitions.ts
@@ -9347,12 +9300,12 @@ msgstr "mySkill"
 #: src/modules/settings/data-model/object-details/components/SettingsObjectRelationsTable.tsx
 #: src/modules/settings/data-model/object-details/components/tabs/SettingsObjectSearchSection.tsx
 #: src/modules/settings/data-model/new-object/components/SettingsAvailableStandardObjectsSection.tsx
-#: src/modules/settings/ai/components/SettingsAiModelsTable.tsx
-#: src/modules/settings/ai/components/SettingsAiModelHoverCard.tsx
 #: src/modules/settings/admin-panel/config-variables/components/SettingsAdminConfigVariablesTable.tsx
 #: src/modules/settings/admin-panel/components/SettingsAdminWorkspaceContent.tsx
 #: src/modules/settings/admin-panel/components/SettingsAdminGeneral.tsx
 #: src/modules/settings/admin-panel/apps/components/SettingsAdminApps.tsx
+#: src/modules/settings/admin-panel/ai/components/SettingsAdminAiModelsTable.tsx
+#: src/modules/settings/admin-panel/ai/components/SettingsAdminAiModelHoverCard.tsx
 msgid "Name"
 msgstr "Tên"
 
@@ -9587,8 +9540,6 @@ msgid "New Webhook"
 msgstr "Webhook mới"
 
 #. js-lingui-id: vam7Jz
-#: src/modules/side-panel/pages/page-layout/utils/getPageLayoutPageTitle.ts
-#: src/modules/side-panel/components/hooks/usePageLayoutHeaderInfo.ts
 #: src/modules/side-panel/components/hooks/usePageLayoutHeaderInfo.ts
 msgid "New widget"
 msgstr ""
@@ -9704,11 +9655,6 @@ msgstr "Không có ứng dụng nào"
 #: src/modules/workflow/workflow-steps/filters/components/WorkflowStepFilterFieldSelect.tsx
 msgid "No available fields to select"
 msgstr "Không có trường nào khả dụng để chọn"
-
-#. js-lingui-id: Yd55ZI
-#: src/modules/side-panel/pages/page-layout/components/dropdown-content/MoveToTabDropdownContent.tsx
-msgid "No available tabs"
-msgstr ""
 
 #. js-lingui-id: V/RzSE
 #: src/modules/workflow/workflow-steps/workflow-actions/http-request-action/components/BodyInput.tsx
@@ -10017,12 +9963,6 @@ msgstr "Không có quyền nào được cấu hình cho ứng dụng này."
 msgid "No permissions have been set for individual objects."
 msgstr "Chưa thiết lập quyền cho các đối tượng cá nhân."
 
-#. js-lingui-id: V/+aTW
-#: src/modules/object-record/record-field/ui/form-types/components/FormSingleRecordPicker.tsx
-#: src/modules/object-record/record-field/ui/form-types/components/FormSingleRecordFieldChip.tsx
-msgid "No record"
-msgstr ""
-
 #. js-lingui-id: ePgApM
 #: src/modules/workflow/workflow-trigger/components/WorkflowEditTriggerManual.tsx
 msgid "No record is required to trigger this workflow"
@@ -10033,6 +9973,11 @@ msgstr "Không cần bản ghi nào để kích hoạt quy trình công việc n
 #: src/modules/command-menu-item/server-items/edit/components/CommandMenuItemEditRecordSelectionDropdown.tsx
 msgid "No record selected"
 msgstr ""
+
+#. js-lingui-id: X8wJTR
+#: src/modules/object-record/record-field/ui/form-types/components/FormSingleRecordPicker.tsx
+msgid "No records"
+msgstr "Không có bản ghi"
 
 #. js-lingui-id: EqGTpW
 #: src/modules/object-record/record-table/empty-state/components/RecordTableEmptyStateReadOnly.tsx
@@ -11039,11 +10984,6 @@ msgstr ""
 msgid "Placeholder"
 msgstr "Chỗ giữ chỗ"
 
-#. js-lingui-id: MFTZK8
-#: src/modules/side-panel/pages/page-layout/components/WidgetSettingsPlacementSection.tsx
-msgid "Placement"
-msgstr ""
-
 #. js-lingui-id: fQtTho
 #: src/modules/advanced-text-editor/extensions/slash-command/DefaultSlashCommands.ts
 msgid "Plain text paragraph"
@@ -11077,7 +11017,7 @@ msgstr "Vui lòng kiểm tra email của bạn để lấy liên kết xác minh
 
 #. js-lingui-id: jEw0Mr
 #: src/pages/settings/applications/tabs/SettingsApplicationRegistrationOAuthTab.tsx
-#: src/modules/side-panel/pages/page-layout/components/dashboard/SidePanelDashboardIframeSettings.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutIframeSettings.tsx
 msgid "Please enter a valid URL"
 msgstr "Vui lòng nhập đường dẫn URL hợp lệ"
 
@@ -11325,8 +11265,8 @@ msgstr "Cung cấp chi tiết nhà cung cấp OIDC của bạn"
 
 #. js-lingui-id: aemBRq
 #: src/pages/settings/admin-panel/SettingsAdminNewAiProvider.tsx
-#: src/modules/settings/ai/components/SettingsAiModelsTable.tsx
-#: src/modules/settings/ai/components/SettingsAiModelHoverCard.tsx
+#: src/modules/settings/admin-panel/ai/components/SettingsAdminAiModelsTable.tsx
+#: src/modules/settings/admin-panel/ai/components/SettingsAdminAiModelHoverCard.tsx
 msgid "Provider"
 msgstr "Nhà cung cấp"
 
@@ -11479,11 +11419,10 @@ msgstr ""
 msgid "Read your profile"
 msgstr "Đọc hồ sơ của bạn"
 
-#. js-lingui-id: 6pSHJ5
+#. js-lingui-id: tCXcL7
 #: src/pages/settings/ai/SettingsAIPrompts.tsx
-#: src/pages/settings/ai/SettingsAIPrompts.tsx
-msgid "Read-only"
-msgstr ""
+msgid "Read-only — managed by Twenty"
+msgstr "Chỉ đọc — được quản lý bởi Twenty"
 
 #. js-lingui-id: W+ApAD
 #: src/modules/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionEmailBase.tsx
@@ -11579,6 +11518,12 @@ msgstr "Trang hồ sơ"
 #: src/modules/side-panel/pages/root/components/SidePanelRootPage.tsx
 msgid "Record Selection"
 msgstr "Chọn Lọc Hồ sơ"
+
+#. js-lingui-id: J9Cfll
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutWidgetTypeSelect.tsx
+#: src/modules/side-panel/components/hooks/usePageLayoutHeaderInfo.ts
+msgid "Record Table"
+msgstr "Bảng bản ghi"
 
 #. js-lingui-id: NxW0+c
 #: src/modules/side-panel/pages/page-layout/utils/getPageLayoutPageTitle.ts
@@ -11854,11 +11799,6 @@ msgstr "Sắp xếp lại trường"
 msgid "Reorder options"
 msgstr "Sắp xếp lại các tùy chọn"
 
-#. js-lingui-id: q8Id6J
-#: src/modules/side-panel/pages/page-layout/components/WidgetSettingsManageSection.tsx
-msgid "Replace widget"
-msgstr ""
-
 #. js-lingui-id: ImOQa9
 #: src/modules/side-panel/hooks/useOpenComposeEmailInSidePanel.ts
 #: src/modules/page-layout/widgets/email-thread/components/EmailThreadComposer.tsx
@@ -11901,8 +11841,6 @@ msgstr "Gửi lại email"
 #. js-lingui-id: OfhWJH
 #: src/pages/settings/admin-panel/SettingsAdminConfigVariableDetails.tsx
 #: src/modules/views/components/ViewBarDetails.tsx
-#: src/modules/side-panel/pages/page-layout/components/WidgetSettingsManageSection.tsx
-#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutTabSettingsContent.tsx
 msgid "Reset"
 msgstr "Đặt lại"
 
@@ -11923,10 +11861,6 @@ msgid "Reset to"
 msgstr "Đặt lại thành"
 
 #. js-lingui-id: L+rMC9
-#: src/modules/side-panel/pages/page-layout/components/WidgetSettingsManageSection.tsx
-#: src/modules/side-panel/pages/page-layout/components/WidgetSettingsManageSection.tsx
-#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutTabSettingsContent.tsx
-#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutTabSettingsContent.tsx
 #: src/modules/settings/data-model/fields/forms/address/components/SettingsDataModelFieldAddressForm.tsx
 #: src/modules/command-menu-item/server-items/edit/components/SidePanelCommandMenuItemEditPage.tsx
 msgid "Reset to default"
@@ -12043,7 +11977,7 @@ msgid "Revoked for this object"
 msgstr "Đã thu hồi cho đối tượng này"
 
 #. js-lingui-id: NP5Nbf
-#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutDashboardWidgetTypeSelect.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutWidgetTypeSelect.tsx
 #: src/modules/side-panel/hooks/useOpenRichTextInSidePanel.ts
 #: src/modules/page-layout/utils/getWidgetTitle.ts
 msgid "Rich Text"
@@ -12196,6 +12130,11 @@ msgstr "Đang chạy hàm"
 #: src/modules/ai/components/CodeExecutionDisplay.tsx
 msgid "Running..."
 msgstr "Đang chạy..."
+
+#. js-lingui-id: eo1n1s
+#: src/modules/settings/logic-functions/components/SettingsLogicFunctionsTable.tsx
+msgid "Runtime"
+msgstr "Môi trường chạy"
 
 #. js-lingui-id: nji0/X
 #: src/pages/settings/profile/appearance/components/LocalePicker.tsx
@@ -12409,7 +12348,7 @@ msgid "Search colors"
 msgstr "Tìm kiếm màu sắc"
 
 #. js-lingui-id: AR3FV/
-#: src/modules/ui/input/components/ThemeColorPickerMenu.tsx
+#: src/modules/navigation-menu-item/edit/side-panel/components/SidePanelEditColorOption.tsx
 msgid "Search colors..."
 msgstr "Tìm kiếm màu sắc..."
 
@@ -12964,7 +12903,6 @@ msgstr "Thiết lập cơ sở dữ liệu của bạn..."
 #: src/modules/ui/navigation/navigation-drawer/components/MultiWorkspaceDropdown/internal/MultiWorkspaceDropdownDefaultComponents.tsx
 #: src/modules/sign-in-background-mock/components/SignInAppNavigationDrawerMock.tsx
 #: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutTabSettingsContent.tsx
-#: src/modules/side-panel/pages/page-layout/components/dashboard/SidePanelDashboardRecordTableSettings.tsx
 #: src/modules/settings/roles/role-permissions/permission-flags/components/SettingsRolePermissionsSettingsSection.tsx
 #: src/modules/settings/roles/role/components/SettingsRole.tsx
 #: src/modules/settings/accounts/components/SettingsAccountsSettingsSection.tsx
@@ -13299,7 +13237,7 @@ msgstr "Xin lỗi, có sự cố xảy ra"
 
 #. js-lingui-id: f6Hub0
 #: src/modules/workflow/workflow-steps/workflow-actions/find-records-action/components/WorkflowEditActionFindRecords.tsx
-#: src/modules/side-panel/pages/page-layout/components/dashboard/SidePanelDashboardRecordTableSettings.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutRecordTableSettings.tsx
 #: src/modules/object-record/record-table/record-table-header/components/RecordTableColumnHeadDropdownMenu.tsx
 #: src/modules/object-record/object-sort-dropdown/components/ObjectSortDropdownButton.tsx
 #: src/modules/object-record/object-sort-dropdown/components/ObjectSortDropdownButton.tsx
@@ -13334,7 +13272,7 @@ msgstr "Sắp xếp"
 #: src/pages/settings/applications/tabs/SettingsApplicationRegistrationGeneralTab.tsx
 #: src/pages/settings/applications/tabs/SettingsApplicationRegistrationGeneralTab.tsx
 #: src/modules/side-panel/pages/page-layout/constants/settings/ChartConfigurationSettingLabels.ts
-#: src/modules/side-panel/pages/page-layout/components/dashboard/SidePanelDashboardRecordTableSettings.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutRecordTableSettings.tsx
 #: src/modules/settings/admin-panel/config-variables/components/ConfigVariableOptionsDropdownContent.tsx
 #: src/modules/settings/admin-panel/apps/components/SettingsAdminApps.tsx
 msgid "Source"
@@ -13781,6 +13719,11 @@ msgstr ""
 msgid "System Prompt"
 msgstr "Lời Nhắc Hệ Thống"
 
+#. js-lingui-id: BXGTWI
+#: src/pages/settings/ai/SettingsAIPrompts.tsx
+msgid "System Prompt ({totalTokenCount})"
+msgstr "Lời nhắc hệ thống ({totalTokenCount})"
+
 #. js-lingui-id: k+7QWO
 #: src/modules/settings/data-model/object-details/components/SettingsObjectRelationsTable.tsx
 msgid "System relations"
@@ -13821,7 +13764,6 @@ msgstr "Cài đặt Tab"
 #. js-lingui-id: 4hJhzz
 #: src/pages/settings/security/event-logs/components/EventLogTableSelector.tsx
 #: src/modules/views/view-picker/constants/ViewPickerTypeSelectOptions.ts
-#: src/modules/side-panel/pages/page-layout/components/dashboard/SidePanelDashboardRecordTableSettings.tsx
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownLayoutContent.tsx
 #: src/modules/keyboard-shortcut-menu/components/KeyboardShortcutMenuOpenContent.tsx
 msgid "Table"
@@ -14268,16 +14210,6 @@ msgstr ""
 msgid "This week"
 msgstr "Tuần này"
 
-#. js-lingui-id: DF2voz
-#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutTabSettingsContent.tsx
-msgid "This will cancel all modifications done on the tab and its widgets. Edit mode will be canceled and the page will refresh. This action cannot be undone."
-msgstr ""
-
-#. js-lingui-id: VbVocX
-#: src/modules/side-panel/pages/page-layout/components/WidgetSettingsManageSection.tsx
-msgid "This will cancel all modifications done on the widget. This action cannot be undone."
-msgstr ""
-
 #. js-lingui-id: h4VeOo
 #: src/modules/settings/billing/hooks/useBillingWording.ts
 msgid "This will cancel the scheduled interval change and keep your current billing interval ({currentIntervalLabel})."
@@ -14549,7 +14481,6 @@ msgstr "Thử nghiệm đã hết hạn. Vui lòng cập nhật chi tiết thanh
 #: src/modules/side-panel/components/SidePanelWorkflowStepInfo.tsx
 #: src/modules/side-panel/components/SidePanelWorkflowStepInfo.tsx
 #: src/modules/side-panel/components/SidePanelWorkflowStepInfo.tsx
-#: src/modules/settings/logic-functions/components/SettingsLogicFunctionsTable.tsx
 msgid "Trigger"
 msgstr "Kích hoạt"
 
@@ -14935,7 +14866,7 @@ msgid "Untitled field"
 msgstr ""
 
 #. js-lingui-id: RBz20h
-#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutDashboardWidgetTypeSelect.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutWidgetTypeSelect.tsx
 msgid "Untitled iFrame"
 msgstr "iFrame chưa có tiêu đề"
 
@@ -15050,11 +14981,6 @@ msgstr "Nâng cấp để truy cập"
 msgid "Upgrade to Enterprise to access audit logs."
 msgstr ""
 
-#. js-lingui-id: D+7y/3
-#: src/pages/settings/applications/tabs/SettingsApplicationRegistrationDistributionTab.tsx
-msgid "Upgrade to Enterprise to share private applications."
-msgstr ""
-
 #. js-lingui-id: +Gi3x1
 #: src/pages/settings/applications/SettingsAvailableApplicationDetails.tsx
 #: src/pages/settings/applications/components/SettingsApplicationVersionContainer.tsx
@@ -15116,7 +15042,7 @@ msgid "URL"
 msgstr "URL"
 
 #. js-lingui-id: pphDjD
-#: src/modules/side-panel/pages/page-layout/components/dashboard/SidePanelDashboardIframeSettings.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutIframeSettings.tsx
 msgid "URL to Embed"
 msgstr "URL để Nhúng"
 
@@ -15395,9 +15321,7 @@ msgid "view"
 msgstr "xem"
 
 #. js-lingui-id: jpctdh
-#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutDashboardWidgetTypeSelect.tsx
 #: src/modules/side-panel/components/SidePanelObjectViewRecordInfo.tsx
-#: src/modules/side-panel/components/hooks/usePageLayoutHeaderInfo.ts
 #: src/modules/settings/developers/components/WebhookEntitySelect.tsx
 #: src/modules/settings/data-model/object-details/components/SettingsObjectFieldDisabledActionDropdown.tsx
 #: src/modules/navigation-menu-item/edit/side-panel/components/SidePanelNewSidebarItemMainMenu.tsx
@@ -15493,6 +15417,7 @@ msgstr "Xem nhật ký"
 
 #. js-lingui-id: 7PrSCy
 #: src/pages/settings/applications/tabs/SettingsApplicationRegistrationDistributionTab.tsx
+#: src/pages/settings/applications/tabs/SettingsApplicationRegistrationDistributionTab.tsx
 msgid "View marketplace page"
 msgstr "Xem trang trên chợ ứng dụng"
 
@@ -15505,11 +15430,6 @@ msgstr ""
 #: src/modules/command-menu-item/engine-command/constants/EngineComponentKeyHeadlessComponentMap.tsx
 msgid "View Previous AI Chats"
 msgstr "Xem các cuộc trò chuyện AI trước đây"
-
-#. js-lingui-id: NnJpTN
-#: src/pages/settings/applications/tabs/SettingsApplicationRegistrationDistributionTab.tsx
-msgid "View private application page"
-msgstr ""
 
 #. js-lingui-id: hAAsm/
 #: src/modules/workflow/workflow-steps/workflow-actions/ai-agent-action/components/WorkflowEditActionAiAgent.tsx
@@ -15812,8 +15732,7 @@ msgid "widget"
 msgstr ""
 
 #. js-lingui-id: fANaAS
-#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutRecordPageWidgetTypeSelect.tsx
-#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutDashboardWidgetTypeSelect.tsx
+#: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutWidgetTypeSelect.tsx
 msgid "Widget type"
 msgstr "Loại tiện ích"
 
@@ -15900,6 +15819,7 @@ msgstr "Quy Trình Làm Việc"
 #: src/pages/settings/data-model/new-field/SettingsObjectNewFieldSelect.tsx
 #: src/pages/settings/data-model/new-field/SettingsObjectNewFieldConfigure.tsx
 #: src/pages/settings/applications/SettingsAvailableApplicationDetails.tsx
+#: src/pages/settings/applications/SettingsApplications.tsx
 #: src/pages/settings/applications/SettingsApplications.tsx
 #: src/pages/settings/applications/SettingsApplicationRegistrationDetails.tsx
 #: src/pages/settings/applications/SettingsApplicationDetails.tsx

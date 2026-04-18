@@ -24,7 +24,10 @@ export const THREE_CARDS_ILLUSTRATION_DATA: ThreeCardsIllustrationDataType = {
         { text: 'Soon: earn revenue' },
       ],
       attribution: undefined,
-      illustration: 'programming',
+      illustration: {
+        src: '/illustrations/partner/three-cards-illustration/one.glb',
+        title: 'Technology partners illustration',
+      },
     },
     {
       heading: { text: 'Content & Community Partners', fontFamily: 'sans' },
@@ -37,7 +40,10 @@ export const THREE_CARDS_ILLUSTRATION_DATA: ThreeCardsIllustrationDataType = {
         { text: 'Marketing assets & brand resources' },
       ],
       attribution: undefined,
-      illustration: 'connect',
+      illustration: {
+        src: '/illustrations/partner/three-cards-illustration/two.glb',
+        title: 'Content and community partners illustration',
+      },
     },
     {
       heading: { text: 'Solutions Partners', fontFamily: 'sans' },
@@ -50,7 +56,10 @@ export const THREE_CARDS_ILLUSTRATION_DATA: ThreeCardsIllustrationDataType = {
         { text: 'Dedicated partner support' },
       ],
       attribution: undefined,
-      illustration: 'grow',
+      illustration: {
+        src: '/illustrations/partner/three-cards-illustration/three.glb',
+        title: 'Solutions partners illustration',
+      },
     },
   ],
 };

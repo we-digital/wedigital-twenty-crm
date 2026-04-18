@@ -20,6 +20,7 @@ import { WorkspaceAuthGuard } from 'src/engine/guards/workspace-auth.guard';
 import { CreateViewFieldInput } from 'src/engine/metadata-modules/view-field/dtos/inputs/create-view-field.input';
 import { UpdateViewFieldInput } from 'src/engine/metadata-modules/view-field/dtos/inputs/update-view-field.input';
 import { ViewFieldDTO } from 'src/engine/metadata-modules/view-field/dtos/view-field.dto';
+import { ViewFieldEntity } from 'src/engine/metadata-modules/view-field/entities/view-field.entity';
 import {
   generateViewFieldExceptionMessage,
   generateViewFieldUserFriendlyExceptionMessage,
@@ -44,7 +45,7 @@ export class ViewFieldController {
   async findMany(
     @AuthWorkspace() workspace: WorkspaceEntity,
     @Query('viewId') viewId?: string,
-  ): Promise<ViewFieldDTO[]> {
+  ): Promise<ViewFieldEntity[]> {
     if (viewId) {
       return this.viewFieldService.findByViewId(workspace.id, viewId);
     }
@@ -57,7 +58,7 @@ export class ViewFieldController {
   async findOne(
     @Param('id') id: string,
     @AuthWorkspace() workspace: WorkspaceEntity,
-  ): Promise<ViewFieldDTO> {
+  ): Promise<ViewFieldEntity> {
     const viewField = await this.viewFieldService.findById(id, workspace.id);
 
     if (!isDefined(viewField)) {

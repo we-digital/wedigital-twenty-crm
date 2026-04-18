@@ -1,9 +1,4 @@
-'use client';
-
-import {
-  BaseButton,
-  buttonBaseStyles,
-} from '@/design-system/components/Button/BaseButton';
+import { LinkButton } from '@/design-system/components';
 import { CheckIcon } from '@/icons';
 import type {
   PlanTableCellType,
@@ -13,7 +8,6 @@ import type {
 } from '@/sections/PlanTable/types';
 import { theme } from '@/theme';
 import { styled } from '@linaria/react';
-import { useState } from 'react';
 import { CalculatorEmbed } from '../CalculatorEmbed/CalculatorEmbed';
 
 const TableScope = styled.div`
@@ -21,6 +15,7 @@ const TableScope = styled.div`
   color: ${theme.colors.secondary.text[100]};
   display: flex;
   flex-direction: column;
+  gap: ${theme.spacing(10)};
   width: 100%;
 `;
 
@@ -99,34 +94,10 @@ const CategoryTitle = styled.span`
   width: 100%;
 `;
 
-const CollapsibleWrapper = styled.div`
-  display: grid;
-  grid-template-rows: 0fr;
-  opacity: 0;
-  transition:
-    grid-template-rows 0.4s ease,
-    opacity 0.4s ease;
-  width: 100%;
-
-  &[data-expanded='true'] {
-    grid-template-rows: 1fr;
-    opacity: 1;
-  }
-`;
-
-const CollapsibleInner = styled.div`
-  overflow: hidden;
-`;
-
 const CtaRow = styled.div`
   display: flex;
   justify-content: center;
-  margin-top: ${theme.spacing(10)};
   width: 100%;
-`;
-
-const ToggleButton = styled.button`
-  ${buttonBaseStyles}
 `;
 
 type CellValueProps = {
@@ -191,44 +162,6 @@ type ContentProps = {
 };
 
 export function Content({ data }: ContentProps) {
-  const [expanded, setExpanded] = useState(false);
-
-  const initialRows = data.rows.slice(0, data.initialVisibleRowCount);
-  const extraRows = data.rows.slice(data.initialVisibleRowCount);
-  const hasMoreRows = extraRows.length > 0;
-
-  const toggleLabel = expanded
-    ? data.seeMoreFeaturesCta.collapseLabel
-    : data.seeMoreFeaturesCta.expandLabel;
-
-  const mapRows = (rows: PlanTableDataType['rows'], startIndex: number) =>
-    rows.map((row, index) => {
-      const rowIndex = startIndex + index;
-
-      if (row.type === 'category') {
-        return (
-          <CategoryRow key={`${row.title}-${rowIndex}`} title={row.title} />
-        );
-      }
-
-      if (row.type === 'calculator') {
-        return (
-          <CalculatorEmbed
-            calculator={row.calculator}
-            key={`calculator-${rowIndex}`}
-          />
-        );
-      }
-
-      return (
-        <FeatureRow
-          key={`${row.featureLabel}-${rowIndex}`}
-          row={row}
-          tierColumns={data.tierColumns}
-        />
-      );
-    });
-
   return (
     <TableScope>
       <GridRow>
@@ -238,27 +171,43 @@ export function Content({ data }: ContentProps) {
         ))}
       </GridRow>
 
-      {mapRows(initialRows, 0)}
-
-      {hasMoreRows && (
-        <CollapsibleWrapper data-expanded={String(expanded)}>
-          <CollapsibleInner>
-            {mapRows(extraRows, data.initialVisibleRowCount)}
-          </CollapsibleInner>
-        </CollapsibleWrapper>
-      )}
-
-      {hasMoreRows && (
-        <CtaRow>
-          <ToggleButton onClick={() => setExpanded((prev) => !prev)}>
-            <BaseButton
-              color="primary"
-              label={toggleLabel}
-              variant="outlined"
+      {data.rows.map((row, rowIndex) => {
+        if (row.type === 'category') {
+          return (
+            <CategoryRow
+              key={`${row.title}-${rowIndex}`}
+              title={row.title}
             />
-          </ToggleButton>
-        </CtaRow>
-      )}
+          );
+        }
+
+        if (row.type === 'calculator') {
+          return (
+            <CalculatorEmbed
+              calculator={row.calculator}
+              key={`calculator-${rowIndex}`}
+            />
+          );
+        }
+
+        return (
+          <FeatureRow
+            key={`${row.featureLabel}-${rowIndex}`}
+            row={row}
+            tierColumns={data.tierColumns}
+          />
+        );
+      })}
+
+      <CtaRow>
+        <LinkButton
+          color="secondary"
+          href={data.seeMoreFeaturesCta.href}
+          label={data.seeMoreFeaturesCta.label}
+          type="link"
+          variant="outlined"
+        />
+      </CtaRow>
     </TableScope>
   );
 }

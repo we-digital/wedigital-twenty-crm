@@ -8,6 +8,21 @@ const StyledHeading = styled(BaseHeading)`
   position: relative;
   display: inline-block;
 
+  &::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 1px;
+    bottom: -4px;
+    left: 0;
+    background-color: currentColor;
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  &:hover::after {
+    width: 100%;
+  }
+
   @media (min-width: ${theme.breakpoints.md}px) {
     max-width: 672px;
   }

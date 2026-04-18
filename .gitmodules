@@ -1,4 +1,0 @@
-[submodule "packages/twenty-widgets/submodules/widget-mrz-input"]
-	path = packages/twenty-widgets/submodules/widget-mrz-input
-	url = https://github.com/we-digital/widget-mrz-input
-	branch = main

@@ -67,7 +67,7 @@ export const Catalog: CatalogStory<Story, typeof MenuItemSelectColor> = {
         },
         {
           name: 'variant',
-          values: ['circle', 'default', 'pipeline'],
+          values: ['default', 'pipeline'],
           props: (variant: ColorSampleVariant) => ({ variant }),
           labels: (variant: ColorSampleVariant) => variant,
         },

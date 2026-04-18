@@ -1,7 +1,7 @@
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 
 import { WorkspaceActivationStatus } from 'twenty-shared/workspace';
-import { In, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 import {
   CalendarChannelSyncStage,
@@ -14,8 +14,8 @@ import { Process } from 'src/engine/core-modules/message-queue/decorators/proces
 import { Processor } from 'src/engine/core-modules/message-queue/decorators/processor.decorator';
 import { MessageQueue } from 'src/engine/core-modules/message-queue/message-queue.constants';
 import { MessageQueueService } from 'src/engine/core-modules/message-queue/services/message-queue.service';
-import { CalendarChannelEntity } from 'src/engine/metadata-modules/calendar-channel/entities/calendar-channel.entity';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
+import { getWorkspaceSchemaName } from 'src/engine/workspace-datasource/utils/get-workspace-schema-name.util';
 import {
   CalendarRelaunchFailedCalendarChannelJob,
   type CalendarRelaunchFailedCalendarChannelJobData,
@@ -29,10 +29,10 @@ export class CalendarRelaunchFailedCalendarChannelsCronJob {
   constructor(
     @InjectRepository(WorkspaceEntity)
     private readonly workspaceRepository: Repository<WorkspaceEntity>,
-    @InjectRepository(CalendarChannelEntity)
-    private readonly calendarChannelRepository: Repository<CalendarChannelEntity>,
     @InjectMessageQueue(MessageQueue.calendarQueue)
     private readonly messageQueueService: MessageQueueService,
+    @InjectDataSource()
+    private readonly coreDataSource: DataSource,
     private readonly exceptionHandlerService: ExceptionHandlerService,
   ) {}
 
@@ -48,41 +48,27 @@ export class CalendarRelaunchFailedCalendarChannelsCronJob {
       },
     });
 
-    const activeWorkspaceIds = activeWorkspaces.map(
-      (workspace) => workspace.id,
-    );
-
-    if (activeWorkspaceIds.length === 0) {
-      return;
-    }
-
-    const failedCalendarChannels = await this.calendarChannelRepository
-      .find({
-        where: {
-          syncStage: CalendarChannelSyncStage.FAILED,
-          syncStatus: CalendarChannelSyncStatus.FAILED_UNKNOWN,
-          workspaceId: In(activeWorkspaceIds),
-        },
-      })
-      .catch((error) => {
-        this.exceptionHandlerService.captureExceptions([error]);
-
-        return [];
-      });
-
-    for (const calendarChannel of failedCalendarChannels) {
+    for (const activeWorkspace of activeWorkspaces) {
       try {
-        await this.messageQueueService.add<CalendarRelaunchFailedCalendarChannelJobData>(
-          CalendarRelaunchFailedCalendarChannelJob.name,
-          {
-            workspaceId: calendarChannel.workspaceId,
-            calendarChannelId: calendarChannel.id,
-          },
+        const schemaName = getWorkspaceSchemaName(activeWorkspace.id);
+
+        const failedCalendarChannels = await this.coreDataSource.query(
+          `SELECT * FROM ${schemaName}."calendarChannel" WHERE "syncStage" = '${CalendarChannelSyncStage.FAILED}' AND "syncStatus" = '${CalendarChannelSyncStatus.FAILED_UNKNOWN}'`,
         );
+
+        for (const calendarChannel of failedCalendarChannels) {
+          await this.messageQueueService.add<CalendarRelaunchFailedCalendarChannelJobData>(
+            CalendarRelaunchFailedCalendarChannelJob.name,
+            {
+              workspaceId: activeWorkspace.id,
+              calendarChannelId: calendarChannel.id,
+            },
+          );
+        }
       } catch (error) {
         this.exceptionHandlerService.captureExceptions([error], {
           workspace: {
-            id: calendarChannel.workspaceId,
+            id: activeWorkspace.id,
           },
         });
       }

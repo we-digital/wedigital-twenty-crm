@@ -921,7 +921,6 @@ export const ALL_ENTITY_PROPERTIES_CONFIGURATION_BY_METADATA_NAME = {
       toCompare: false,
       toStringify: false,
       universalProperty: 'pageLayoutTabUniversalIdentifier',
-      isOverridable: true,
     },
     conditionalDisplay: {
       toCompare: true,
@@ -938,7 +937,7 @@ export const ALL_ENTITY_PROPERTIES_CONFIGURATION_BY_METADATA_NAME = {
     overrides: {
       toCompare: true,
       toStringify: true,
-      universalProperty: 'universalOverrides',
+      universalProperty: undefined,
     },
   },
   pageLayoutTab: {
@@ -1091,11 +1090,6 @@ export const ALL_ENTITY_PROPERTIES_CONFIGURATION_BY_METADATA_NAME = {
     engineComponentKey: {
       toCompare: true,
       toStringify: false,
-      universalProperty: undefined,
-    },
-    payload: {
-      toCompare: true,
-      toStringify: true,
       universalProperty: undefined,
     },
     hotKeys: {

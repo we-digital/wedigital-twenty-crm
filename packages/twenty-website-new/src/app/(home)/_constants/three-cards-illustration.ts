@@ -22,7 +22,10 @@ export const THREE_CARDS_ILLUSTRATION_DATA: ThreeCardsIllustrationDataType = {
         role: { text: 'Head of Engineering' },
         company: { text: 'Mid-Market Fintech' },
       },
-      illustration: 'diamond',
+      illustration: {
+        src: '/illustrations/home/three-cards-illustration/one.glb',
+        title: 'Production grade illustration',
+      },
     },
     {
       heading: { text: 'AI for rapid iterations', fontFamily: 'sans' },
@@ -34,7 +37,10 @@ export const THREE_CARDS_ILLUSTRATION_DATA: ThreeCardsIllustrationDataType = {
         role: { text: 'Head of Engineering' },
         company: { text: 'Mid-Market Fintech' },
       },
-      illustration: 'flash',
+      illustration: {
+        src: '/illustrations/home/three-cards-illustration/two.glb',
+        title: 'Rapid iteration illustration',
+      },
     },
     {
       heading: { text: 'Control without drag', fontFamily: 'sans' },
@@ -46,7 +52,10 @@ export const THREE_CARDS_ILLUSTRATION_DATA: ThreeCardsIllustrationDataType = {
         role: { text: 'Head of Engineering' },
         company: { text: 'Mid-Market Fintech' },
       },
-      illustration: 'lock',
+      illustration: {
+        src: '/illustrations/home/three-cards-illustration/three.glb',
+        title: 'Control illustration',
+      },
     },
   ],
 };

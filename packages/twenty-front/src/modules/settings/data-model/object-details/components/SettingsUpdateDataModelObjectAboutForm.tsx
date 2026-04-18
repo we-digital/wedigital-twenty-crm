@@ -1,7 +1,6 @@
-import { isDDLLockedState } from '@/client-config/states/isDDLLockedState';
-import { parseThemeColor } from '@/navigation-menu-item/common/utils/parseThemeColor';
 import { useUpdateOneObjectMetadataItem } from '@/object-metadata/hooks/useUpdateOneObjectMetadataItem';
 import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
+import { isDDLLockedState } from '@/client-config/states/isDDLLockedState';
 import { isObjectMetadataReadOnly } from '@/object-record/read-only/utils/isObjectMetadataReadOnly';
 import { computeUpdatedNavigationMemorizedUrlAfterObjectNamePluralChange } from '@/settings/data-model/object-details/utils/computeUpdatedNavigationMemorizedUrlAfterObjectNamePluralChange';
 import { SettingsDataModelObjectAboutForm } from '@/settings/data-model/objects/forms/components/SettingsDataModelObjectAboutForm';
@@ -61,9 +60,6 @@ export const SettingsUpdateDataModelObjectAboutForm = ({
       labelSingular,
       namePlural,
       nameSingular,
-      ...(objectMetadataItem.isCustom
-        ? { color: parseThemeColor(objectMetadataItem.color) }
-        : {}),
     },
   });
 
@@ -103,14 +99,6 @@ export const SettingsUpdateDataModelObjectAboutForm = ({
         labelSingular: updatedObject?.data?.updateOneObject.labelSingular,
         namePlural: updatedObject?.data?.updateOneObject.namePlural,
         nameSingular: updatedObject?.data?.updateOneObject.nameSingular,
-        ...(objectMetadataItem.isCustom
-          ? {
-              color: parseThemeColor(
-                updatedObject?.data?.updateOneObject.color ??
-                  objectMetadataItem.color,
-              ),
-            }
-          : {}),
       });
     } else {
       formConfig.reset(formValues);
@@ -146,7 +134,6 @@ export const SettingsUpdateDataModelObjectAboutForm = ({
         nameSingular: _nameSingular,
         namePlural: _namePlural,
         isLabelSyncedWithName: _isLabelSyncedWithName,
-        color: _color,
         ...payloadWithoutNames
       } = updatePayload;
 

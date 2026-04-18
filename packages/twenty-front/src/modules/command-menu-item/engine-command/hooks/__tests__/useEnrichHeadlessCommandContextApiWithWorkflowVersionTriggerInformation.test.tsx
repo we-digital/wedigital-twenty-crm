@@ -49,7 +49,6 @@ const buildBaseContextApi = (
   targetedRecordsRule: { mode: 'selection', selectedRecordIds: [] },
   selectedRecords: [],
   graphqlFilter: null,
-  payload: null,
   ...overrides,
 });
 

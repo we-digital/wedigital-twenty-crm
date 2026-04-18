@@ -149,10 +149,6 @@ export class BullMQDriver
         shouldStoreInCache: false,
       });
     });
-
-    this.workerMap[queueName].on('error', (error) => {
-      this.logger.error(`Worker error on queue ${queueName}: ${error.message}`);
-    });
   }
 
   async addCron<T>({

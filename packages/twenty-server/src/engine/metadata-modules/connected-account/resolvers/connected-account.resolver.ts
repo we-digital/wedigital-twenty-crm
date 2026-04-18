@@ -13,7 +13,6 @@ import { SettingsPermissionGuard } from 'src/engine/guards/settings-permission.g
 import { WorkspaceAuthGuard } from 'src/engine/guards/workspace-auth.guard';
 import { ConnectedAccountMetadataService } from 'src/engine/metadata-modules/connected-account/connected-account-metadata.service';
 import { ConnectedAccountDTO } from 'src/engine/metadata-modules/connected-account/dtos/connected-account.dto';
-import { ConnectedAccountPublicDTO } from 'src/engine/metadata-modules/connected-account/dtos/connected-account-public.dto';
 import { ConnectedAccountGraphqlApiExceptionInterceptor } from 'src/engine/metadata-modules/connected-account/interceptors/connected-account-graphql-api-exception.interceptor';
 
 @UseGuards(WorkspaceAuthGuard)
@@ -32,18 +31,6 @@ export class ConnectedAccountResolver {
   ): Promise<ConnectedAccountDTO[]> {
     return this.connectedAccountMetadataService.findByUserWorkspaceId({
       userWorkspaceId,
-      workspaceId: workspace.id,
-    });
-  }
-
-  @Query(() => ConnectedAccountPublicDTO, { nullable: true })
-  @UseGuards(NoPermissionGuard)
-  async connectedAccountById(
-    @Args('id', { type: () => UUIDScalarType }) id: string,
-    @AuthWorkspace() workspace: WorkspaceEntity,
-  ): Promise<ConnectedAccountPublicDTO | null> {
-    return this.connectedAccountMetadataService.findById({
-      id,
       workspaceId: workspace.id,
     });
   }

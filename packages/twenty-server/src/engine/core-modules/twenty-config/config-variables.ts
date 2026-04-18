@@ -17,11 +17,13 @@ import { type AwsRegion } from 'src/engine/core-modules/twenty-config/interfaces
 import { NodeEnvironment } from 'src/engine/core-modules/twenty-config/interfaces/node-environment.interface';
 import { SupportDriver } from 'src/engine/core-modules/twenty-config/interfaces/support.interface';
 
-import { ApplicationLogDriverType } from 'src/engine/core-modules/application-logs/interfaces/application-log-driver-type.enum';
 import { CaptchaDriverType } from 'src/engine/core-modules/captcha/interfaces';
 import { CodeInterpreterDriverType } from 'src/engine/core-modules/code-interpreter/code-interpreter.interface';
 import { WebSearchDriverType } from 'src/engine/core-modules/web-search/web-search.interface';
 import { EmailDriver } from 'src/engine/core-modules/email/enums/email-driver.enum';
+import { type AiModelPreferences } from 'src/engine/metadata-modules/ai/ai-models/types/ai-model-preferences.type';
+import { type AiProvidersConfig } from 'src/engine/metadata-modules/ai/ai-models/types/ai-providers-config.type';
+import { loadDefaultModelPreferences } from 'src/engine/metadata-modules/ai/ai-models/utils/load-default-model-preferences.util';
 import { ExceptionHandlerDriver } from 'src/engine/core-modules/exception-handler/interfaces';
 import { StorageDriverType } from 'src/engine/core-modules/file-storage/interfaces';
 import { LoggerDriverType } from 'src/engine/core-modules/logger/interfaces';
@@ -43,9 +45,6 @@ import {
   ConfigVariableException,
   ConfigVariableExceptionCode,
 } from 'src/engine/core-modules/twenty-config/twenty-config.exception';
-import { type AiModelPreferences } from 'src/engine/metadata-modules/ai/ai-models/types/ai-model-preferences.type';
-import { type AiProvidersConfig } from 'src/engine/metadata-modules/ai/ai-models/types/ai-providers-config.type';
-import { loadDefaultModelPreferences } from 'src/engine/metadata-modules/ai/ai-models/utils/load-default-model-preferences.util';
 
 export class ConfigVariables {
   @ConfigVariablesMetadata({
@@ -245,16 +244,6 @@ export class ConfigVariables {
     type: ConfigVariableType.BOOLEAN,
   })
   MESSAGING_PROVIDER_MICROSOFT_ENABLED = false;
-
-  @ConfigVariablesMetadata({
-    group: ConfigVariablesGroup.ADVANCED_SETTINGS,
-    description:
-      'Number of messages fetched per batch during message import, adjust incase of rate limiting caused by Gmail, Outlook or IMAP',
-    type: ConfigVariableType.NUMBER,
-  })
-  @CastToPositiveNumber()
-  @IsOptional()
-  MESSAGING_MESSAGES_GET_BATCH_SIZE = 400;
 
   @ConfigVariablesMetadata({
     group: ConfigVariablesGroup.MICROSOFT_AUTH,
@@ -926,19 +915,6 @@ export class ConfigVariables {
   )
   @IsOptional()
   SENTRY_ENVIRONMENT: string;
-
-  @ConfigVariablesMetadata({
-    group: ConfigVariablesGroup.LOGGING,
-    description:
-      'Driver used for application logs (Disabled, Console, or ClickHouse)',
-    type: ConfigVariableType.ENUM,
-    options: Object.values(ApplicationLogDriverType),
-    isEnvOnly: true,
-  })
-  @IsOptional()
-  @CastToUpperSnakeCase()
-  APPLICATION_LOG_DRIVER_TYPE: ApplicationLogDriverType =
-    ApplicationLogDriverType.DISABLED;
 
   @ConfigVariablesMetadata({
     group: ConfigVariablesGroup.SUPPORT_CHAT_CONFIG,

@@ -1,6 +1,5 @@
-import { Body, Heading, LinkButton } from '@/design-system/components';
+import { Body, Heading, LazyEmbed, LinkButton } from '@/design-system/components';
 import { CLIENT_ICONS } from '@/icons';
-import { IllustrationMount } from '@/illustrations';
 import { HelpedCardShape } from '@/sections/Helped/HelpedCardShape';
 import type { HeadingCardType } from '@/sections/Helped/types/HeadingCard';
 import { theme } from '@/theme';
@@ -20,11 +19,32 @@ const CardRoot = styled.article`
   position: relative;
   row-gap: ${theme.spacing(2.5)};
   width: 100%;
-  transition:
-    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-    filter 0.6s ease;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.6s ease;
   transform-style: preserve-3d;
   perspective: 1200px;
+
+  /* Group hover context to dim other cards */
+  &:hover {
+    transform: translateY(-16px) scale(1.02) rotateX(2deg) rotateY(-2deg);
+    z-index: 10;
+  }
+
+  /* Complex hover shadow */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: ${theme.radius(4)};
+    box-shadow: 0 40px 80px -20px rgba(0,0,0,0.4);
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  &:hover::before {
+    opacity: 1;
+  }
 `;
 
 const LogoRow = styled.div`
@@ -47,6 +67,32 @@ const VisualShell = styled.div`
   overflow: hidden;
   position: relative;
   width: 100%;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-style: preserve-3d;
+
+  ${CardRoot}:hover & {
+    transform: translateZ(30px) scale(1.02);
+  }
+`;
+
+const StyledIframe = styled(LazyEmbed)`
+  border: none;
+  height: 200%;
+  left: 51.5%;
+  mix-blend-mode: lighten;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 200%;
+`;
+
+const HueOverlay = styled.div`
+  background-color: ${theme.colors.highlight[100]};
+  inset: 0;
+  mix-blend-mode: hue;
+  pointer-events: none;
+  position: absolute;
 `;
 
 const CopyBlock = styled.div`
@@ -93,7 +139,14 @@ export function Card({ card }: CardProps) {
       </LogoRow>
       <Rule aria-hidden="true" />
       <VisualShell>
-        <IllustrationMount illustration={card.illustration} />
+        <StyledIframe
+          allow="clipboard-write; encrypted-media; gyroscope; web-share"
+          allowFullScreen
+          referrerPolicy="strict-origin-when-cross-origin"
+          src={card.illustration.src}
+          title={card.illustration.title || 'Case illustration'}
+        />
+        <HueOverlay aria-hidden="true" />
       </VisualShell>
       <Rule aria-hidden="true" />
       <CopyBlock>

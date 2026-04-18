@@ -331,7 +331,7 @@ describe('SyncMessageFoldersService', () => {
           id: 'folder-1',
           externalId: 'child-ext',
           name: 'Projects',
-          parentFolderId: 'old-parent-ext',
+          parentFolderId: 'old-parent-uuid',
         });
         const discoveredFolders = [
           createMockDiscoveredFolder({
@@ -360,7 +360,7 @@ describe('SyncMessageFoldersService', () => {
         expect(mockMessageFolderRepository.update).toHaveBeenCalledWith(
           { id: 'folder-1', messageChannelId: 'channel-123', workspaceId },
           expect.objectContaining({
-            parentFolderId: 'new-parent-id',
+            parentFolderId: 'new-parent-uuid',
           }),
         );
       });

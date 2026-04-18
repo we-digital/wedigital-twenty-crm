@@ -129,10 +129,10 @@ export class DevSeederService {
       this.coreDataSource,
       'core',
       workspaceId,
-      twentyStandardFlatApplication.id,
+      workspaceCustomFlatApplication.id,
     );
     await seedPageLayoutTabs({
-      applicationId: twentyStandardFlatApplication.id,
+      applicationId: workspaceCustomFlatApplication.id,
       workspaceId,
       dataSource: this.coreDataSource,
       schemaName: 'core',
@@ -150,7 +150,7 @@ export class DevSeederService {
       schemaName: 'core',
       workspaceId,
       objectMetadataItems,
-      applicationId: twentyStandardFlatApplication.id,
+      workspaceCustomApplicationId: workspaceCustomFlatApplication.id,
     });
 
     const relatedPageLayoutCacheKeysToInvalidate = [

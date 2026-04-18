@@ -31,9 +31,9 @@ const StyledEditor = styled.div<{
     &::-webkit-scrollbar {
       display: none;
     }
-    height: ${({ multiline }) => (multiline ? 'auto' : '100%')};
+    height: 100%;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: ${({ multiline }) => (multiline ? 'auto' : 'hidden')};
     padding: ${themeCssVariables.spacing[1]} ${themeCssVariables.spacing[2]};
     scrollbar-width: none;
     white-space: ${({ multiline }) => (multiline ? 'pre' : 'nowrap')};

@@ -2,7 +2,6 @@ import { authLogin } from '@/cli/operations/login';
 import { authLoginOAuth } from '@/cli/operations/login-oauth';
 import { ApiService } from '@/cli/utilities/api/api-service';
 import { ConfigService } from '@/cli/utilities/config/config-service';
-import { getConfigPath } from '@/cli/utilities/config/get-config-path';
 import { detectLocalServer } from '@/cli/utilities/server/detect-local-server';
 import chalk from 'chalk';
 import type { Command } from 'commander';
@@ -73,19 +72,14 @@ export const registerRemoteCommands = (program: Command): void => {
     .option('--api-key <apiKey>', 'API key for non-interactive auth')
     .option('--api-url <apiUrl>', 'Server URL')
     .option('--local', 'Connect to a local Twenty server (auto-detect)')
-    .option('--test', 'Write to config.test.json (for integration tests)')
     .action(
       async (options: {
         as?: string;
         apiKey?: string;
         apiUrl?: string;
         local?: boolean;
-        test?: boolean;
       }) => {
-        const configPath = options.test ? getConfigPath(true) : undefined;
-        const configService = new ConfigService(
-          configPath ? { configPath } : undefined,
-        );
+        const configService = new ConfigService();
         const existingRemotes = await configService.getRemotes();
 
         if (options.as !== undefined && existingRemotes.includes(options.as)) {

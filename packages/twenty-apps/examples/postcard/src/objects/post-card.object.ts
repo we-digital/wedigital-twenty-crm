@@ -51,28 +51,28 @@ export default defineObject({
       defaultValue: `'${PostCardStatus.DRAFT}'`,
       options: [
         {
-          id: '8ab3abad-02e7-4670-9283-983d7fac7fe4',
+          id: 'a1b2c3d4-0001-4000-8000-000000000001',
           value: PostCardStatus.DRAFT,
           label: 'Draft',
           position: 0,
           color: 'gray',
         },
         {
-          id: '2bcdd195-6c99-4d69-84b2-e2838ee54467',
+          id: 'a1b2c3d4-0002-4000-8000-000000000002',
           value: PostCardStatus.SENT,
           label: 'Sent',
           position: 1,
           color: 'orange',
         },
         {
-          id: '918ff60c-c26e-4fae-8eba-3fbce04dc48b',
+          id: 'a1b2c3d4-0003-4000-8000-000000000003',
           value: PostCardStatus.DELIVERED,
           label: 'Delivered',
           position: 2,
           color: 'green',
         },
         {
-          id: '3c91a653-5d31-4023-be6c-a69c68d21233',
+          id: 'a1b2c3d4-0004-4000-8000-000000000004',
           value: PostCardStatus.RETURNED,
           label: 'Returned',
           position: 3,

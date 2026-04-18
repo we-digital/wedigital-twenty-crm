@@ -15,7 +15,7 @@ import { EmailAliasManagerService } from 'src/modules/connected-account/email-al
 import { ConnectedAccountRefreshTokensService } from 'src/modules/connected-account/refresh-tokens-manager/services/connected-account-refresh-tokens.service';
 import { type ConnectedAccountEntity } from 'src/engine/metadata-modules/connected-account/entities/connected-account.entity';
 import { MessageChannelSyncStatusService } from 'src/modules/messaging/common/services/message-channel-sync-status.service';
-import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
+import { MESSAGING_GMAIL_USERS_MESSAGES_GET_BATCH_SIZE } from 'src/modules/messaging/message-import-manager/drivers/gmail/constants/messaging-gmail-users-messages-get-batch-size.constant';
 import { MessagingAccountAuthenticationService } from 'src/modules/messaging/message-import-manager/services/messaging-account-authentication.service';
 import { MessagingGetMessagesService } from 'src/modules/messaging/message-import-manager/services/messaging-get-messages.service';
 import { MessageImportExceptionHandlerService } from 'src/modules/messaging/message-import-manager/services/messaging-import-exception-handler.service';
@@ -183,12 +183,6 @@ describe('MessagingMessagesImportService', () => {
           findOne: jest.fn().mockResolvedValue({ userId: 'user-id' }),
         },
       },
-      {
-        provide: TwentyConfigService,
-        useValue: {
-          get: jest.fn().mockReturnValue(400),
-        },
-      },
     ];
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -287,7 +281,7 @@ describe('MessagingMessagesImportService', () => {
 
   it('should process message batch import of more than MESSAGING_GMAIL_USERS_MESSAGES_GET_BATCH_SIZE successfully', async () => {
     const arrayMessagesBig = Array.from(
-      { length: 401 },
+      { length: MESSAGING_GMAIL_USERS_MESSAGES_GET_BATCH_SIZE + 1 },
       (_, index) => `message-id-${index + 1}`,
     );
 

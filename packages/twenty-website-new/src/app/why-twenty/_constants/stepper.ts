@@ -13,5 +13,8 @@ export const STEPPER_DATA: WhyTwentyStepperDataType = {
       text: 'Because in the AI age, the winners will not be the companies with the most dashboards. They will be the companies whose systems turn information into decisions, and decisions into action, faster than everyone else.',
     },
   ],
-  illustration: 'whyTwentyStepperLogo',
+  illustration: {
+    src: '/illustrations/why-twenty/stepper/logo.glb',
+    title: 'Our vision illustration',
+  },
 };

@@ -584,7 +584,7 @@ type ViewField {
   createdAt: DateTime!
   updatedAt: DateTime!
   deletedAt: DateTime
-  isOverridden: Boolean @deprecated(reason: "isOverridden is deprecated")
+  isOverridden: Boolean!
 }
 
 enum AggregateOperations {
@@ -693,7 +693,7 @@ type ViewFieldGroup {
   updatedAt: DateTime!
   deletedAt: DateTime
   viewFields: [ViewField!]!
-  isOverridden: Boolean! @deprecated(reason: "isOverridden is deprecated")
+  isOverridden: Boolean!
 }
 
 type View {
@@ -899,7 +899,7 @@ type PageLayoutWidget {
   createdAt: DateTime!
   updatedAt: DateTime!
   deletedAt: DateTime
-  isOverridden: Boolean @deprecated(reason: "isOverridden is deprecated")
+  isOverridden: Boolean!
 }
 
 enum WidgetType {
@@ -1233,7 +1233,7 @@ type PageLayoutTab {
   createdAt: DateTime!
   updatedAt: DateTime!
   deletedAt: DateTime
-  isOverridden: Boolean @deprecated(reason: "isOverridden is deprecated")
+  isOverridden: Boolean!
 }
 
 type PageLayout {
@@ -1634,15 +1634,12 @@ type ClientAIModelConfig {
   modelFamily: ModelFamily
   modelFamilyLabel: String
   sdkPackage: String
-  inputCostPerMillionTokens: Float
-  outputCostPerMillionTokens: Float
+  inputCostPerMillionTokensInCredits: Float!
+  outputCostPerMillionTokensInCredits: Float!
   nativeCapabilities: NativeModelCapabilities
   isDeprecated: Boolean
   isRecommended: Boolean
   providerName: String
-  providerLabel: String
-  contextWindowTokens: Float
-  maxOutputTokens: Float
   dataResidency: String
 }
 
@@ -1732,13 +1729,13 @@ enum FeatureFlagKey {
   IS_JSON_FILTER_ENABLED
   IS_AI_ENABLED
   IS_COMMAND_MENU_ITEM_ENABLED
+  IS_MARKETPLACE_ENABLED
   IS_MARKETPLACE_SETTING_TAB_VISIBLE
   IS_RECORD_PAGE_LAYOUT_EDITING_ENABLED
   IS_PUBLIC_DOMAIN_ENABLED
   IS_EMAILING_DOMAIN_ENABLED
   IS_JUNCTION_RELATIONS_ENABLED
   IS_DRAFT_EMAIL_ENABLED
-  IS_CONNECTED_ACCOUNT_MIGRATED
   IS_USAGE_ANALYTICS_ENABLED
   IS_RICH_TEXT_V1_MIGRATED
   IS_RECORD_PAGE_LAYOUT_GLOBAL_EDITION_ENABLED
@@ -2578,7 +2575,6 @@ type CommandMenuItem {
   position: Float!
   isPinned: Boolean!
   availabilityType: CommandMenuItemAvailabilityType!
-  payload: CommandMenuItemPayload
   hotKeys: [String!]
   conditionalAvailabilityExpression: String
   availabilityObjectMetadataId: UUID
@@ -2605,11 +2601,19 @@ enum EngineComponentKey {
   SEE_DELETED_RECORDS
   CREATE_NEW_VIEW
   HIDE_DELETED_RECORDS
+  GO_TO_PEOPLE
+  GO_TO_COMPANIES
+  GO_TO_DASHBOARDS
+  GO_TO_OPPORTUNITIES
+  GO_TO_SETTINGS
+  GO_TO_TASKS
+  GO_TO_NOTES
   EDIT_RECORD_PAGE_LAYOUT
   EDIT_DASHBOARD_LAYOUT
   SAVE_DASHBOARD_LAYOUT
   CANCEL_DASHBOARD_LAYOUT
   DUPLICATE_DASHBOARD
+  GO_TO_WORKFLOWS
   ACTIVATE_WORKFLOW
   DEACTIVATE_WORKFLOW
   DISCARD_DRAFT_WORKFLOW
@@ -2620,6 +2624,7 @@ enum EngineComponentKey {
   ADD_NODE_WORKFLOW
   TIDY_UP_WORKFLOW
   DUPLICATE_WORKFLOW
+  GO_TO_RUNS
   SEE_VERSION_WORKFLOW_RUN
   SEE_WORKFLOW_WORKFLOW_RUN
   STOP_WORKFLOW_RUN
@@ -2631,20 +2636,10 @@ enum EngineComponentKey {
   SEARCH_RECORDS_FALLBACK
   ASK_AI
   VIEW_PREVIOUS_AI_CHATS
-  NAVIGATION
   TRIGGER_WORKFLOW_VERSION
   FRONT_COMPONENT_RENDERER
   REPLY_TO_EMAIL_THREAD
   COMPOSE_EMAIL
-  GO_TO_PEOPLE
-  GO_TO_COMPANIES
-  GO_TO_DASHBOARDS
-  GO_TO_OPPORTUNITIES
-  GO_TO_SETTINGS
-  GO_TO_TASKS
-  GO_TO_NOTES
-  GO_TO_WORKFLOWS
-  GO_TO_RUNS
   DELETE_SINGLE_RECORD
   DELETE_MULTIPLE_RECORDS
   RESTORE_SINGLE_RECORD
@@ -2660,16 +2655,6 @@ enum CommandMenuItemAvailabilityType {
   GLOBAL
   RECORD_SELECTION
   FALLBACK
-}
-
-union CommandMenuItemPayload = PathCommandMenuItemPayload | ObjectMetadataCommandMenuItemPayload
-
-type PathCommandMenuItemPayload {
-  path: String!
-}
-
-type ObjectMetadataCommandMenuItemPayload {
-  objectMetadataItemId: UUID!
 }
 
 type ToolIndexEntry {
@@ -2786,39 +2771,10 @@ type ConnectedAccountDTO {
   authFailedAt: DateTime
   handleAliases: [String!]
   scopes: [String!]
-  connectionParameters: ImapSmtpCaldavConnectionParameters
   lastSignedInAt: DateTime
   userWorkspaceId: UUID!
   createdAt: DateTime!
   updatedAt: DateTime!
-}
-
-type PublicConnectionParametersOutput {
-  host: String!
-  port: Float!
-  username: String
-  secure: Boolean
-}
-
-type PublicImapSmtpCaldavConnectionParameters {
-  IMAP: PublicConnectionParametersOutput
-  SMTP: PublicConnectionParametersOutput
-  CALDAV: PublicConnectionParametersOutput
-}
-
-type ConnectedAccountPublicDTO {
-  id: UUID!
-  handle: String!
-  provider: String!
-  lastCredentialsRefreshedAt: DateTime
-  authFailedAt: DateTime
-  handleAliases: [String!]
-  scopes: [String!]
-  lastSignedInAt: DateTime
-  userWorkspaceId: UUID!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  connectionParameters: PublicImapSmtpCaldavConnectionParameters
 }
 
 type SendEmailOutput {
@@ -3239,7 +3195,6 @@ type Query {
   myMessageFolders(messageChannelId: UUID): [MessageFolder!]!
   myMessageChannels(connectedAccountId: UUID): [MessageChannel!]!
   myConnectedAccounts: [ConnectedAccountDTO!]!
-  connectedAccountById(id: UUID!): ConnectedAccountPublicDTO
   connectedAccounts: [ConnectedAccountDTO!]!
   myCalendarChannels(connectedAccountId: UUID): [CalendarChannel!]!
   webhooks: [Webhook!]!
@@ -3277,6 +3232,7 @@ type Query {
   findApplicationRegistrationStats(id: String!): ApplicationRegistrationStats!
   findApplicationRegistrationVariables(applicationRegistrationId: String!): [ApplicationRegistrationVariable!]!
   applicationRegistrationTarballUrl(id: String!): String
+  getApplicationShareLink(id: String!): String!
   currentUser: User!
   currentWorkspace: Workspace!
   getPublicWorkspaceDataByDomain(origin: String): PublicWorkspaceData!
@@ -3384,7 +3340,6 @@ enum EventLogTable {
   PAGEVIEW
   OBJECT_EVENT
   USAGE_EVENT
-  APPLICATION_LOG
 }
 
 input EventLogFiltersInput {
@@ -3503,8 +3458,6 @@ type Mutation {
   updatePageLayout(id: String!, input: UpdatePageLayoutInput!): PageLayout!
   destroyPageLayout(id: String!): Boolean!
   updatePageLayoutWithTabsAndWidgets(id: String!, input: UpdatePageLayoutWithTabsInput!): PageLayout!
-  resetPageLayoutWidgetToDefault(id: String!): PageLayoutWidget!
-  resetPageLayoutTabToDefault(id: String!): PageLayoutTab!
   createPageLayoutWidget(input: CreatePageLayoutWidgetInput!): PageLayoutWidget!
   updatePageLayoutWidget(id: String!, input: UpdatePageLayoutWidgetInput!): PageLayoutWidget!
   destroyPageLayoutWidget(id: String!): Boolean!
@@ -3612,9 +3565,7 @@ type Mutation {
   userLookupAdminPanel(userIdentifier: String!): UserLookup!
   updateWorkspaceFeatureFlag(workspaceId: UUID!, featureFlag: String!, value: Boolean!): Boolean!
   setAdminAiModelEnabled(modelId: String!, enabled: Boolean!): Boolean!
-  setAdminAiModelsEnabled(modelIds: [String!]!, enabled: Boolean!): Boolean!
   setAdminAiModelRecommended(modelId: String!, recommended: Boolean!): Boolean!
-  setAdminAiModelsRecommended(modelIds: [String!]!, recommended: Boolean!): Boolean!
   setAdminDefaultAiModel(role: AiModelRole!, modelId: String!): Boolean!
   createDatabaseConfigVariable(key: String!, value: JSON!): Boolean!
   updateDatabaseConfigVariable(key: String!, value: JSON!): Boolean!
@@ -4031,7 +3982,6 @@ input CreatePageLayoutWidgetInput {
 }
 
 input UpdatePageLayoutWidgetInput {
-  pageLayoutTabId: UUID
   title: String
   type: WidgetType
   objectMetadataId: UUID
@@ -4098,7 +4048,6 @@ input CreateCommandMenuItemInput {
   hotKeys: [String!]
   conditionalAvailabilityExpression: String
   availabilityObjectMetadataId: UUID
-  payload: JSON
 }
 
 input UpdateCommandMenuItemInput {

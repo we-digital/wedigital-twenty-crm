@@ -23,14 +23,14 @@ export const computeStandardWorkflowAutomatedTriggerViewFieldGroups = (
           isVisible: true,
         },
       }),
-    workflowAutomatedTriggerRecordPageFieldsSystem:
+    workflowAutomatedTriggerRecordPageFieldsOther:
       createStandardViewFieldGroupFlatMetadata({
         ...args,
         objectName: 'workflowAutomatedTrigger',
         context: {
           viewName: 'workflowAutomatedTriggerRecordPageFields',
-          viewFieldGroupName: 'system',
-          name: 'System',
+          viewFieldGroupName: 'other',
+          name: 'Other',
           position: 1,
           isVisible: true,
         },

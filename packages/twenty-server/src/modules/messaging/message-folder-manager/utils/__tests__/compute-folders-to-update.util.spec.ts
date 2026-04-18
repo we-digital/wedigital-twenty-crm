@@ -2,6 +2,8 @@ import { MessageFolderPendingSyncAction } from 'twenty-shared/types';
 import { computeFoldersToUpdate } from 'src/modules/messaging/message-folder-manager/utils/compute-folders-to-update.util';
 
 describe('computeFoldersToUpdate', () => {
+  const emptyMap = new Map<string, string>();
+
   it('should detect folder rename from provider', () => {
     const discoveredFolders = [
       {
@@ -29,12 +31,15 @@ describe('computeFoldersToUpdate', () => {
     const result = computeFoldersToUpdate({
       discoveredFolders,
       existingFolders,
+      externalIdToUuidMap: emptyMap,
     });
 
     expect(result.get('folder-id')?.name).toBe('Work Emails');
   });
 
   it('should detect folder moved to different parent', () => {
+    const existingParentUuid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+
     const discoveredFolders = [
       {
         name: 'Subfolder',
@@ -52,18 +57,23 @@ describe('computeFoldersToUpdate', () => {
         externalId: 'sub-1',
         isSynced: true,
         isSentFolder: false,
-        parentFolderId: 'old-parent-ext',
+        parentFolderId: 'old-parent-uuid',
         syncCursor: 'cursor',
         pendingSyncAction: MessageFolderPendingSyncAction.NONE,
       },
     ];
 
+    const externalIdToUuidMap = new Map([
+      ['new-parent-ext', existingParentUuid],
+    ]);
+
     const result = computeFoldersToUpdate({
       discoveredFolders,
       existingFolders,
+      externalIdToUuidMap,
     });
 
-    expect(result.get('folder-id')?.parentFolderId).toBe('new-parent-ext');
+    expect(result.get('folder-id')?.parentFolderId).toBe(existingParentUuid);
   });
 
   it('should not flag unchanged folders for update', () => {
@@ -88,6 +98,7 @@ describe('computeFoldersToUpdate', () => {
     const result = computeFoldersToUpdate({
       discoveredFolders,
       existingFolders,
+      externalIdToUuidMap: emptyMap,
     });
 
     expect(result.size).toBe(0);
@@ -120,6 +131,7 @@ describe('computeFoldersToUpdate', () => {
     const result = computeFoldersToUpdate({
       discoveredFolders,
       existingFolders,
+      externalIdToUuidMap: emptyMap,
     });
 
     expect(result.size).toBe(0);

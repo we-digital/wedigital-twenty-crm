@@ -7,7 +7,7 @@ import type {
 } from '@/sections/Salesforce/types';
 import { theme } from '@/theme';
 import { styled } from '@linaria/react';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const formatPriceAmount = (amount: number) =>
   `$${new Intl.NumberFormat('en-US').format(amount)}`;
@@ -54,6 +54,10 @@ const calculatePriceAmounts = (
 };
 
 const PANEL_BACKGROUND = '#c9c9c9';
+const CARD_STICKY_TOP_OFFSET_PX = 64;
+const CARD_STICKY_BOTTOM_OFFSET_PX = 340;
+
+type StickyHeaderMode = 'absolute' | 'fixed';
 
 const Panel = styled.div`
   background-color: ${PANEL_BACKGROUND};
@@ -65,7 +69,17 @@ const Panel = styled.div`
   width: 100%;
 `;
 
-const PricingHeader = styled.div`
+const StickyHeaderSpacer = styled.div<{ $height: number }>`
+  height: ${({ $height }) => $height}px;
+  width: 100%;
+`;
+
+const StickyHeader = styled.div<{
+  $absoluteTop: number;
+  $left: number;
+  $mode: StickyHeaderMode;
+  $width: number;
+}>`
   background-color: ${PANEL_BACKGROUND};
   box-shadow:
     inset 1px 0 0 0 #dfdfdf,
@@ -74,8 +88,11 @@ const PricingHeader = styled.div`
     inset -2px 0 0 0 #808080,
     inset 0 1px 0 0 #dfdfdf,
     inset 0 2px 0 0 #ffffff;
-  position: relative;
-  width: 100%;
+  left: ${({ $left, $mode }) => ($mode === 'fixed' ? `${$left}px` : '0')};
+  position: ${({ $mode }) => ($mode === 'fixed' ? 'fixed' : 'absolute')};
+  top: ${({ $absoluteTop, $mode }) =>
+    $mode === 'fixed' ? `${CARD_STICKY_TOP_OFFSET_PX}px` : `${$absoluteTop}px`};
+  width: ${({ $mode, $width }) => ($mode === 'fixed' ? `${$width}px` : '100%')};
   z-index: 20;
 `;
 
@@ -317,9 +334,7 @@ const HiddenCheckbox = styled.input`
 const CheckboxFace = styled.span<{ checked: boolean }>`
   aspect-ratio: 1 / 1;
   background-color: ${({ checked }) =>
-    checked
-      ? theme.colors.primary.background[100]
-      : 'rgba(255, 255, 255, 0.05)'};
+    checked ? theme.colors.primary.background[100] : 'rgba(255, 255, 255, 0.05)'};
   border-radius: 0;
   box-sizing: border-box;
   box-shadow:
@@ -366,11 +381,9 @@ const AddonRightText = styled.span`
   text-align: right;
 `;
 
-const AddonRightLine = styled.span<{ 'data-muted'?: boolean }>`
-  color: ${(props) =>
-    props['data-muted']
-      ? theme.colors.primary.text[60]
-      : theme.colors.primary.text[100]};
+const AddonRightLine = styled.span<{ muted?: boolean }>`
+  color: ${({ muted }) =>
+    muted ? theme.colors.primary.text[60] : theme.colors.primary.text[100]};
   display: block;
 `;
 
@@ -381,7 +394,7 @@ const AddonRightPart = styled.span`
 
 const renderRightLabelParts = (lines: SalesforceRichTextPartType[][]) =>
   lines.map((line, lineIndex) => (
-    <AddonRightLine key={lineIndex} data-muted={lineIndex > 0 || undefined}>
+    <AddonRightLine key={lineIndex} muted={lineIndex > 0}>
       {line.map((part, partIndex) => (
         <AddonRightPart
           key={partIndex}
@@ -402,10 +415,7 @@ const renderRightLabelParts = (lines: SalesforceRichTextPartType[][]) =>
 
 const renderRightLabel = (label: string) =>
   label.split('\n').map((line, lineIndex) => (
-    <AddonRightLine
-      key={`${lineIndex}-${line}`}
-      data-muted={lineIndex > 0 || undefined}
-    >
+    <AddonRightLine key={`${lineIndex}-${line}`} muted={lineIndex > 0}>
       {line}
     </AddonRightLine>
   ));
@@ -420,20 +430,137 @@ export type PricingWindowProps = {
   pricing: SalesforcePricingPanelType;
 };
 
+type StickyHeaderState = {
+  absoluteTop: number;
+  height: number;
+  left: number;
+  mode: StickyHeaderMode;
+  width: number;
+};
+
 export function PricingWindow({
   checkedIds,
   onAddonToggle,
   onClose,
   pricing,
 }: PricingWindowProps) {
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const stickyHeaderRef = useRef<HTMLDivElement | null>(null);
   const addonAnchorRefs = useRef<Record<string, HTMLLabelElement | null>>({});
+  const [stickyHeaderState, setStickyHeaderState] = useState<StickyHeaderState>({
+    absoluteTop: 0,
+    height: 0,
+    left: 0,
+    mode: 'absolute',
+    width: 0,
+  });
   const { fixedPriceAmount, perSeatPriceAmount, totalPriceAmount } =
     calculatePriceAmounts(pricing, checkedIds);
 
+  useEffect(() => {
+    let frameId = 0;
+
+    const updateStickyHeaderState = () => {
+      frameId = 0;
+
+      const panel = panelRef.current;
+      const stickyHeader = stickyHeaderRef.current;
+
+      if (!panel || !stickyHeader) {
+        return;
+      }
+
+      const panelRect = panel.getBoundingClientRect();
+      const stickyHeight = stickyHeader.offsetHeight;
+      const panelHeight = panel.offsetHeight;
+      const panelTop = window.scrollY + panelRect.top;
+      const maxAbsoluteTop = Math.max(
+        0,
+        panelHeight - stickyHeight - CARD_STICKY_BOTTOM_OFFSET_PX,
+      );
+      const fixedEndScrollY =
+        panelTop +
+        panelHeight -
+        stickyHeight -
+        CARD_STICKY_TOP_OFFSET_PX -
+        CARD_STICKY_BOTTOM_OFFSET_PX;
+      const nextState: StickyHeaderState =
+        window.scrollY >= panelTop - CARD_STICKY_TOP_OFFSET_PX &&
+        window.scrollY < fixedEndScrollY
+          ? {
+              absoluteTop: 0,
+              height: stickyHeight,
+              left: panelRect.left,
+              mode: 'fixed',
+              width: panelRect.width,
+            }
+          : {
+              absoluteTop:
+                window.scrollY >= fixedEndScrollY ? maxAbsoluteTop : 0,
+              height: stickyHeight,
+              left: 0,
+              mode: 'absolute',
+              width: panelRect.width,
+            };
+
+      setStickyHeaderState((previous) =>
+        previous.absoluteTop === nextState.absoluteTop &&
+        previous.height === nextState.height &&
+        previous.left === nextState.left &&
+        previous.mode === nextState.mode &&
+        previous.width === nextState.width
+          ? previous
+          : nextState,
+      );
+    };
+
+    const requestStickyHeaderUpdate = () => {
+      if (frameId !== 0) {
+        return;
+      }
+
+      frameId = window.requestAnimationFrame(updateStickyHeaderState);
+    };
+
+    requestStickyHeaderUpdate();
+
+    window.addEventListener('resize', requestStickyHeaderUpdate);
+    window.addEventListener('scroll', requestStickyHeaderUpdate, {
+      passive: true,
+    });
+
+    const resizeObserver = new ResizeObserver(requestStickyHeaderUpdate);
+
+    if (panelRef.current) {
+      resizeObserver.observe(panelRef.current);
+    }
+
+    if (stickyHeaderRef.current) {
+      resizeObserver.observe(stickyHeaderRef.current);
+    }
+
+    return () => {
+      if (frameId !== 0) {
+        window.cancelAnimationFrame(frameId);
+      }
+
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', requestStickyHeaderUpdate);
+      window.removeEventListener('scroll', requestStickyHeaderUpdate);
+    };
+  }, [fixedPriceAmount]);
+
   return (
-    <Panel>
+    <Panel ref={panelRef}>
       <WindowChrome aria-hidden="true" />
-      <PricingHeader>
+      <StickyHeaderSpacer $height={stickyHeaderState.height} />
+      <StickyHeader
+        $absoluteTop={stickyHeaderState.absoluteTop}
+        $left={stickyHeaderState.left}
+        $mode={stickyHeaderState.mode}
+        $width={stickyHeaderState.width}
+        ref={stickyHeaderRef}
+      >
         <TitleBar>
           <TitleBarText>{pricing.windowTitle}</TitleBarText>
           <TitleBarActions>
@@ -460,9 +587,7 @@ export function PricingWindow({
                 <ProductCopy>
                   <ProductTitle>{pricing.productTitle}</ProductTitle>
                   <PriceRow>
-                    <PriceAmount>
-                      {formatPriceAmount(perSeatPriceAmount)}
-                    </PriceAmount>
+                    <PriceAmount>{formatPriceAmount(perSeatPriceAmount)}</PriceAmount>
                     <PriceSuffix>{pricing.priceSuffix}</PriceSuffix>
                   </PriceRow>
                   {fixedPriceAmount > 0 ? (
@@ -470,9 +595,7 @@ export function PricingWindow({
                       <TotalPriceAmount>
                         {formatPriceAmount(totalPriceAmount)}
                       </TotalPriceAmount>
-                      <TotalPriceLabel>
-                        {pricing.totalPriceLabel}
-                      </TotalPriceLabel>
+                      <TotalPriceLabel>{pricing.totalPriceLabel}</TotalPriceLabel>
                     </TotalPriceRow>
                   ) : null}
                 </ProductCopy>
@@ -485,7 +608,7 @@ export function PricingWindow({
             <Separator aria-hidden="true" />
           </SummaryInner>
         </SummaryPad>
-      </PricingHeader>
+      </StickyHeader>
       <ContentPad>
         <Inner>
           <SectionLabel>{pricing.featureSectionHeading}</SectionLabel>
@@ -505,9 +628,8 @@ export function PricingWindow({
                     onChange={() =>
                       onAddonToggle(
                         addon,
-                        addonAnchorRefs.current[
-                          addon.id
-                        ]?.getBoundingClientRect() ?? null,
+                        addonAnchorRefs.current[addon.id]?.getBoundingClientRect() ??
+                          null,
                       )
                     }
                     type="checkbox"

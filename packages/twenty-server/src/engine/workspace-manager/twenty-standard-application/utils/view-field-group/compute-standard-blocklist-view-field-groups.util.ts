@@ -19,13 +19,13 @@ export const computeStandardBlocklistViewFieldGroups = (
         isVisible: true,
       },
     }),
-    blocklistRecordPageFieldsSystem: createStandardViewFieldGroupFlatMetadata({
+    blocklistRecordPageFieldsOther: createStandardViewFieldGroupFlatMetadata({
       ...args,
       objectName: 'blocklist',
       context: {
         viewName: 'blocklistRecordPageFields',
-        viewFieldGroupName: 'system',
-        name: 'System',
+        viewFieldGroupName: 'other',
+        name: 'Other',
         position: 1,
         isVisible: true,
       },

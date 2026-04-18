@@ -15,6 +15,12 @@ const FeatureCardContainer = styled.div`
   overflow: hidden;
   min-width: 0;
   height: 100%;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+  }
 `;
 
 const CardImage = styled.div`
@@ -23,6 +29,14 @@ const CardImage = styled.div`
   background-color: ${theme.colors.primary.border[10]};
   position: relative;
   overflow: hidden;
+
+  img {
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  ${FeatureCardContainer}:hover img {
+    transform: scale(1.05);
+  }
 `;
 
 const CardContent = styled.div`
@@ -46,6 +60,20 @@ const CardIcon = styled.div`
   height: 22px;
 `;
 
+const HeadingWrap = styled.div`
+  min-width: 0;
+
+  span {
+    transition: opacity 0.4s ease;
+  }
+
+  h1:has(span:hover) span:not(:hover),
+  h2:has(span:hover) span:not(:hover),
+  h3:has(span:hover) span:not(:hover) {
+    opacity: 0.2;
+  }
+`;
+
 type FeatureCardProps = { featureCard: ThreeCardsFeatureCardType };
 
 export function FeatureCard({ featureCard }: FeatureCardProps) {
@@ -67,12 +95,14 @@ export function FeatureCard({ featureCard }: FeatureCardProps) {
               fillColor={theme.colors.highlight[100]}
             />
           </CardIcon>
-          <Heading
-            as="h3"
-            segments={featureCard.heading}
-            size="xs"
-            weight="medium"
-          />
+          <HeadingWrap>
+            <Heading
+              as="h3"
+              segments={featureCard.heading}
+              size="xs"
+              weight="medium"
+            />
+          </HeadingWrap>
         </CardTitleRow>
         <Body body={featureCard.body} size="sm" weight="regular" />
       </CardContent>

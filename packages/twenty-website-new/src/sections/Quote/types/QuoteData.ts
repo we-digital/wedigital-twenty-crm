@@ -1,7 +1,7 @@
 import type { HeadingType } from '@/design-system/components/Heading/types/Heading';
-import type { IllustrationId } from '@/illustrations';
+import type { IllustrationType } from '@/design-system/components/Illustration/types/Illustration';
 
 export type QuoteDataType = {
-  illustration: IllustrationId;
+  illustration: IllustrationType;
   heading: HeadingType[];
 };

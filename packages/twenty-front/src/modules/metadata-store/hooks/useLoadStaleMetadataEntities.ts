@@ -15,7 +15,6 @@ import {
   FindManyCommandMenuItemsDocument,
   FindAllRecordPageLayoutsDocument,
   FindFieldsWidgetViewsDocument,
-  FindManyFrontComponentsDocument,
   FindManyLogicFunctionsDocument,
   FindManyNavigationMenuItemsDocument,
   GetChatThreadsDocument,
@@ -205,23 +204,6 @@ export const useLoadStaleMetadataEntities = () => {
               }
 
               replaceDraft('commandMenuItems', result.data.commandMenuItems);
-            }),
-        );
-      }
-
-      if (staleEntityKeys.includes('frontComponents')) {
-        fetchPromises.push(
-          client
-            .query({
-              query: FindManyFrontComponentsDocument,
-              fetchPolicy: 'network-only',
-            })
-            .then((result) => {
-              if (!isDefined(result.data?.frontComponents)) {
-                return;
-              }
-
-              replaceDraft('frontComponents', result.data.frontComponents);
             }),
         );
       }

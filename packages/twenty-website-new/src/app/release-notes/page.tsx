@@ -10,6 +10,7 @@ import { mergeSocialLinkLabels } from '@/lib/community/merge-social-link-labels'
 import { fetchLatestGithubReleaseTag } from '@/lib/github/fetch-latest-release-tag';
 import { getVisibleReleaseNotes } from '@/lib/releases/get-visible-releases';
 import { loadLocalReleaseNotes } from '@/lib/releases/load-local-release-notes';
+import { ScrollReveal } from '@/motion/ScrollReveal';
 import { Hero } from '@/sections/Hero/components';
 import { Menu } from '@/sections/Menu/components';
 import { ReleaseNotes } from '@/sections/ReleaseNotes/components';
@@ -49,28 +50,30 @@ export default async function ReleaseNotesPage() {
         <Menu.Cta scheme="primary" />
       </Menu.Root>
 
-      <Hero.Root backgroundColor={theme.colors.primary.background[100]}>
-        <Hero.Heading
-          page={Pages.ReleaseNotes}
-          segments={RELEASE_NOTES_HERO_HEADING}
-          size="lg"
-          weight="light"
-        />
-        <Hero.Body
-          page={Pages.ReleaseNotes}
-          body={RELEASE_NOTES_HERO_BODY}
-          size="sm"
-        />
-        <Hero.Cta>
-          <LinkButton
-            color="secondary"
-            href="https://github.com/twentyhq/twenty/releases"
-            label="GitHub releases"
-            type="anchor"
-            variant="outlined"
+      <ScrollReveal>
+        <Hero.Root backgroundColor={theme.colors.primary.background[100]}>
+          <Hero.Heading
+            page={Pages.ReleaseNotes}
+            segments={RELEASE_NOTES_HERO_HEADING}
+            size="lg"
+            weight="light"
           />
-        </Hero.Cta>
-      </Hero.Root>
+          <Hero.Body
+            page={Pages.ReleaseNotes}
+            body={RELEASE_NOTES_HERO_BODY}
+            size="sm"
+          />
+          <Hero.Cta>
+            <LinkButton
+              color="secondary"
+              href="https://github.com/twentyhq/twenty/releases"
+              label="GitHub releases"
+              type="anchor"
+              variant="outlined"
+            />
+          </Hero.Cta>
+        </Hero.Root>
+      </ScrollReveal>
 
       <ReleaseNotes.Root>
         {allNotes.length === 0 ? (

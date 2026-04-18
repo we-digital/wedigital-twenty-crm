@@ -1,6 +1,10 @@
 import { styled } from '@linaria/react';
 
-import { type MessageChannel } from '@/accounts/types/MessageChannel';
+import {
+  type MessageChannel,
+  type MessageChannelContactAutoCreationPolicy,
+  type MessageFolderImportPolicy,
+} from '@/accounts/types/MessageChannel';
 import { UPDATE_MESSAGE_CHANNEL } from '@/settings/accounts/graphql/mutations/updateMessageChannel';
 import { useMutation } from '@apollo/client/react';
 import { SettingsAccountsMessageAutoCreationCard } from '@/settings/accounts/components/SettingsAccountsMessageAutoCreationCard';
@@ -12,10 +16,6 @@ import { H2Title, IconBriefcase, IconUsers } from 'twenty-ui/display';
 import { Card, Section } from 'twenty-ui/layout';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 import { type MessageChannelVisibility } from '~/generated/graphql';
-import {
-  type MessageChannelContactAutoCreationPolicy,
-  type MessageFolderImportPolicy,
-} from 'twenty-shared/types';
 
 type SettingsAccountsMessageChannelDetailsProps = {
   messageChannel: Pick<
@@ -26,6 +26,7 @@ type SettingsAccountsMessageChannelDetailsProps = {
     | 'excludeNonProfessionalEmails'
     | 'excludeGroupEmails'
     | 'isSyncEnabled'
+    | 'messageFolders'
     | 'messageFolderImportPolicy'
   >;
 };

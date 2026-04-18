@@ -22,10 +22,6 @@ const CopyColumn = styled.div`
   gap: ${theme.spacing(2)};
   max-width: 400px;
   min-width: 0;
-
-  @media (min-width: ${theme.breakpoints.md}px) {
-    align-self: center;
-  }
 `;
 
 const RightColumn = styled.div`

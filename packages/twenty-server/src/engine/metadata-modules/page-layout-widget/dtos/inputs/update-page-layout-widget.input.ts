@@ -22,11 +22,6 @@ import { AllPageLayoutWidgetConfiguration } from 'src/engine/metadata-modules/pa
 
 @InputType()
 export class UpdatePageLayoutWidgetInput {
-  @Field(() => UUIDScalarType, { nullable: true })
-  @IsUUID()
-  @IsOptional()
-  pageLayoutTabId?: string;
-
   @Field({ nullable: true })
   @IsString()
   @IsOptional()

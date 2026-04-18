@@ -32,11 +32,6 @@ export const cacheStorageModuleFactory = (
         ...cacheModuleOptions,
         store: redisStore,
         url: redisUrl,
-        pingInterval: 60_000,
-        socket: {
-          reconnectStrategy: (retries: number) =>
-            Math.min(retries * 500, 5000),
-        },
       };
     }
     default:

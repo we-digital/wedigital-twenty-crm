@@ -183,7 +183,7 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: '94009e34-52fb-4534-89ce-6c6d0a774056',
           },
-          system: {
+          other: {
             universalIdentifier: '35dace44-6e63-4cdb-b761-a92bcf126a7e',
           },
         },
@@ -273,7 +273,7 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: '9c27f771-9f85-492f-b1f1-9bc7a175f6f3',
           },
-          system: {
+          other: {
             universalIdentifier: 'c7b18e05-dd60-4ee4-911a-290790e8c425',
           },
         },
@@ -394,7 +394,7 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: 'e015afb4-bb6b-44ab-8077-01196c70bd1b',
           },
-          system: {
+          other: {
             universalIdentifier: 'a7e61a73-68b3-46a2-8624-54a4f0a81710',
           },
         },
@@ -517,7 +517,7 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: '3d842777-436e-467d-90ae-9e1fa0aa7e9c',
           },
-          system: {
+          other: {
             universalIdentifier: '098836d8-15c1-44c1-a58e-2ff7fd6a05f9',
           },
         },
@@ -761,14 +761,11 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: '20202020-a001-4a01-8a01-c0aba11c1101',
           },
-          business: {
+          additional: {
             universalIdentifier: '20202020-a001-4a01-8a01-c0aba11c1102',
           },
-          contact: {
+          other: {
             universalIdentifier: '20202020-a001-4a01-8a01-c0aba11c1103',
-          },
-          system: {
-            universalIdentifier: '20202020-a001-4a01-8a01-c0aba11c1104',
           },
         },
         viewFields: {
@@ -930,7 +927,7 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: '428a9949-71f4-4ebf-9160-1da43f1113ff',
           },
-          system: {
+          other: {
             universalIdentifier: 'ce9f7f72-583e-4415-a82f-e1f4b2cc8e2f',
           },
         },
@@ -1138,7 +1135,7 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: 'd08267ae-eb74-4ed5-884e-4015d16d962d',
           },
-          system: {
+          other: {
             universalIdentifier: 'bbbca990-4876-4802-bf7e-94f685bd5f52',
           },
         },
@@ -1226,7 +1223,7 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: 'c0af3a9b-38bc-4c19-a79d-910f35d6f766',
           },
-          system: {
+          other: {
             universalIdentifier: 'a7db50c7-826a-41ed-a252-1a07d445b025',
           },
         },
@@ -1328,7 +1325,7 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: '86d7066c-ba38-4f6a-996f-77345bedd549',
           },
-          system: {
+          other: {
             universalIdentifier: '6044c58c-a63c-4f3f-a283-b8803553628f',
           },
         },
@@ -1421,7 +1418,7 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: '4928521b-ae24-4013-a69a-1392017d57af',
           },
-          system: {
+          other: {
             universalIdentifier: 'b76cebb3-39b2-477a-9212-8bf1190227a4',
           },
         },
@@ -1558,7 +1555,7 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: '96113215-6bf2-476c-ae69-c70274257913',
           },
-          system: {
+          other: {
             universalIdentifier: '2f08a624-e1a7-4f79-b5f7-1a8e92f4c07e',
           },
         },
@@ -1668,7 +1665,7 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: 'c55a9366-bb2c-4ae7-8345-115c790f56b1',
           },
-          system: {
+          other: {
             universalIdentifier: '51b6af5e-9f76-4fb2-811b-6193761d7702',
           },
         },
@@ -1780,7 +1777,7 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: '41c18430-34c3-430f-b86b-fc3963281277',
           },
-          system: {
+          other: {
             universalIdentifier: 'add21830-a7c6-4cde-9eed-430afbcbf557',
           },
         },
@@ -2016,7 +2013,10 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: '20202020-a005-4a05-8a05-a0be5a115101',
           },
-          system: {
+          additional: {
+            universalIdentifier: '20202020-a005-4a05-8a05-a0be5a115102',
+          },
+          other: {
             universalIdentifier: '20202020-a005-4a05-8a05-a0be5a115103',
           },
         },
@@ -2261,13 +2261,13 @@ export const STANDARD_OBJECTS = {
       opportunityRecordPageFields: {
         universalIdentifier: '20202020-a003-4a03-8a03-0aa0b1ca3001',
         viewFieldGroups: {
-          deal: {
+          general: {
             universalIdentifier: '20202020-a003-4a03-8a03-0aa0b1ca3101',
           },
-          relations: {
+          additional: {
             universalIdentifier: '20202020-a003-4a03-8a03-0aa0b1ca3102',
           },
-          system: {
+          other: {
             universalIdentifier: '20202020-a003-4a03-8a03-0aa0b1ca3103',
           },
         },
@@ -2438,14 +2438,11 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: '20202020-a002-4a02-8a02-ae0a1ea12101',
           },
-          work: {
+          additional: {
             universalIdentifier: '20202020-a002-4a02-8a02-ae0a1ea12102',
           },
-          social: {
+          other: {
             universalIdentifier: '20202020-a002-4a02-8a02-ae0a1ea12103',
-          },
-          system: {
-            universalIdentifier: '20202020-a002-4a02-8a02-ae0a1ea12104',
           },
         },
         viewFields: {
@@ -2677,7 +2674,10 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: '20202020-a006-4a06-8a06-ba5ca11a6101',
           },
-          system: {
+          additional: {
+            universalIdentifier: '20202020-a006-4a06-8a06-ba5ca11a6102',
+          },
+          other: {
             universalIdentifier: '20202020-a006-4a06-8a06-ba5ca11a6103',
           },
         },
@@ -3092,7 +3092,7 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: 'c5261eae-f2fe-416e-8ef9-eda5d377f8ca',
           },
-          system: {
+          other: {
             universalIdentifier: 'e6da0410-7f63-41b7-b977-421fc37d67f5',
           },
         },
@@ -3243,7 +3243,10 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: '20202020-a011-4a11-8a11-a0bcf10abcf2',
           },
-          system: {
+          additional: {
+            universalIdentifier: '20202020-a011-4a11-8a11-a0bcf10abcf3',
+          },
+          other: {
             universalIdentifier: '20202020-a011-4a11-8a11-a0bcf10abcf4',
           },
         },
@@ -3364,7 +3367,10 @@ export const STANDARD_OBJECTS = {
           general: {
             universalIdentifier: '20202020-a010-4a10-8a10-a0bcf10aaef2',
           },
-          system: {
+          additional: {
+            universalIdentifier: '20202020-a010-4a10-8a10-a0bcf10aaef3',
+          },
+          other: {
             universalIdentifier: '20202020-a010-4a10-8a10-a0bcf10aaef4',
           },
         },

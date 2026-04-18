@@ -94,7 +94,7 @@ export const computeStandardMessageChannelMessageAssociationMessageFolderViewFie
             position: 0,
             isVisible: true,
             size: 150,
-            viewFieldGroupName: 'system',
+            viewFieldGroupName: 'other',
           },
         }),
       messageChannelMessageAssociationMessageFolderRecordPageFieldsCreatedBy:
@@ -109,7 +109,7 @@ export const computeStandardMessageChannelMessageAssociationMessageFolderViewFie
             position: 1,
             isVisible: true,
             size: 150,
-            viewFieldGroupName: 'system',
+            viewFieldGroupName: 'other',
           },
         }),
     };

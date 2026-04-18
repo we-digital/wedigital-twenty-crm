@@ -34,7 +34,6 @@ export const SettingsNewObject = () => {
     mode: 'onChange',
     resolver: zodResolver(settingsDataModelObjectAboutFormSchema),
     defaultValues: {
-      color: 'gray',
       isLabelSyncedWithName:
         SETTINGS_OBJECT_MODEL_IS_LABEL_SYNCED_WITH_NAME_LABEL_DEFAULT_VALUE,
     },

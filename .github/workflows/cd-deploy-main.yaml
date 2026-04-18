@@ -10,7 +10,6 @@ on:
 
 jobs:
   deploy-main:
-    if: github.repository == 'twentyhq/twenty'
     timeout-minutes: 3
     runs-on: ubuntu-latest
     steps:

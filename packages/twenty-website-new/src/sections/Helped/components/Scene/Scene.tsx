@@ -1,15 +1,17 @@
 'use client';
 
+import { styled } from '@linaria/react';
+import { useRef } from 'react';
 import { Eyebrow, Heading } from '@/design-system/components';
 import { HelpedSceneScrollLayoutEffect } from '@/sections/Helped/effect-components/HelpedSceneScrollLayoutEffect';
 import type { HelpedDataType } from '@/sections/Helped/types/HelpedData';
+import { CARD_WIDTH_DESKTOP } from '@/sections/Helped/utils/helped-scene-layout';
 import { theme } from '@/theme';
-import { styled } from '@linaria/react';
-import { useRef } from 'react';
 import { Card } from '../Card/Card';
 
+const SCROLL_HEIGHT_VH = 420;
+
 const ScrollStage = styled.section`
-  height: 280vh;
   position: relative;
   width: 100%;
 `;
@@ -37,6 +39,16 @@ const HeadlineBlock = styled.div`
   text-align: center;
   width: 100%;
   z-index: 1;
+
+  span {
+    transition: opacity 0.4s ease;
+  }
+
+  h1:has(span:hover) span:not(:hover),
+  h2:has(span:hover) span:not(:hover),
+  h3:has(span:hover) span:not(:hover) {
+    opacity: 0.2;
+  }
 `;
 
 const CardsLayer = styled.div`
@@ -52,7 +64,8 @@ const CardsLayer = styled.div`
 
 const CardPositioner = styled.div`
   position: absolute;
-  will-change: top, opacity;
+  width: min(${CARD_WIDTH_DESKTOP}px, calc(100% - ${theme.spacing(8)}));
+  will-change: transform, opacity;
 `;
 
 type SceneProps = {
@@ -62,18 +75,24 @@ type SceneProps = {
 export function Scene({ data }: SceneProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
+  const headlineRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   return (
-    <ScrollStage aria-label="Customer stories" ref={sectionRef}>
+    <ScrollStage
+      aria-label="Customer stories"
+      ref={sectionRef}
+      style={{ height: `${SCROLL_HEIGHT_VH}vh` }}
+    >
       <HelpedSceneScrollLayoutEffect
         cardRefs={cardRefs}
         cards={data.cards}
+        headlineRef={headlineRef}
         innerRef={innerRef}
         sectionRef={sectionRef}
       />
       <StickyInner ref={innerRef}>
-        <HeadlineBlock>
+        <HeadlineBlock ref={headlineRef}>
           <Eyebrow colorScheme="primary" heading={data.eyebrow.heading} />
           <Heading as="h2" segments={data.heading} size="xl" weight="light" />
         </HeadlineBlock>

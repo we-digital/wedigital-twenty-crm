@@ -1,6 +1,5 @@
 import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { t } from '@lingui/core/macro';
-import { themeColorSchema } from 'twenty-ui/utilities';
 import { type ZodType, z } from 'zod';
 import { type ReadonlyKeysArray } from '~/types/ReadonlyKeysArray';
 import { zodNonEmptyString } from '~/types/ZodNonEmptyString';
@@ -9,7 +8,6 @@ import { camelCaseStringSchema } from '~/utils/validation-schemas/camelCaseStrin
 type ZodTypeSettingsDataModelFormFields = ZodType<
   Pick<
     EnrichedObjectMetadataItem,
-    | 'color'
     | 'labelSingular'
     | 'labelPlural'
     | 'description'
@@ -20,7 +18,6 @@ type ZodTypeSettingsDataModelFormFields = ZodType<
   > & { skipNameField?: boolean }
 >;
 const settingsDataModelFormFieldsSchema = z.object({
-  color: themeColorSchema.optional(),
   description: z.string().nullish(),
   icon: z.string().optional(),
   labelSingular: zodNonEmptyString,

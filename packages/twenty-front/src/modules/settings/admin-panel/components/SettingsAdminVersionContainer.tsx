@@ -1,4 +1,4 @@
-import { SettingsTableCard } from '@/settings/components/SettingsTableCard';
+import { SettingsAdminTableCard } from '@/settings/admin-panel/components/SettingsAdminTableCard';
 import { SettingsAdminVersionDisplay } from '@/settings/admin-panel/components/SettingsAdminVersionDisplay';
 import { t } from '@lingui/core/macro';
 import { IconCircleDot, IconStatusChange } from 'twenty-ui/display';
@@ -35,6 +35,10 @@ export const SettingsAdminVersionContainer = () => {
   ];
 
   return (
-    <SettingsTableCard rounded items={versionItems} gridAutoColumns="3fr 8fr" />
+    <SettingsAdminTableCard
+      rounded
+      items={versionItems}
+      gridAutoColumns="3fr 8fr"
+    />
   );
 };

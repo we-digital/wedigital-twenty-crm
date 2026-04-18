@@ -1,11 +1,10 @@
-'use client';
-
-import { Body, Heading } from '@/design-system/components';
-import { THREE_CARDS_ILLUSTRATIONS } from '@/illustrations';
+import { Body, Heading, IconButton, LazyEmbed } from '@/design-system/components';
+import { ArrowRightIcon } from '@/icons';
 import type { ThreeCardsIllustrationCardType } from '@/sections/ThreeCards/types';
 import { theme } from '@/theme';
 import { styled } from '@linaria/react';
 import { ThreeCardsCardShape } from './CardShape';
+import { GlbViewer } from './GlbViewer';
 
 const IllustrationCardContainer = styled.div`
   position: relative;
@@ -20,6 +19,22 @@ const IllustrationCardContainer = styled.div`
   min-width: 0;
   min-height: 0;
   height: 100%;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+  span {
+    transition: opacity 0.4s ease;
+  }
+
+  h1:has(span:hover) span:not(:hover),
+  h2:has(span:hover) span:not(:hover),
+  h3:has(span:hover) span:not(:hover) {
+    opacity: 0.2;
+  }
+
+  &:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+  }
 `;
 
 const CardRule = styled.div`
@@ -39,9 +54,10 @@ const CardEmbed = styled.div`
 `;
 
 const CardFooter = styled.footer`
-  display: flex;
-  align-items: center;
-  gap: ${theme.spacing(2)};
+  display: grid;
+  grid-template-columns: auto auto auto 1fr;
+  align-items: start;
+  column-gap: ${theme.spacing(2)};
 `;
 
 const AttributionPipe = styled.span`
@@ -49,6 +65,10 @@ const AttributionPipe = styled.span`
   width: 0;
   height: 21px;
   border-left: 1px solid ${theme.colors.primary.border[20]};
+`;
+
+const FooterTrailingAction = styled.div`
+  justify-self: end;
 `;
 
 const CardBodyCell = styled.div`
@@ -66,9 +86,6 @@ export function IllustrationCard({
   illustrationCard,
   variant = 'shaped',
 }: IllustrationCardProps) {
-  const ThreeCardsIllustration =
-    THREE_CARDS_ILLUSTRATIONS[illustrationCard.illustration];
-
   return (
     <IllustrationCardContainer>
       {variant === 'shaped' && (
@@ -85,7 +102,17 @@ export function IllustrationCard({
       />
       <CardRule />
       <CardEmbed>
-        <ThreeCardsIllustration />
+        {illustrationCard.illustration.src.endsWith('.glb') ? (
+          <GlbViewer src={illustrationCard.illustration.src} />
+        ) : (
+          <LazyEmbed
+            src={illustrationCard.illustration.src}
+            title={illustrationCard.illustration.title}
+            allow="clipboard-write; encrypted-media; gyroscope; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
+          />
+        )}
       </CardEmbed>
       <CardRule />
       <CardBodyCell>
@@ -105,6 +132,17 @@ export function IllustrationCard({
             size="xs"
             weight="regular"
           />
+          <FooterTrailingAction>
+            <IconButton
+              icon={ArrowRightIcon}
+              ariaLabel="Learn more"
+              borderColor={theme.colors.primary.border[20]}
+              iconFillColor="transparent"
+              iconSize={24}
+              iconStrokeColor={theme.colors.primary.text[80]}
+              size={48}
+            />
+          </FooterTrailingAction>
         </CardFooter>
       )}
     </IllustrationCardContainer>
