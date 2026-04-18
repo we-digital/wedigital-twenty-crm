@@ -8,16 +8,15 @@ import { InstanceCommandGenerationService } from 'src/database/commands/instance
 import { ListOrphanedWorkspaceEntitiesCommand } from 'src/database/commands/list-and-delete-orphaned-workspace-entities.command';
 import { ConfirmationQuestion } from 'src/database/commands/questions/confirmation.question';
 import { RunInstanceCommandsCommand } from 'src/database/commands/run-instance-commands.command';
-import { InstanceCommandProviderModule } from 'src/database/commands/upgrade-version-command/instance-command-provider.module';
 import { UpgradeVersionCommandModule } from 'src/database/commands/upgrade-version-command/upgrade-version-command.module';
 import { WorkspaceExportModule } from 'src/database/commands/workspace-export/workspace-export.module';
 import { TypeORMModule } from 'src/database/typeorm/typeorm.module';
-import { CoreEngineVersionModule } from 'src/engine/core-engine-version/core-engine-version.module';
 import { ApiKeyModule } from 'src/engine/core-modules/api-key/api-key.module';
 import { GenerateApiKeyCommand } from 'src/engine/core-modules/api-key/commands/generate-api-key.command';
 import { MarketplaceModule } from 'src/engine/core-modules/application/application-marketplace/marketplace.module';
 import { StaleRegistrationCleanupModule } from 'src/engine/core-modules/application/application-oauth/stale-registration-cleanup/stale-registration-cleanup.module';
 import { ApplicationUpgradeModule } from 'src/engine/core-modules/application/application-upgrade/application-upgrade.module';
+import { EnforceUsageCapCronCommand } from 'src/engine/core-modules/billing/crons/commands/enforce-usage-cap.cron.command';
 import { EnterpriseKeyValidationCronCommand } from 'src/engine/core-modules/enterprise/cron/command/enterprise-key-validation.cron.command';
 import { EnterpriseModule } from 'src/engine/core-modules/enterprise/enterprise.module';
 import { EventLogCleanupModule } from 'src/engine/core-modules/event-logs/cleanup/event-log-cleanup.module';
@@ -28,7 +27,6 @@ import { TwentyConfigModule } from 'src/engine/core-modules/twenty-config/twenty
 import { UpgradeModule } from 'src/engine/core-modules/upgrade/upgrade.module';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
 import { WorkspaceModule } from 'src/engine/core-modules/workspace/workspace.module';
-import { DataSourceModule } from 'src/engine/metadata-modules/data-source/data-source.module';
 import { FieldMetadataModule } from 'src/engine/metadata-modules/field-metadata/field-metadata.module';
 import { ObjectMetadataModule } from 'src/engine/metadata-modules/object-metadata/object-metadata.module';
 import { TrashCleanupModule } from 'src/engine/trash-cleanup/trash-cleanup.module';
@@ -46,7 +44,6 @@ import { AutomatedTriggerModule } from 'src/modules/workflow/workflow-trigger/au
 @Module({
   imports: [
     UpgradeVersionCommandModule,
-    InstanceCommandProviderModule,
     TypeOrmModule.forFeature([WorkspaceEntity]),
     WorkspaceExportModule,
     // Cron command dependencies
@@ -62,7 +59,6 @@ import { AutomatedTriggerModule } from 'src/modules/workflow/workflow-trigger/au
     ObjectMetadataModule,
     DevSeederModule,
     WorkspaceManagerModule,
-    DataSourceModule,
     WorkspaceCacheStorageModule,
     ApiKeyModule,
     FeatureFlagModule,
@@ -76,7 +72,6 @@ import { AutomatedTriggerModule } from 'src/modules/workflow/workflow-trigger/au
     MarketplaceModule,
     ApplicationUpgradeModule,
     StaleRegistrationCleanupModule,
-    CoreEngineVersionModule,
     WorkspaceVersionModule,
     UpgradeModule,
   ],
@@ -90,6 +85,7 @@ import { AutomatedTriggerModule } from 'src/modules/workflow/workflow-trigger/au
     ListOrphanedWorkspaceEntitiesCommand,
     EnterpriseKeyValidationCronCommand,
     GenerateApiKeyCommand,
+    EnforceUsageCapCronCommand,
   ],
 })
 export class DatabaseCommandModule {}

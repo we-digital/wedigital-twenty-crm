@@ -61,6 +61,7 @@ export type { ConfirmationModalCaller } from './ConfirmationModalCaller';
 export { ConnectedAccountProvider } from './ConnectedAccountProvider';
 export { CoreObjectNameSingular } from './CoreObjectNameSingular';
 export { CrudOperationType } from './CrudOperationType';
+export type { EmailAttachment } from './EmailAttachment';
 export type {
   SnackBarVariant,
   EnqueueSnackbarParams,
@@ -123,9 +124,11 @@ export { FirstDayOfTheWeek } from './FirstDayOfTheWeek';
 export type { FormatRecordSerializedRelationProperties } from './FormatRecordSerializedRelationProperties.type';
 export type { FromTo } from './FromToType';
 export { HTTPMethod } from './HttpMethod';
+export type { IndexOf } from './IndexOf.type';
 export type { IsEmptyObject } from './IsEmptyObject.type';
 export type { IsEmptyRecord } from './IsEmptyRecord.type';
 export type { IsExactly } from './IsExactly';
+export type { IsGreaterOrEqual } from './IsGreaterOrEqual.type';
 export type { IsNever } from './IsNever.type';
 export type { IsSerializedRelation } from './IsSerializedRelation.type';
 export type { LogicFunctionEvent } from './LogicFunctionEvent';
