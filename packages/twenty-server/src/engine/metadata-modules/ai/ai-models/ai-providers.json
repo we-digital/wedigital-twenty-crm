@@ -298,17 +298,6 @@
         "supportsReasoning": true
       },
       {
-        "name": "codex-mini-latest",
-        "label": "Codex Mini",
-        "modelFamily": "GPT",
-        "inputCostPerMillionTokens": 1.5,
-        "outputCostPerMillionTokens": 6,
-        "cachedInputCostPerMillionTokens": 0.375,
-        "contextWindowTokens": 200000,
-        "maxOutputTokens": 100000,
-        "supportsReasoning": true
-      },
-      {
         "name": "gpt-4",
         "label": "GPT-4",
         "modelFamily": "GPT",
@@ -577,6 +566,19 @@
         "cacheCreationCostPerMillionTokens": 18.75,
         "contextWindowTokens": 200000,
         "maxOutputTokens": 32000,
+        "modalities": ["image", "pdf"],
+        "supportsReasoning": true
+      },
+      {
+        "name": "claude-opus-4-7",
+        "label": "Claude Opus 4.7",
+        "modelFamily": "CLAUDE",
+        "inputCostPerMillionTokens": 5,
+        "outputCostPerMillionTokens": 25,
+        "cachedInputCostPerMillionTokens": 0.5,
+        "cacheCreationCostPerMillionTokens": 6.25,
+        "contextWindowTokens": 1000000,
+        "maxOutputTokens": 128000,
         "modalities": ["image", "pdf"],
         "supportsReasoning": true
       },
