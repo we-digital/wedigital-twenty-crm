@@ -1,136 +1,112 @@
-<p align="center">
-  <a href="https://www.twenty.com">
-    <img src="./packages/twenty-website/public/images/core/logo.svg" width="100px" alt="Twenty logo" />
-  </a>
-</p>
+# We Digital — Twenty CRM (Fork)
 
-<h2 align="center" >The #1 Open-Source CRM </h2>
+Fork of [twentyhq/twenty](https://github.com/twentyhq/twenty) with We Digital customizations.
 
-<p align="center"><a href="https://twenty.com">🌐 Website</a> · <a href="https://docs.twenty.com">📚 Documentation</a> · <a href="https://github.com/orgs/twentyhq/projects/1"><img src="./packages/twenty-website/public/images/readme/planner-icon.svg" width="12" height="12"/> Roadmap </a> · <a href="https://discord.gg/cx5n4Jzs57"><img src="./packages/twenty-website/public/images/readme/discord-icon.svg" width="12" height="12"/> Discord</a> · <a href="https://www.figma.com/file/xt8O9mFeLl46C5InWwoMrN/Twenty"><img src="./packages/twenty-website/public/images/readme/figma-icon.png"  width="12" height="12"/>  Figma</a></p>
-<br />
+**Current upstream version:** v1.22.0 (see `.upstream-version`)
 
+## How It Works
 
-<p align="center">
-  <a href="https://www.twenty.com">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/twentyhq/twenty/refs/heads/main/packages/twenty-website/public/images/readme/github-cover-dark.png" />
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/twentyhq/twenty/refs/heads/main/packages/twenty-website/public/images/readme/github-cover-light.png" />
-      <img src="./packages/twenty-website/public/images/readme/github-cover-light.png" alt="Cover" />
-    </picture>
-  </a>
-</p>
+This is a **build-only** repository. All We Digital customizations live in a single diff file — `we-digital-custom.patch`. On every push to `main`, the `build-and-push` workflow builds a Docker image and pushes it to GHCR:
 
-<br />
+```
+ghcr.io/we-digital/wedigital-twenty-crm:v1.XX.0
+ghcr.io/we-digital/wedigital-twenty-crm:latest
+```
 
-# Installation
+Deployment happens in a separate repo — [bbc-devops](https://github.com/we-digital/bbc-devops).
 
-See:
-🚀 [Self-hosting](https://docs.twenty.com/developers/self-host/capabilities/docker-compose)
-🖥️ [Local Setup](https://docs.twenty.com/developers/contribute/capabilities/local-setup)
+## Upgrade to a New Upstream Version
 
-# Why Twenty
+### Prerequisites
 
-We built Twenty for three reasons:
+- `upstream` remote pointing to `https://github.com/twentyhq/twenty.git`
+- Clean working tree (no uncommitted changes)
+- `we-digital-custom.patch` in repo root
+- Node.js + Yarn
 
-**CRMs are too expensive, and users are trapped.** Companies use locked-in customer data to hike prices. It shouldn't be that way.
+### Run the upgrade script
 
-**A fresh start is required to build a better experience.** We can learn from past mistakes and craft a cohesive experience inspired by new UX patterns from tools like Notion, Airtable or Linear.
+```bash
+./scripts/upgrade-upstream.sh v1.XX.0
+```
 
-**We believe in open-source and community.** Hundreds of developers are already building Twenty together. Once we have plugin capabilities, a whole ecosystem will grow around it.
+The script will:
+1. Create a safety tag `pre-v1.XX.0-upgrade` on main
+2. Fetch the target upstream tag
+3. Create branch `chore/upgrade-to-v1.XX.0` from main
+4. Replace the entire tree with the upstream tag
+5. Apply `we-digital-custom.patch` via `git apply --3way`
+6. Update `.upstream-version`
+7. Run `yarn install` to sync lockfile
+8. Commit and regenerate the patch
 
-<br />
+### After the script
 
-# What You Can Do With Twenty
+```bash
+# Push the branch
+git push -u origin chore/upgrade-to-v1.XX.0
 
-Please feel free to flag any specific needs you have by creating an issue.
+# Create PR (ALWAYS use --repo to avoid pushing PR to upstream!)
+gh pr create --repo we-digital/wedigital-twenty-crm --base main
 
-Below are a few features we have implemented to date:
+# Wait for CI, then merge
+```
 
-+ [Personalize layouts with filters, sort, group by, kanban and table views](#personalize-layouts-with-filters-sort-group-by-kanban-and-table-views)
-+ [Customize your objects and fields](#customize-your-objects-and-fields)
-+ [Create and manage permissions with custom roles](#create-and-manage-permissions-with-custom-roles)
-+ [Automate workflow with triggers and actions](#automate-workflow-with-triggers-and-actions)
-+ [Emails, calendar events, files, and more](#emails-calendar-events-files-and-more)
+After merge, `build-and-push` workflow auto-builds the image. Then update `CRM_IMAGE_TAG` and `APP_VERSION` in [bbc-devops](https://github.com/we-digital/bbc-devops) to deploy.
 
+### If the patch has conflicts
 
-## Personalize layouts with filters, sort, group by, kanban and table views
+The script will exit with a warning. Resolve conflicts manually (look for `<<<<` markers), then:
 
-<p align="center">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/twentyhq/twenty/refs/heads/main/packages/twenty-website/public/images/readme/views-dark.png" />
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/twentyhq/twenty/refs/heads/main/packages/twenty-website/public/images/readme/views-light.png" />
-      <img src="./packages/twenty-website/public/images/readme/views-light.png" alt="Companies Kanban Views" />
-    </picture>
-</p>
+```bash
+git add -A
+git commit
 
-## Customize your objects and fields
+# Regenerate the patch
+git diff v1.XX.0 HEAD > we-digital-custom.patch
+git add we-digital-custom.patch
+git commit -m "chore: regenerate we-digital-custom.patch"
+```
 
-<p align="center">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/twentyhq/twenty/refs/heads/main/packages/twenty-website/public/images/readme/data-model-dark.png" />
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/twentyhq/twenty/refs/heads/main/packages/twenty-website/public/images/readme/data-model-light.png" />
-      <img src="./packages/twenty-website/public/images/readme/data-model-light.png" alt="Setting Custom Objects" />
-    </picture>
-</p>
+## What's in the Patch
 
-## Create and manage permissions with custom roles
+All We Digital customizations that differ from upstream:
 
-<p align="center">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/twentyhq/twenty/refs/heads/main/packages/twenty-website/public/images/readme/permissions-dark.png" />
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/twentyhq/twenty/refs/heads/main/packages/twenty-website/public/images/readme/permissions-light.png" />
-      <img src="./packages/twenty-website/public/images/readme/permissions-light.png" alt="Permissions" />
-    </picture>
-</p>
+| Area | What |
+|------|------|
+| `IframeWidget.tsx` | Jotai state + postMessage `WIDGET_AUTH` token |
+| Redis/Valkey | Reconnect strategy, error handlers, keepAlive, pingInterval, IORedis for session store |
+| `file-storage.service.ts` | `deleteByFileId` uses `application.universalIdentifier` |
+| `main.ts`, `queue-worker.ts` | Process-level `uncaughtException`/`unhandledRejection` + BullMQ error handler |
+| Deploy workflow | `build-and-push.yaml` — GHCR + DigitalOcean App Platform |
+| Docker, widget | docker-compose, widget infrastructure |
 
-## Automate workflow with triggers and actions
+## Important Notes
 
-<p align="center">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/twentyhq/twenty/refs/heads/main/packages/twenty-website/public/images/readme/workflows-dark.png" />
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/twentyhq/twenty/refs/heads/main/packages/twenty-website/public/images/readme/workflows-light.png" />
-      <img src="./packages/twenty-website/public/images/readme/workflows-light.png" alt="Workflows" />
-    </picture>
-</p>
+- **Never skip versions.** Workspace upgrade commands are removed from upstream after a few minor versions. Upgrade step by step (e.g. v1.19 -> v1.20 -> v1.21 -> v1.22).
+- **Always use `--repo` with `gh pr create`.** Without it, the PR goes to the upstream `twentyhq/twenty` repo (we learned this the hard way).
+- **Always regenerate the patch after merge.** Otherwise the next upgrade will apply a stale diff.
 
-## Emails, calendar events, files, and more
+## Upgrade History
 
-<p align="center">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/twentyhq/twenty/refs/heads/main/packages/twenty-website/public/images/readme/plus-other-features-dark.png" />
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/twentyhq/twenty/refs/heads/main/packages/twenty-website/public/images/readme/plus-other-features-light.png" />
-      <img src="./packages/twenty-website/public/images/readme/plus-other-features-light.png" alt="Other Features" />
-    </picture>
-</p>
+| Date | From | To | Method | Notes |
+|------|------|----|--------|-------|
+| 2026-03-30 | — | v1.19.11 | Bot (paperclip-ai) | Minor version merge |
+| 2026-04-17 | v1.19.11 | v1.20.0 | `upgrade-upstream.sh` | 15 workspace commands |
+| 2026-04-17 | v1.20.0 | v1.21.0 | `upgrade-upstream.sh` | 14 workspace + 3 instance commands |
+| 2026-04-18 | v1.21.0 | v1.22.0 | `upgrade-upstream.sh` | Manual SQL migrations required (upstream bugs) |
 
-<br />
+## Files
 
-# Stack
-- [TypeScript](https://www.typescriptlang.org/)
-- [Nx](https://nx.dev/)
-- [NestJS](https://nestjs.com/), with [BullMQ](https://bullmq.io/), [PostgreSQL](https://www.postgresql.org/), [Redis](https://redis.io/)
-- [React](https://reactjs.org/), with [Jotai](https://jotai.org/), [Linaria](https://linaria.dev/) and [Lingui](https://lingui.dev/)
+| File | Purpose |
+|------|---------|
+| `we-digital-custom.patch` | All We Digital customizations as a single diff |
+| `.upstream-version` | Current upstream tag (read by CI) |
+| `scripts/upgrade-upstream.sh` | Automated upgrade script |
+| `.github/workflows/build-and-push.yaml` | Build Docker image and push to GHCR |
 
+## Upstream
 
-
-# Thanks
-
-<p align="center">
-  <a href="https://www.chromatic.com/"><img src="./packages/twenty-website/public/images/readme/chromatic.png" height="30" alt="Chromatic" /></a>
-  <a href="https://greptile.com"><img src="./packages/twenty-website/public/images/readme/greptile.png" height="30" alt="Greptile" /></a>
-  <a href="https://sentry.io/"><img src="./packages/twenty-website/public/images/readme/sentry.png" height="30" alt="Sentry" /></a>
-  <a href="https://crowdin.com/"><img src="./packages/twenty-website/public/images/readme/crowdin.png" height="30" alt="Crowdin" /></a>
-  <a href="https://e2b.dev/"><img src="./packages/twenty-website/public/images/readme/e2b.svg" height="30" alt="E2B" /></a>
-</p>
-
-  Thanks to these amazing services that we use and recommend for UI testing (Chromatic), code review (Greptile), catching bugs (Sentry) and translating (Crowdin).
-
-
-# Join the Community
-
-- Star the repo
-- Subscribe to releases (watch -> custom -> releases)
-- Follow us on [Twitter](https://twitter.com/twentycrm) or [LinkedIn](https://www.linkedin.com/company/twenty/)
-- Join our [Discord](https://discord.gg/cx5n4Jzs57)
-- Improve translations on [Crowdin](https://twenty.crowdin.com/twenty)
-- [Contributions](https://github.com/twentyhq/twenty/contribute) are, of course, most welcome!
+- Repo: [twentyhq/twenty](https://github.com/twentyhq/twenty)
+- Docs: [docs.twenty.com](https://docs.twenty.com)
+- Stack: TypeScript, NestJS, BullMQ, PostgreSQL, Redis, React, Jotai
