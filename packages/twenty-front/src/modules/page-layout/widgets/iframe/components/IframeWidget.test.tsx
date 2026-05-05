@@ -16,6 +16,10 @@ jest.mock(
   }),
 );
 
+jest.mock('@/page-layout/hooks/useIsPageLayoutInEditMode', () => ({
+  useIsPageLayoutInEditMode: () => false,
+}));
+
 const mockCurrentUser = {
   id: 'user-id-123',
   email: 'john.doe@acme.com',
@@ -85,7 +89,7 @@ describe('IframeWidget', () => {
   });
 
   it('keeps original URL and sends full user context via postMessage on load', () => {
-    const postMessageSpy = jest.spyOn(Window.prototype, 'postMessage');
+    const postMessageMock = jest.fn();
 
     render(<IframeWidget widget={buildWidget('https://example.com/embed')} />, {
       wrapper: ({ children }) => (
@@ -102,9 +106,15 @@ describe('IframeWidget', () => {
     const iframeElement = screen.getByTitle('Dashboard');
     expect(iframeElement.getAttribute('src')).toBe('https://example.com/embed');
 
+    // Mock contentWindow.postMessage on the iframe element
+    Object.defineProperty(iframeElement, 'contentWindow', {
+      value: { postMessage: postMessageMock },
+      writable: true,
+    });
+
     fireEvent.load(iframeElement);
 
-    expect(postMessageSpy).toHaveBeenCalledWith(
+    expect(postMessageMock).toHaveBeenCalledWith(
       {
         type: 'twenty:user-context',
         payload: {
@@ -116,7 +126,7 @@ describe('IframeWidget', () => {
   });
 
   it('does not send postMessage when current user is not loaded', () => {
-    const postMessageSpy = jest.spyOn(Window.prototype, 'postMessage');
+    const postMessageMock = jest.fn();
 
     render(
       <IframeWidget
@@ -133,9 +143,14 @@ describe('IframeWidget', () => {
       'https://example.com/embed?foo=bar',
     );
 
+    Object.defineProperty(iframeElement, 'contentWindow', {
+      value: { postMessage: postMessageMock },
+      writable: true,
+    });
+
     fireEvent.load(iframeElement);
 
-    expect(postMessageSpy).not.toHaveBeenCalled();
+    expect(postMessageMock).not.toHaveBeenCalled();
   });
 
   it('renders fallback when URL cannot be parsed with user context', () => {
