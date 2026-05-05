@@ -13,6 +13,7 @@ import { DataSource, QueryRunner, Repository } from 'typeorm';
 import { CoreEntityCacheService } from 'src/engine/core-entity-cache/services/core-entity-cache.service';
 import { ApiKeyEntity } from 'src/engine/core-modules/api-key/api-key.entity';
 import { ApplicationService } from 'src/engine/core-modules/application/application.service';
+import { PreInstalledAppsService } from 'src/engine/core-modules/application/pre-installed-apps/pre-installed-apps.service';
 import { type AuthContextUser } from 'src/engine/core-modules/auth/types/auth-context.type';
 import { BillingSubscriptionService } from 'src/engine/core-modules/billing/services/billing-subscription.service';
 import { BillingService } from 'src/engine/core-modules/billing/services/billing.service';
@@ -119,6 +120,7 @@ export class WorkspaceService extends TypeOrmQueryService<WorkspaceEntity> {
     private readonly flatEntityMapsCacheService: WorkspaceManyOrAllFlatEntityMapsCacheService,
     private readonly prefillLogicFunctionService: PrefillLogicFunctionService,
     private readonly applicationService: ApplicationService,
+    private readonly preInstalledAppsService: PreInstalledAppsService,
     private readonly workspaceMigrationValidateBuildAndRunService: WorkspaceMigrationValidateBuildAndRunService,
     private readonly workspaceCacheStorageService: WorkspaceCacheStorageService,
     private readonly subdomainManagerService: SubdomainManagerService,
@@ -383,8 +385,13 @@ export class WorkspaceService extends TypeOrmQueryService<WorkspaceEntity> {
     workspaceId: string;
     displayName: string;
   }): Promise<void> {
-    const lastWorkspaceCommand =
-      this.upgradeSequenceReaderService.getLastWorkspaceCommand();
+    const lastAttemptedInstanceCommand =
+      await this.upgradeMigrationService.getLastAttemptedInstanceCommandOrThrow();
+
+    const initialCursor =
+      this.upgradeSequenceReaderService.getInitialCursorForNewWorkspace(
+        lastAttemptedInstanceCommand,
+      );
 
     const executedByVersion =
       this.twentyConfigService.get('APP_VERSION') ?? 'unknown';
@@ -400,10 +407,11 @@ export class WorkspaceService extends TypeOrmQueryService<WorkspaceEntity> {
         activationStatus: WorkspaceActivationStatus.ACTIVE,
       });
 
-      await this.upgradeMigrationService.markAsInitial({
-        name: lastWorkspaceCommand.name,
+      await this.upgradeMigrationService.markAsWorkspaceInitial({
+        name: initialCursor.name,
         workspaceId,
         executedByVersion,
+        status: initialCursor.status,
         queryRunner,
       });
 
@@ -813,5 +821,21 @@ export class WorkspaceService extends TypeOrmQueryService<WorkspaceEntity> {
       );
       this.exceptionHandlerService.captureExceptions([error as Error]);
     }
+
+    try {
+      await this.preInstalledAppsService.installOnWorkspace(workspaceId);
+    } catch (error) {
+      this.logger.error(
+        `Non-critical: failed to install pre-installed apps for workspace ${workspaceId}`,
+        error,
+      );
+      this.exceptionHandlerService.captureExceptions([error as Error]);
+    }
+  }
+
+  async findOneWorkspaceById(id: string) {
+    return await this.workspaceRepository.findOneBy({
+      id,
+    });
   }
 }

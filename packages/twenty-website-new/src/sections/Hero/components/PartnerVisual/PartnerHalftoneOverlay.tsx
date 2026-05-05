@@ -4,6 +4,15 @@ import { styled } from '@linaria/react';
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
+import { getPrefersReducedMotionSnapshot } from '@/lib/motion';
+import { observeElementSize } from '@/lib/dom/observe-element-size';
+import {
+  createVisualRenderLoop,
+  loadVisualImage,
+  tryCreateSiteWebGlRenderer,
+  type VisualRenderLoop,
+} from '@/lib/visual-runtime';
+
 const PREVIEW_DISTANCE = 3.2;
 const SOURCE_PREVIEW_DISTANCE = 6.1;
 const REFERENCE_PREVIEW_DISTANCE = 4;
@@ -20,6 +29,8 @@ const HALFTONE_HOVER_POWER_SHIFT = 0.9;
 const HALFTONE_HOVER_WIDTH_SHIFT = -0.2;
 const HALFTONE_HOVER_LIGHT_INTENSITY = 0;
 const HALFTONE_HOVER_LIGHT_RADIUS = 0.2;
+const HALFTONE_HOVER_FADE_IN = 18;
+const HALFTONE_HOVER_FADE_OUT = 7;
 
 const IMAGE_POINTER_FOLLOW = 0.38;
 const IMAGE_POINTER_VELOCITY_DAMPING = 0.82;
@@ -151,7 +162,9 @@ const halftoneFragmentShader = `
     float hoverHalftoneMask = 0.0;
     if (hoverHalftoneActive > 0.0) {
       float hoverHalftoneRadiusPx = hoverHalftoneRadius * logicalResolution.y;
-      hoverHalftoneMask = smoothstep(hoverHalftoneRadiusPx, 0.0, fragDist);
+      hoverHalftoneMask =
+        smoothstep(hoverHalftoneRadiusPx, 0.0, fragDist) *
+        clamp(hoverHalftoneActive, 0.0, 1.0);
     }
 
     float hoverFlowMask = 0.0;
@@ -230,6 +243,7 @@ const OverlayMount = styled.div`
 `;
 
 type PointerState = {
+  hoverStrength: number;
   mouseX: number;
   mouseY: number;
   pointerInside: boolean;
@@ -408,17 +422,6 @@ function createRenderTarget(width: number, height: number) {
   });
 }
 
-function loadImage(imageUrl: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.decoding = 'async';
-    image.onload = () => resolve(image);
-    image.onerror = () =>
-      reject(new Error(`Failed to load hero image: ${imageUrl}`));
-    image.src = imageUrl;
-  });
-}
-
 async function mountHalftoneOverlay({
   container,
   imageUrl,
@@ -426,7 +429,9 @@ async function mountHalftoneOverlay({
   container: HTMLDivElement;
   imageUrl: string;
 }): Promise<() => void> {
-  const image = await loadImage(imageUrl);
+  const image = await loadVisualImage(imageUrl, {
+    label: 'partner hero image',
+  });
 
   const getWidth = () => Math.max(container.clientWidth, 1);
   const getHeight = () => Math.max(container.clientHeight, 1);
@@ -437,11 +442,20 @@ async function mountHalftoneOverlay({
       1,
     );
 
-  const renderer = new THREE.WebGLRenderer({
+  let renderLoop: VisualRenderLoop | null = null;
+  const renderer = tryCreateSiteWebGlRenderer({
     alpha: true,
     antialias: false,
+    onContextLost: () => {
+      renderLoop?.stop();
+    },
     powerPreference: 'high-performance',
   });
+
+  if (renderer === null) {
+    return () => {};
+  }
+
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.setPixelRatio(1);
   renderer.setClearColor(0x000000, 0);
@@ -565,6 +579,7 @@ async function mountHalftoneOverlay({
     });
 
   const pointer: PointerState = {
+    hoverStrength: 0,
     mouseX: 0.5,
     mouseY: 0.5,
     pointerInside: false,
@@ -588,8 +603,7 @@ async function mountHalftoneOverlay({
     });
   };
 
-  const resizeObserver = new ResizeObserver(syncSize);
-  resizeObserver.observe(container);
+  const stopObservingSize = observeElementSize(container, syncSize);
 
   const updatePointerPosition = (
     event: PointerEvent,
@@ -650,12 +664,26 @@ async function mountHalftoneOverlay({
   canvas.addEventListener('pointermove', handlePointerMove);
   canvas.addEventListener('pointerleave', handlePointerLeave);
 
-  let animationFrameId = 0;
+  let previousTimestamp = 0;
 
   const renderFrame = (timestamp: number) => {
-    animationFrameId = window.requestAnimationFrame(renderFrame);
     halftoneMaterial.uniforms.time.value = timestamp / 1000;
     const hoverScale = getHoverScale();
+    const deltaSeconds =
+      previousTimestamp === 0
+        ? 1 / 60
+        : Math.min((timestamp - previousTimestamp) / 1000, 0.1);
+    previousTimestamp = timestamp;
+    const hoverEasing =
+      1 -
+      Math.exp(
+        -deltaSeconds *
+          (pointer.pointerInside
+            ? HALFTONE_HOVER_FADE_IN
+            : HALFTONE_HOVER_FADE_OUT),
+      );
+    pointer.hoverStrength +=
+      ((pointer.pointerInside ? 1 : 0) - pointer.hoverStrength) * hoverEasing;
 
     pointer.smoothedMouseX +=
       (pointer.mouseX - pointer.smoothedMouseX) * IMAGE_POINTER_FOLLOW;
@@ -672,18 +700,15 @@ async function mountHalftoneOverlay({
       pointer.pointerVelocityX * getVirtualWidth(),
       -pointer.pointerVelocityY * getVirtualHeight(),
     );
-    halftoneMaterial.uniforms.hoverHalftoneActive.value = pointer.pointerInside
-      ? 1
-      : 0;
+    halftoneMaterial.uniforms.hoverHalftoneActive.value = pointer.hoverStrength;
     halftoneMaterial.uniforms.hoverHalftonePowerShift.value =
-      pointer.pointerInside ? HALFTONE_HOVER_POWER_SHIFT : 0;
+      HALFTONE_HOVER_POWER_SHIFT;
     halftoneMaterial.uniforms.hoverHalftoneRadius.value =
       HALFTONE_HOVER_RADIUS * hoverScale;
     halftoneMaterial.uniforms.hoverHalftoneWidthShift.value =
-      pointer.pointerInside ? HALFTONE_HOVER_WIDTH_SHIFT : 0;
-    halftoneMaterial.uniforms.hoverLightStrength.value = pointer.pointerInside
-      ? HALFTONE_HOVER_LIGHT_INTENSITY
-      : 0;
+      HALFTONE_HOVER_WIDTH_SHIFT;
+    halftoneMaterial.uniforms.hoverLightStrength.value =
+      HALFTONE_HOVER_LIGHT_INTENSITY * pointer.hoverStrength;
     halftoneMaterial.uniforms.hoverLightRadius.value =
       HALFTONE_HOVER_LIGHT_RADIUS * hoverScale;
     halftoneMaterial.uniforms.footprintScale.value = getHalftoneScale();
@@ -697,11 +722,16 @@ async function mountHalftoneOverlay({
     renderer.render(postScene, orthographicCamera);
   };
 
-  renderFrame(0);
+  renderLoop = createVisualRenderLoop({
+    renderFrame,
+    target: container,
+    targetVisibilityOptions: { rootMargin: '100px' },
+  });
+  renderLoop.start();
 
   return () => {
-    window.cancelAnimationFrame(animationFrameId);
-    resizeObserver.disconnect();
+    renderLoop?.dispose();
+    stopObservingSize();
     canvas.removeEventListener('pointermove', handlePointerMove);
     canvas.removeEventListener('pointerleave', handlePointerLeave);
     halftoneMaterial.dispose();
@@ -727,7 +757,7 @@ export function PartnerHalftoneOverlay({
   const mountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (getPrefersReducedMotionSnapshot()) {
       return;
     }
 

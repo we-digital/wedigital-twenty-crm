@@ -6,19 +6,19 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const buildDefaultFieldsWidgetGroups = ({
   fields,
-  objectNameSingular,
   labelIdentifierFieldMetadataItemId,
 }: {
   fields: FieldMetadataItem[];
-  objectNameSingular: string;
   labelIdentifierFieldMetadataItemId: string | undefined;
 }): FieldsWidgetGroup[] => {
-  const eligibleFields = fields.filter((field) =>
-    isFieldMetadataEligibleForFieldsWidget({
-      fieldName: field.name,
-      fieldType: field.type,
-      isLabelIdentifierField: field.id === labelIdentifierFieldMetadataItemId,
-    }),
+  const eligibleFields = fields.filter(
+    (field) =>
+      field.isActive &&
+      isFieldMetadataEligibleForFieldsWidget({
+        fieldName: field.name,
+        fieldType: field.type,
+        isLabelIdentifierField: field.id === labelIdentifierFieldMetadataItemId,
+      }),
   );
 
   const standardFields = eligibleFields.filter((field) => !field.isCustom);

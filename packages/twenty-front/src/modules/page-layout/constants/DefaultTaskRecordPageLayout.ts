@@ -33,6 +33,7 @@ export const DEFAULT_TASK_RECORD_PAGE_LAYOUT: PageLayout = {
       widgets: [
         {
           __typename: 'PageLayoutWidget',
+          applicationId: '',
           id: 'task-widget-fields',
           isActive: true,
           pageLayoutTabId: 'task-tab-fields',
@@ -46,6 +47,11 @@ export const DEFAULT_TASK_RECORD_PAGE_LAYOUT: PageLayout = {
             rowSpan: 12,
             columnSpan: 12,
           },
+          position: {
+            __typename: 'PageLayoutWidgetVerticalListPosition',
+            layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
+            index: 0,
+          },
           configuration: {
             __typename: 'FieldsConfiguration',
             configurationType: WidgetConfigurationType.FIELDS,
@@ -57,6 +63,7 @@ export const DEFAULT_TASK_RECORD_PAGE_LAYOUT: PageLayout = {
         },
         {
           __typename: 'PageLayoutWidget',
+          applicationId: '',
           id: 'task-widget-note',
           isActive: true,
           pageLayoutTabId: 'task-tab-fields',
@@ -69,6 +76,11 @@ export const DEFAULT_TASK_RECORD_PAGE_LAYOUT: PageLayout = {
             column: 0,
             rowSpan: 6,
             columnSpan: 12,
+          },
+          position: {
+            __typename: 'PageLayoutWidgetVerticalListPosition',
+            layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
+            index: 1,
           },
           configuration: {
             __typename: 'FieldsConfiguration',
@@ -104,6 +116,7 @@ export const DEFAULT_TASK_RECORD_PAGE_LAYOUT: PageLayout = {
       widgets: [
         {
           __typename: 'PageLayoutWidget',
+          applicationId: '',
           id: 'task-widget-note',
           isActive: true,
           pageLayoutTabId: 'task-tab-note',
@@ -116,6 +129,11 @@ export const DEFAULT_TASK_RECORD_PAGE_LAYOUT: PageLayout = {
             column: 0,
             rowSpan: 6,
             columnSpan: 12,
+          },
+          position: {
+            __typename: 'PageLayoutWidgetVerticalListPosition',
+            layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
+            index: 0,
           },
           configuration: {
             __typename: 'FieldsConfiguration',
@@ -151,6 +169,7 @@ export const DEFAULT_TASK_RECORD_PAGE_LAYOUT: PageLayout = {
       widgets: [
         {
           __typename: 'PageLayoutWidget',
+          applicationId: '',
           id: 'task-widget-timeline',
           isActive: true,
           pageLayoutTabId: 'task-tab-timeline',
@@ -163,6 +182,10 @@ export const DEFAULT_TASK_RECORD_PAGE_LAYOUT: PageLayout = {
             column: 0,
             rowSpan: 6,
             columnSpan: 12,
+          },
+          position: {
+            __typename: 'PageLayoutWidgetCanvasPosition',
+            layoutMode: PageLayoutTabLayoutMode.CANVAS,
           },
           configuration: {
             __typename: 'FieldsConfiguration',
@@ -191,6 +214,7 @@ export const DEFAULT_TASK_RECORD_PAGE_LAYOUT: PageLayout = {
       widgets: [
         {
           __typename: 'PageLayoutWidget',
+          applicationId: '',
           id: 'task-widget-files',
           isActive: true,
           pageLayoutTabId: 'task-tab-files',
@@ -203,6 +227,10 @@ export const DEFAULT_TASK_RECORD_PAGE_LAYOUT: PageLayout = {
             column: 0,
             rowSpan: 6,
             columnSpan: 12,
+          },
+          position: {
+            __typename: 'PageLayoutWidgetCanvasPosition',
+            layoutMode: PageLayoutTabLayoutMode.CANVAS,
           },
           configuration: {
             __typename: 'FieldsConfiguration',
