@@ -364,10 +364,10 @@ index 0000000000..ca64be557d
 +  });
 +});
 diff --git a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
-index 7d46c20801..9a60983df1 100644
+index 7d46c20801..aa6c8ddf5c 100644
 --- a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
 +++ b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
-@@ -1,10 +1,13 @@
+@@ -1,10 +1,19 @@
 +import { currentUserState } from '@/auth/states/currentUserState';
 +import { tokenPairState } from '@/auth/states/tokenPairState';
  import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
@@ -377,13 +377,19 @@ index 7d46c20801..9a60983df1 100644
  import { styled } from '@linaria/react';
 -import { useState } from 'react';
 -import { getSafeUrl, isDefined } from 'twenty-shared/utils';
-+import { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
++import {
++  type SyntheticEvent,
++  useCallback,
++  useEffect,
++  useRef,
++  useState,
++} from 'react';
 +import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 +import { isDefined } from 'twenty-shared/utils';
  import { themeCssVariables } from 'twenty-ui/theme-constants';
  
  const StyledContainer = styled.div<{ $isEditMode: boolean }>`
-@@ -55,9 +58,43 @@ export type IframeWidgetProps = {
+@@ -55,9 +64,43 @@ export type IframeWidgetProps = {
    widget: PageLayoutWidget;
  };
  
@@ -427,7 +433,7 @@ index 7d46c20801..9a60983df1 100644
    const configuration = widget.configuration;
  
    if (!isDefined(configuration) || !('url' in configuration)) {
-@@ -66,12 +103,103 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
+@@ -66,12 +109,103 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
  
    const url = configuration.url;
    const title = widget.title;
@@ -441,7 +447,7 @@ index 7d46c20801..9a60983df1 100644
 +  const iframeRef = useRef<HTMLIFrameElement>(null);
 +
 +  // Whether the widget iframe has announced readiness (widget:ready received).
-+  const isWidgetReady = useRef(false);
++  const [isWidgetReady, setIsWidgetReady] = useState(false);
 +
 +  const accessToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
 +
@@ -473,7 +479,7 @@ index 7d46c20801..9a60983df1 100644
 +      if (!isDefined(msg) || msg.version !== 1) return;
 +
 +      if (msg.type === 'widget:ready') {
-+        isWidgetReady.current = true;
++        setIsWidgetReady(true);
 +        sendContext('widget:context');
 +      }
 +      // widget:ack is informational — no action needed.
@@ -486,9 +492,9 @@ index 7d46c20801..9a60983df1 100644
 +  // Send widget:context:update whenever the access token changes after
 +  // the widget is already loaded and has announced readiness.
 +  useEffect(() => {
-+    if (!isWidgetReady.current) return;
++    if (!isWidgetReady) return;
 +    sendContext('widget:context:update');
-+  }, [accessToken, sendContext]);
++  }, [accessToken, isWidgetReady, sendContext]);
 +
 +  // Send widget:reset when the widget unmounts (logout / navigation away).
 +  useEffect(() => {
@@ -526,13 +532,13 @@ index 7d46c20801..9a60983df1 100644
 +
 +    // The widget will announce widget:ready after mounting; we respond then.
 +    // If widget:ready was already received (e.g. fast load), send context now.
-+    if (isWidgetReady.current) {
++    if (isWidgetReady) {
 +      sendContext('widget:context');
 +    }
    };
  
    const handleIframeError = () => {
-@@ -79,10 +207,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
+@@ -79,10 +213,11 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
      setHasError(true);
    };
  
@@ -540,11 +546,15 @@ index 7d46c20801..9a60983df1 100644
 -  const isHttpUrl = isDefined(safeUrl) && /^https?:\/\//i.test(safeUrl);
 -
 -  if (hasError || !isHttpUrl) {
-+  if (hasError || !isDefined(url) || (isDefined(currentUser) && !targetOrigin)) {
++  if (
++    hasError ||
++    !isDefined(url) ||
++    (isDefined(currentUser) && !targetOrigin)
++  ) {
      return (
        <StyledContainer $isEditMode={isPageLayoutInEditMode}>
          <StyledErrorContainer>
-@@ -101,7 +226,8 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
+@@ -101,7 +236,8 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
        )}
        <StyledIframe
          $isEditMode={isPageLayoutInEditMode}
@@ -555,17 +565,16 @@ index 7d46c20801..9a60983df1 100644
          onLoad={handleIframeLoad}
          onError={handleIframeError}
 diff --git a/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module-factory.ts b/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module-factory.ts
-index 303cf9cd21..c298d03aff 100644
+index 303cf9cd21..d442e52015 100644
 --- a/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module-factory.ts
 +++ b/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module-factory.ts
-@@ -32,6 +32,11 @@ export const cacheStorageModuleFactory = (
+@@ -32,6 +32,10 @@ export const cacheStorageModuleFactory = (
          ...cacheModuleOptions,
          store: redisStore,
          url: redisUrl,
 +        pingInterval: 60_000,
 +        socket: {
-+          reconnectStrategy: (retries: number) =>
-+            Math.min(retries * 500, 5000),
++          reconnectStrategy: (retries: number) => Math.min(retries * 500, 5000),
 +        },
        };
      }
