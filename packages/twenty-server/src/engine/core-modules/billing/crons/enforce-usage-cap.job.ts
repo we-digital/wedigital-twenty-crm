@@ -3,9 +3,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { In, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 
+import { formatDateForClickHouse } from 'src/database/clickHouse/clickHouse.util';
 import { enforceUsageCapCronPattern } from 'src/engine/core-modules/billing/crons/enforce-usage-cap.cron.pattern';
+import { BillingProductEntity } from 'src/engine/core-modules/billing/entities/billing-product.entity';
 import { BillingSubscriptionItemEntity } from 'src/engine/core-modules/billing/entities/billing-subscription-item.entity';
 import { BillingSubscriptionEntity } from 'src/engine/core-modules/billing/entities/billing-subscription.entity';
 import { BillingProductKey } from 'src/engine/core-modules/billing/enums/billing-product-key.enum';
@@ -29,6 +31,8 @@ export class EnforceUsageCapJob {
     private readonly billingSubscriptionRepository: Repository<BillingSubscriptionEntity>,
     @InjectRepository(BillingSubscriptionItemEntity)
     private readonly billingSubscriptionItemRepository: Repository<BillingSubscriptionItemEntity>,
+    @InjectRepository(BillingProductEntity)
+    private readonly billingProductRepository: Repository<BillingProductEntity>,
     private readonly billingUsageCapService: BillingUsageCapService,
     private readonly twentyConfigService: TwentyConfigService,
   ) {}
@@ -57,46 +61,48 @@ export class EnforceUsageCapJob {
     let errors = 0;
     let offset = 0;
 
+    const allProducts = await this.billingProductRepository.find({
+      relations: { billingPrices: true },
+    });
+    const productByStripeProductId = new Map(
+      allProducts.map((product) => [product.stripeProductId, product]),
+    );
+
     let batch: BillingSubscriptionEntity[];
-    let idRows: { subscription_id: string }[];
+    let idRows: Pick<BillingSubscriptionEntity, 'id'>[];
 
     do {
-      idRows = await this.billingSubscriptionRepository
-        .createQueryBuilder('subscription')
-        .select('subscription.id')
-        .innerJoin('subscription.workspace', 'workspace')
-        .where('subscription.status IN (:...statuses)', {
-          statuses: [
+      idRows = await this.billingSubscriptionRepository.find({
+        select: { id: true },
+        relations: {
+          workspace: true,
+        },
+        where: {
+          status: In([
             SubscriptionStatus.Active,
             SubscriptionStatus.Trialing,
             SubscriptionStatus.PastDue,
-          ],
-        })
-        .andWhere('workspace.suspendedAt IS NULL')
-        .orderBy('subscription.id', 'ASC')
-        .limit(BATCH_SIZE)
-        .offset(offset)
-        .getRawMany<{ subscription_id: string }>();
+          ]),
+          workspace: { suspendedAt: IsNull() },
+        },
+        order: { id: 'ASC' },
+        take: BATCH_SIZE,
+        skip: offset,
+      });
 
       if (idRows.length === 0) {
         break;
       }
 
-      const ids = idRows.map((row) => row.subscription_id);
+      const ids = idRows.map((row) => row.id);
 
-      batch = await this.billingSubscriptionRepository
-        .createQueryBuilder('subscription')
-        .innerJoinAndSelect(
-          'subscription.billingSubscriptionItems',
-          'item',
-          'item.billingSubscriptionId = subscription.id',
-        )
-        .innerJoinAndSelect('item.billingProduct', 'product')
-        .leftJoinAndSelect('product.billingPrices', 'price')
-        .innerJoinAndSelect('subscription.billingCustomer', 'customer')
-        .where('subscription.id IN (:...ids)', { ids })
-        .orderBy('subscription.id', 'ASC')
-        .getMany();
+      batch = await this.billingSubscriptionRepository.find({
+        where: { id: In(ids) },
+        relations: {
+          billingCustomer: true,
+          billingSubscriptionItems: true,
+        },
+      });
 
       if (batch.length === 0) {
         break;
@@ -113,7 +119,6 @@ export class EnforceUsageCapJob {
             await this.billingUsageCapService.getBatchPeriodCreditsUsed(
               workspaceIds,
               group[0].currentPeriodStart,
-              group[0].currentPeriodEnd,
             );
 
           for (const [id, usage] of batchUsage) {
@@ -139,6 +144,14 @@ export class EnforceUsageCapJob {
             subscription.stripeCustomerId,
             subscription.billingCustomer.creditBalanceMicro,
           );
+        }
+
+        for (const item of subscription.billingSubscriptionItems ?? []) {
+          const product = productByStripeProductId.get(item.stripeProductId);
+
+          if (product) {
+            item.billingProduct = product;
+          }
         }
       }
 
@@ -166,8 +179,8 @@ export class EnforceUsageCapJob {
 
         const meteredItem = subscription.billingSubscriptionItems.find(
           (item) =>
-            item.billingProduct?.metadata?.productKey ===
-            BillingProductKey.WORKFLOW_NODE_EXECUTION,
+            productByStripeProductId.get(item.stripeProductId)?.metadata
+              ?.productKey === BillingProductKey.WORKFLOW_NODE_EXECUTION,
         );
 
         if (!meteredItem) {
@@ -236,7 +249,7 @@ export class EnforceUsageCapJob {
     const groups = new Map<string, BillingSubscriptionEntity[]>();
 
     for (const subscription of subscriptions) {
-      const key = `${subscription.currentPeriodStart.toISOString()}|${subscription.currentPeriodEnd.toISOString()}`;
+      const key = `${formatDateForClickHouse(subscription.currentPeriodStart)}`;
       const group = groups.get(key);
 
       if (group) {

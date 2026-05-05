@@ -93,240 +93,11 @@ index 0000000000..785775967e
 +	branch = main
 diff --git a/.upstream-version b/.upstream-version
 new file mode 100644
-index 0000000000..e3e48c4c4f
+index 0000000000..a4b6ac3ded
 --- /dev/null
 +++ b/.upstream-version
 @@ -0,0 +1 @@
-+v1.22.0
-diff --git a/docker-compose.prod.yml b/docker-compose.prod.yml
-new file mode 100644
-index 0000000000..dc75f8200c
---- /dev/null
-+++ b/docker-compose.prod.yml
-@@ -0,0 +1,223 @@
-+name: twenty
-+
-+services:
-+  traefik:
-+    image: traefik:v3
-+    command:
-+      - "--providers.docker=true"
-+      - "--providers.docker.exposedbydefault=false"
-+      - "--entrypoints.web.address=:80"
-+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-+      - "--entrypoints.websecure.address=:443"
-+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
-+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
-+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
-+    ports:
-+      - "80:80"
-+      - "443:443"
-+    volumes:
-+      - /var/run/docker.sock:/var/run/docker.sock:ro
-+      - letsencrypt:/letsencrypt
-+    restart: always
-+    networks:
-+      - traefik-public
-+
-+  server:
-+    image: twentycrm/twenty:${TAG:-latest}
-+    volumes:
-+      - server-local-data:/app/packages/twenty-server/.local-storage
-+    labels:
-+      - "traefik.enable=true"
-+      - "traefik.docker.network=twenty_traefik-public"
-+      - "traefik.http.routers.server.rule=Host(`${SERVER_DOMAIN}`)"
-+      - "traefik.http.routers.server.entrypoints=websecure"
-+      - "traefik.http.routers.server.priority=1"
-+      - "traefik.http.routers.server.tls.certresolver=letsencrypt"
-+      - "traefik.http.routers.server.service=server"
-+      - "traefik.http.services.server.loadbalancer.server.port=3000"
-+    networks:
-+      - traefik-public
-+      - default
-+    environment:
-+      NODE_PORT: 3000
-+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/${PG_DATABASE_NAME:-twenty}
-+      SERVER_URL: ${SERVER_URL}
-+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-+      DISABLE_DB_MIGRATIONS: ${DISABLE_DB_MIGRATIONS}
-+      DISABLE_CRON_JOBS_REGISTRATION: ${DISABLE_CRON_JOBS_REGISTRATION}
-+
-+      STORAGE_TYPE: ${STORAGE_TYPE}
-+      STORAGE_S3_REGION: ${STORAGE_S3_REGION}
-+      STORAGE_S3_NAME: ${STORAGE_S3_NAME}
-+      STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
-+
-+      APP_SECRET: ${APP_SECRET:-replace_me_with_a_random_string}
-+      # MESSAGING_PROVIDER_GMAIL_ENABLED: ${MESSAGING_PROVIDER_GMAIL_ENABLED}
-+      # CALENDAR_PROVIDER_GOOGLE_ENABLED: ${CALENDAR_PROVIDER_GOOGLE_ENABLED}
-+      # AUTH_GOOGLE_CLIENT_ID: ${AUTH_GOOGLE_CLIENT_ID}
-+      # AUTH_GOOGLE_CLIENT_SECRET: ${AUTH_GOOGLE_CLIENT_SECRET}
-+      # AUTH_GOOGLE_CALLBACK_URL: ${AUTH_GOOGLE_CALLBACK_URL}
-+      # AUTH_GOOGLE_APIS_CALLBACK_URL: ${AUTH_GOOGLE_APIS_CALLBACK_URL}
-+
-+      # CALENDAR_PROVIDER_MICROSOFT_ENABLED: ${CALENDAR_PROVIDER_MICROSOFT_ENABLED}
-+      # MESSAGING_PROVIDER_MICROSOFT_ENABLED: ${MESSAGING_PROVIDER_MICROSOFT_ENABLED}
-+      # AUTH_MICROSOFT_ENABLED: ${AUTH_MICROSOFT_ENABLED}
-+      # AUTH_MICROSOFT_CLIENT_ID: ${AUTH_MICROSOFT_CLIENT_ID}
-+      # AUTH_MICROSOFT_CLIENT_SECRET: ${AUTH_MICROSOFT_CLIENT_SECRET}
-+      # AUTH_MICROSOFT_CALLBACK_URL: ${AUTH_MICROSOFT_CALLBACK_URL}
-+      # AUTH_MICROSOFT_APIS_CALLBACK_URL: ${AUTH_MICROSOFT_APIS_CALLBACK_URL}
-+
-+      # EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-contact@yourdomain.com}
-+      # EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-"John from YourDomain"}
-+      # EMAIL_SYSTEM_ADDRESS: ${EMAIL_SYSTEM_ADDRESS:-system@yourdomain.com}
-+      # EMAIL_DRIVER: ${EMAIL_DRIVER:-smtp}
-+      # EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST:-smtp.gmail.com}
-+      # EMAIL_SMTP_PORT: ${EMAIL_SMTP_PORT:-465}
-+      # EMAIL_SMTP_USER: ${EMAIL_SMTP_USER:-}
-+      # EMAIL_SMTP_PASSWORD: ${EMAIL_SMTP_PASSWORD:-}
-+
-+    depends_on:
-+      db:
-+        condition: service_healthy
-+      redis:
-+        condition: service_healthy
-+    healthcheck:
-+      test: curl --fail http://localhost:3000/healthz
-+      interval: 5s
-+      timeout: 5s
-+      retries: 20
-+      start_period: 120s
-+    restart: always
-+
-+  widgets:
-+    image: ${WIDGETS_IMAGE}
-+    labels:
-+      - "traefik.enable=true"
-+      - "traefik.docker.network=twenty_traefik-public"
-+      - "traefik.http.services.widgets.loadbalancer.server.port=4175"
-+      - "traefik.http.routers.wedigital-widgets.rule=Host(`${SERVER_DOMAIN}`) && PathPrefix(`/wedigital`)"
-+      - "traefik.http.routers.wedigital-widgets.entrypoints=websecure"
-+      - "traefik.http.routers.wedigital-widgets.tls.certresolver=letsencrypt"
-+      - "traefik.http.routers.wedigital-widgets.service=widgets"
-+      - "traefik.http.middlewares.wedigital-strip.stripprefix.prefixes=/wedigital"
-+      - "traefik.http.routers.wedigital-widgets.middlewares=wedigital-strip"
-+      - "traefik.http.routers.wedigital-widgets.priority=100"
-+    networks:
-+      - traefik-public
-+      - default
-+    restart: always
-+    healthcheck:
-+      test: ["CMD", "curl", "-f", "http://localhost:4175"]
-+      interval: 10s
-+      timeout: 5s
-+      retries: 3
-+      start_period: 10s
-+
-+  mrz-widget:
-+    image: ${WIDGETS_IMAGE}
-+    labels:
-+      - "traefik.enable=true"
-+      - "traefik.docker.network=twenty_traefik-public"
-+      - "traefik.http.services.mrz-widget.loadbalancer.server.port=4175"
-+      - "traefik.http.routers.mrz-widget.rule=Host(`${SERVER_DOMAIN}`) && PathPrefix(`/wedigital/mrz-input`)"
-+      - "traefik.http.routers.mrz-widget.entrypoints=websecure"
-+      - "traefik.http.routers.mrz-widget.tls.certresolver=letsencrypt"
-+      - "traefik.http.routers.mrz-widget.service=mrz-widget"
-+      - "traefik.http.routers.mrz-widget.priority=200"
-+    networks:
-+      - traefik-public
-+      - default
-+    restart: always
-+    healthcheck:
-+      test: ["CMD", "curl", "-f", "http://localhost:4175"]
-+      interval: 10s
-+      timeout: 5s
-+      retries: 3
-+      start_period: 10s
-+
-+  worker:
-+    image: twentycrm/twenty:${TAG:-latest}
-+    volumes:
-+      - server-local-data:/app/packages/twenty-server/.local-storage
-+    command: ["yarn", "worker:prod"]
-+    environment:
-+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/${PG_DATABASE_NAME:-twenty}
-+      SERVER_URL: ${SERVER_URL}
-+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-+      DISABLE_DB_MIGRATIONS: "true"
-+      DISABLE_CRON_JOBS_REGISTRATION: "true"
-+
-+      STORAGE_TYPE: ${STORAGE_TYPE}
-+      STORAGE_S3_REGION: ${STORAGE_S3_REGION}
-+      STORAGE_S3_NAME: ${STORAGE_S3_NAME}
-+      STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
-+
-+      APP_SECRET: ${APP_SECRET:-replace_me_with_a_random_string}
-+      # MESSAGING_PROVIDER_GMAIL_ENABLED: ${MESSAGING_PROVIDER_GMAIL_ENABLED}
-+      # CALENDAR_PROVIDER_GOOGLE_ENABLED: ${CALENDAR_PROVIDER_GOOGLE_ENABLED}
-+      # AUTH_GOOGLE_CLIENT_ID: ${AUTH_GOOGLE_CLIENT_ID}
-+      # AUTH_GOOGLE_CLIENT_SECRET: ${AUTH_GOOGLE_CLIENT_SECRET}
-+      # AUTH_GOOGLE_CALLBACK_URL: ${AUTH_GOOGLE_CALLBACK_URL}
-+      # AUTH_GOOGLE_APIS_CALLBACK_URL: ${AUTH_GOOGLE_APIS_CALLBACK_URL}
-+
-+      # CALENDAR_PROVIDER_MICROSOFT_ENABLED: ${CALENDAR_PROVIDER_MICROSOFT_ENABLED}
-+      # MESSAGING_PROVIDER_MICROSOFT_ENABLED: ${MESSAGING_PROVIDER_MICROSOFT_ENABLED}
-+      # AUTH_MICROSOFT_ENABLED: ${AUTH_MICROSOFT_ENABLED}
-+      # AUTH_MICROSOFT_CLIENT_ID: ${AUTH_MICROSOFT_CLIENT_ID}
-+      # AUTH_MICROSOFT_CLIENT_SECRET: ${AUTH_MICROSOFT_CLIENT_SECRET}
-+      # AUTH_MICROSOFT_CALLBACK_URL: ${AUTH_MICROSOFT_CALLBACK_URL}
-+      # AUTH_MICROSOFT_APIS_CALLBACK_URL: ${AUTH_MICROSOFT_APIS_CALLBACK_URL}
-+
-+      # EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-contact@yourdomain.com}
-+      # EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-"John from YourDomain"}
-+      # EMAIL_SYSTEM_ADDRESS: ${EMAIL_SYSTEM_ADDRESS:-system@yourdomain.com}
-+      # EMAIL_DRIVER: ${EMAIL_DRIVER:-smtp}
-+      # EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST:-smtp.gmail.com}
-+      # EMAIL_SMTP_PORT: ${EMAIL_SMTP_PORT:-465}
-+      # EMAIL_SMTP_USER: ${EMAIL_SMTP_USER:-}
-+      # EMAIL_SMTP_PASSWORD: ${EMAIL_SMTP_PASSWORD:-}
-+
-+    depends_on:
-+      db:
-+        condition: service_healthy
-+      server:
-+        condition: service_healthy
-+    restart: always
-+
-+  db:
-+    image: postgres:16
-+    volumes:
-+      - db-data:/var/lib/postgresql/data
-+    environment:
-+      POSTGRES_DB: ${PG_DATABASE_NAME:-twenty}
-+      POSTGRES_PASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
-+      POSTGRES_USER: ${PG_DATABASE_USER:-postgres}
-+      PGPORT: 5432               # добавляем для безопасности
-+    ports:
-+      - "5432:5432"
-+    healthcheck:
-+      test: pg_isready -U ${PG_DATABASE_USER:-postgres} -h localhost -d postgres
-+      interval: 5s
-+      timeout: 5s
-+      retries: 10
-+    restart: always
-+
-+  redis:
-+    image: redis
-+    restart: always
-+    command: ["--maxmemory-policy", "noeviction"]
-+    healthcheck:
-+      test: ["CMD", "redis-cli", "ping"]
-+      interval: 5s
-+      timeout: 5s
-+      retries: 10
-+
-+networks:
-+  traefik-public:
-+    external: false
-+
-+volumes:
-+  db-data:
-+  server-local-data:
-+  letsencrypt:
++v2.2.0
 diff --git a/package.json b/package.json
 index a12d889736..12f6ac0da7 100644
 --- a/package.json
@@ -593,10 +364,10 @@ index 0000000000..ca64be557d
 +  });
 +});
 diff --git a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
-index 7d46c20801..9a60983df1 100644
+index 7d46c20801..aa6c8ddf5c 100644
 --- a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
 +++ b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
-@@ -1,10 +1,13 @@
+@@ -1,10 +1,19 @@
 +import { currentUserState } from '@/auth/states/currentUserState';
 +import { tokenPairState } from '@/auth/states/tokenPairState';
  import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
@@ -606,13 +377,19 @@ index 7d46c20801..9a60983df1 100644
  import { styled } from '@linaria/react';
 -import { useState } from 'react';
 -import { getSafeUrl, isDefined } from 'twenty-shared/utils';
-+import { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
++import {
++  type SyntheticEvent,
++  useCallback,
++  useEffect,
++  useRef,
++  useState,
++} from 'react';
 +import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 +import { isDefined } from 'twenty-shared/utils';
  import { themeCssVariables } from 'twenty-ui/theme-constants';
  
  const StyledContainer = styled.div<{ $isEditMode: boolean }>`
-@@ -55,9 +58,43 @@ export type IframeWidgetProps = {
+@@ -55,9 +64,43 @@ export type IframeWidgetProps = {
    widget: PageLayoutWidget;
  };
  
@@ -656,7 +433,7 @@ index 7d46c20801..9a60983df1 100644
    const configuration = widget.configuration;
  
    if (!isDefined(configuration) || !('url' in configuration)) {
-@@ -66,12 +103,103 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
+@@ -66,12 +109,103 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
  
    const url = configuration.url;
    const title = widget.title;
@@ -670,7 +447,7 @@ index 7d46c20801..9a60983df1 100644
 +  const iframeRef = useRef<HTMLIFrameElement>(null);
 +
 +  // Whether the widget iframe has announced readiness (widget:ready received).
-+  const isWidgetReady = useRef(false);
++  const [isWidgetReady, setIsWidgetReady] = useState(false);
 +
 +  const accessToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
 +
@@ -702,7 +479,7 @@ index 7d46c20801..9a60983df1 100644
 +      if (!isDefined(msg) || msg.version !== 1) return;
 +
 +      if (msg.type === 'widget:ready') {
-+        isWidgetReady.current = true;
++        setIsWidgetReady(true);
 +        sendContext('widget:context');
 +      }
 +      // widget:ack is informational — no action needed.
@@ -715,9 +492,9 @@ index 7d46c20801..9a60983df1 100644
 +  // Send widget:context:update whenever the access token changes after
 +  // the widget is already loaded and has announced readiness.
 +  useEffect(() => {
-+    if (!isWidgetReady.current) return;
++    if (!isWidgetReady) return;
 +    sendContext('widget:context:update');
-+  }, [accessToken, sendContext]);
++  }, [accessToken, isWidgetReady, sendContext]);
 +
 +  // Send widget:reset when the widget unmounts (logout / navigation away).
 +  useEffect(() => {
@@ -755,13 +532,13 @@ index 7d46c20801..9a60983df1 100644
 +
 +    // The widget will announce widget:ready after mounting; we respond then.
 +    // If widget:ready was already received (e.g. fast load), send context now.
-+    if (isWidgetReady.current) {
++    if (isWidgetReady) {
 +      sendContext('widget:context');
 +    }
    };
  
    const handleIframeError = () => {
-@@ -79,10 +207,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
+@@ -79,10 +213,11 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
      setHasError(true);
    };
  
@@ -769,11 +546,15 @@ index 7d46c20801..9a60983df1 100644
 -  const isHttpUrl = isDefined(safeUrl) && /^https?:\/\//i.test(safeUrl);
 -
 -  if (hasError || !isHttpUrl) {
-+  if (hasError || !isDefined(url) || (isDefined(currentUser) && !targetOrigin)) {
++  if (
++    hasError ||
++    !isDefined(url) ||
++    (isDefined(currentUser) && !targetOrigin)
++  ) {
      return (
        <StyledContainer $isEditMode={isPageLayoutInEditMode}>
          <StyledErrorContainer>
-@@ -101,7 +226,8 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
+@@ -101,7 +236,8 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
        )}
        <StyledIframe
          $isEditMode={isPageLayoutInEditMode}
@@ -784,17 +565,16 @@ index 7d46c20801..9a60983df1 100644
          onLoad={handleIframeLoad}
          onError={handleIframeError}
 diff --git a/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module-factory.ts b/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module-factory.ts
-index 303cf9cd21..c298d03aff 100644
+index 303cf9cd21..d442e52015 100644
 --- a/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module-factory.ts
 +++ b/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module-factory.ts
-@@ -32,6 +32,11 @@ export const cacheStorageModuleFactory = (
+@@ -32,6 +32,10 @@ export const cacheStorageModuleFactory = (
          ...cacheModuleOptions,
          store: redisStore,
          url: redisUrl,
 +        pingInterval: 60_000,
 +        socket: {
-+          reconnectStrategy: (retries: number) =>
-+            Math.min(retries * 500, 5000),
++          reconnectStrategy: (retries: number) => Math.min(retries * 500, 5000),
 +        },
        };
      }
@@ -860,10 +640,10 @@ index c27390d441..a81dc7245a 100644
      });
  
 diff --git a/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts b/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
-index ae9bb55365..76475519fa 100644
+index dedb66ac09..736446414e 100644
 --- a/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
 +++ b/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
-@@ -149,6 +149,10 @@ export class BullMQDriver
+@@ -158,6 +158,10 @@ export class BullMQDriver
          shouldStoreInCache: false,
        });
      });
@@ -970,19 +750,19 @@ index c8aab18e95..161773f78e 100644
  
        return {
 diff --git a/packages/twenty-server/src/main.ts b/packages/twenty-server/src/main.ts
-index 0265aca64d..c6abb07d91 100644
+index 3190a50953..197151e8a4 100644
 --- a/packages/twenty-server/src/main.ts
 +++ b/packages/twenty-server/src/main.ts
-@@ -14,6 +14,8 @@ import { setPgDateTypeParser } from 'src/database/pg/set-pg-date-type-parser';
- import { LoggerService } from 'src/engine/core-modules/logger/logger.service';
+@@ -15,6 +15,8 @@ import { LoggerService } from 'src/engine/core-modules/logger/logger.service';
  import { getSessionStorageOptions } from 'src/engine/core-modules/session-storage/session-storage.module-factory';
  import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
+ import { configTransformers } from 'src/engine/core-modules/twenty-config/utils/config-transformers.util';
 +import { ExceptionHandlerService } from 'src/engine/core-modules/exception-handler/exception-handler.service';
 +import { shouldCaptureException } from 'src/engine/utils/global-exception-handler.util';
  import { UnhandledExceptionFilter } from 'src/filters/unhandled-exception.filter';
  
  import { AppModule } from './app.module';
-@@ -42,6 +44,25 @@ const bootstrap = async () => {
+@@ -45,6 +47,25 @@ const bootstrap = async () => {
    });
    const logger = app.get(LoggerService);
    const twentyConfigService = app.get(TwentyConfigService);
@@ -1006,8 +786,8 @@ index 0265aca64d..c6abb07d91 100644
 +    }
 +  });
  
-   app.use(session(getSessionStorageOptions(twentyConfigService)));
- 
+   const trustProxyRaw = twentyConfigService.get('TRUST_PROXY');
+   const trustProxy = /^\d+$/.test(trustProxyRaw)
 diff --git a/packages/twenty-server/src/queue-worker/queue-worker.ts b/packages/twenty-server/src/queue-worker/queue-worker.ts
 index 61ebe2a6b4..529113f074 100644
 --- a/packages/twenty-server/src/queue-worker/queue-worker.ts
@@ -1281,11 +1061,11 @@ index 0000000000..f078f8cd3c
 +
 diff --git a/packages/twenty-widgets/submodules/widget-mrz-input b/packages/twenty-widgets/submodules/widget-mrz-input
 new file mode 160000
-index 0000000000..1d0c5f7bcb
+index 0000000000..25116985ea
 --- /dev/null
 +++ b/packages/twenty-widgets/submodules/widget-mrz-input
 @@ -0,0 +1 @@
-+Subproject commit 1d0c5f7bcb0c0409b5235a118c0e1f5fd6442fe8
++Subproject commit 25116985ea888725d6cae8801c72b4d80ed9a434
 diff --git a/packages/twenty-widgets/tsconfig.json b/packages/twenty-widgets/tsconfig.json
 new file mode 100644
 index 0000000000..b7fd79420c
@@ -1500,10 +1280,10 @@ index 0000000000..10a48ad54c
 +echo "  5. For controlled upgrades: set CRM_IMAGE_TAG=${TARGET_TAG} in bbc-devops"
 +echo "============================================"
 diff --git a/yarn.lock b/yarn.lock
-index f7910191a2..4603148598 100644
+index b3a78ee12e..bc63d6d746 100644
 --- a/yarn.lock
 +++ b/yarn.lock
-@@ -5181,7 +5181,7 @@ __metadata:
+@@ -5189,7 +5189,7 @@ __metadata:
    languageName: node
    linkType: hard
  
@@ -1512,7 +1292,7 @@ index f7910191a2..4603148598 100644
    version: 11.14.0
    resolution: "@emotion/react@npm:11.14.0"
    dependencies:
-@@ -5222,7 +5222,7 @@ __metadata:
+@@ -5230,7 +5230,7 @@ __metadata:
    languageName: node
    linkType: hard
  
@@ -1521,7 +1301,7 @@ index f7910191a2..4603148598 100644
    version: 11.14.1
    resolution: "@emotion/styled@npm:11.14.1"
    dependencies:
-@@ -60975,6 +60975,18 @@ __metadata:
+@@ -60682,6 +60682,18 @@ __metadata:
    languageName: unknown
    linkType: soft
  

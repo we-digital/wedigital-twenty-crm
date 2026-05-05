@@ -25,7 +25,7 @@ import { AgentChatStreamingService } from 'src/engine/metadata-modules/ai/ai-cha
 import { AgentChatService } from 'src/engine/metadata-modules/ai/ai-chat/services/agent-chat.service';
 import { ChatExecutionService } from 'src/engine/metadata-modules/ai/ai-chat/services/chat-execution.service';
 import { getCancelChannel } from 'src/engine/metadata-modules/ai/ai-chat/utils/get-cancel-channel.util';
-import type { AIModelConfig } from 'src/engine/metadata-modules/ai/ai-models/types/ai-model-config.type';
+import type { AiModelConfig } from 'src/engine/metadata-modules/ai/ai-models/types/ai-model-config.type';
 
 import { STREAM_AGENT_CHAT_JOB_NAME } from './stream-agent-chat-job-name.constant';
 import { type StreamAgentChatJobData } from './stream-agent-chat-job.types';
@@ -188,6 +188,7 @@ export class StreamAgentChatJob {
         outputTokens: 0,
         inputCredits: 0,
         outputCredits: 0,
+        cacheReadTokens: 0,
       };
       let lastStepConversationSize = 0;
       let totalCacheCreationTokens = 0;
@@ -279,6 +280,7 @@ export class StreamAgentChatJob {
                     workspaceId: data.workspaceId,
                     streamUsage,
                     lastStepConversationSize,
+                    totalCacheCreationTokens,
                     modelConfig,
                     userMessagePromise,
                   });
@@ -351,7 +353,7 @@ export class StreamAgentChatJob {
       };
       providerMetadata?: Record<string, Record<string, unknown> | undefined>;
     };
-    modelConfig: AIModelConfig;
+    modelConfig: AiModelConfig;
     lastStepConversationSize: number;
     totalCacheCreationTokens: number;
     onUpdateUsage: (usage: {
@@ -359,6 +361,7 @@ export class StreamAgentChatJob {
       outputTokens: number;
       inputCredits: number;
       outputCredits: number;
+      cacheReadTokens: number;
     }) => void;
     onUpdateConversationSize: (size: number) => void;
     onUpdateCacheCreationTokens: (tokens: number) => void;
@@ -395,6 +398,7 @@ export class StreamAgentChatJob {
         outputTokens: part.totalUsage?.outputTokens ?? 0,
         inputCredits,
         outputCredits,
+        cacheReadTokens: breakdown.tokenCounts.cachedInputTokens,
       });
 
       return {
@@ -422,6 +426,7 @@ export class StreamAgentChatJob {
     workspaceId,
     streamUsage,
     lastStepConversationSize,
+    totalCacheCreationTokens,
     modelConfig,
     userMessagePromise,
   }: {
@@ -433,9 +438,11 @@ export class StreamAgentChatJob {
       outputTokens: number;
       inputCredits: number;
       outputCredits: number;
+      cacheReadTokens: number;
     };
     lastStepConversationSize: number;
-    modelConfig: AIModelConfig;
+    totalCacheCreationTokens: number;
+    modelConfig: AiModelConfig;
     userMessagePromise: Promise<{ turnId: string | null }>;
   }): Promise<void> {
     if (responseMessage.parts.length === 0) {
@@ -459,6 +466,10 @@ export class StreamAgentChatJob {
         `"totalInputCredits" + ${streamUsage.inputCredits}`,
       totalOutputCredits: () =>
         `"totalOutputCredits" + ${streamUsage.outputCredits}`,
+      totalCacheReadTokens: () =>
+        `"totalCacheReadTokens" + ${streamUsage.cacheReadTokens}`,
+      totalCacheCreationTokens: () =>
+        `"totalCacheCreationTokens" + ${totalCacheCreationTokens}`,
       contextWindowTokens: modelConfig.contextWindowTokens,
       conversationSize: lastStepConversationSize,
     });

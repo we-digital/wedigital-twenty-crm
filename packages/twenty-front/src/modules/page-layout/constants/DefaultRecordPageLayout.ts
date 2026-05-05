@@ -33,6 +33,7 @@ export const DEFAULT_RECORD_PAGE_LAYOUT: PageLayout = {
       widgets: [
         {
           __typename: 'PageLayoutWidget',
+          applicationId: '',
           id: 'default-widget-fields',
           isActive: true,
           pageLayoutTabId: 'default-tab-fields',
@@ -45,6 +46,11 @@ export const DEFAULT_RECORD_PAGE_LAYOUT: PageLayout = {
             column: 0,
             rowSpan: 12,
             columnSpan: 12,
+          },
+          position: {
+            __typename: 'PageLayoutWidgetVerticalListPosition',
+            layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
+            index: 0,
           },
           configuration: {
             __typename: 'FieldsConfiguration',
@@ -73,6 +79,7 @@ export const DEFAULT_RECORD_PAGE_LAYOUT: PageLayout = {
       widgets: [
         {
           __typename: 'PageLayoutWidget',
+          applicationId: '',
           id: 'default-widget-timeline',
           isActive: true,
           pageLayoutTabId: 'default-tab-timeline',
@@ -85,6 +92,10 @@ export const DEFAULT_RECORD_PAGE_LAYOUT: PageLayout = {
             column: 0,
             rowSpan: 6,
             columnSpan: 12,
+          },
+          position: {
+            __typename: 'PageLayoutWidgetCanvasPosition',
+            layoutMode: PageLayoutTabLayoutMode.CANVAS,
           },
           configuration: {
             __typename: 'FieldsConfiguration',
@@ -113,6 +124,7 @@ export const DEFAULT_RECORD_PAGE_LAYOUT: PageLayout = {
       widgets: [
         {
           __typename: 'PageLayoutWidget',
+          applicationId: '',
           id: 'default-widget-tasks',
           isActive: true,
           pageLayoutTabId: 'default-tab-tasks',
@@ -125,6 +137,10 @@ export const DEFAULT_RECORD_PAGE_LAYOUT: PageLayout = {
             column: 0,
             rowSpan: 6,
             columnSpan: 12,
+          },
+          position: {
+            __typename: 'PageLayoutWidgetCanvasPosition',
+            layoutMode: PageLayoutTabLayoutMode.CANVAS,
           },
           configuration: {
             __typename: 'FieldsConfiguration',
@@ -153,6 +169,7 @@ export const DEFAULT_RECORD_PAGE_LAYOUT: PageLayout = {
       widgets: [
         {
           __typename: 'PageLayoutWidget',
+          applicationId: '',
           id: 'default-widget-notes',
           isActive: true,
           pageLayoutTabId: 'default-tab-notes',
@@ -165,6 +182,10 @@ export const DEFAULT_RECORD_PAGE_LAYOUT: PageLayout = {
             column: 0,
             rowSpan: 6,
             columnSpan: 12,
+          },
+          position: {
+            __typename: 'PageLayoutWidgetCanvasPosition',
+            layoutMode: PageLayoutTabLayoutMode.CANVAS,
           },
           configuration: {
             __typename: 'FieldsConfiguration',
@@ -193,6 +214,7 @@ export const DEFAULT_RECORD_PAGE_LAYOUT: PageLayout = {
       widgets: [
         {
           __typename: 'PageLayoutWidget',
+          applicationId: '',
           id: 'default-widget-files',
           isActive: true,
           pageLayoutTabId: 'default-tab-files',
@@ -205,6 +227,10 @@ export const DEFAULT_RECORD_PAGE_LAYOUT: PageLayout = {
             column: 0,
             rowSpan: 6,
             columnSpan: 12,
+          },
+          position: {
+            __typename: 'PageLayoutWidgetCanvasPosition',
+            layoutMode: PageLayoutTabLayoutMode.CANVAS,
           },
           configuration: {
             __typename: 'FieldsConfiguration',

@@ -1,8 +1,12 @@
 import { AgentChatComponentInstanceContext } from '@/ai/states/AgentChatComponentInstanceContext';
+import { type AiChatError } from '@/ai/types/AiChatError';
 import { createAtomComponentFamilyState } from '@/ui/utilities/state/jotai/utils/createAtomComponentFamilyState';
 
 export const agentChatErrorComponentFamilyState =
-  createAtomComponentFamilyState<Error | null, { threadId: string | null }>({
+  createAtomComponentFamilyState<
+    AiChatError | null,
+    { threadId: string | null }
+  >({
     key: 'agentChatErrorComponentFamilyState',
     defaultValue: null,
     componentInstanceContext: AgentChatComponentInstanceContext,

@@ -32,6 +32,7 @@ export type {
 } from './color/components/ColorSample';
 export { ColorSample } from './color/components/ColorSample';
 export { CommandBlock } from './command-block/components/CommandBlock';
+export { LinkifiedText } from './components/LinkifiedText';
 export type { IconProps } from './icon/components/Icon';
 export { Icon } from './icon/components/Icon';
 export { IconAddressBook } from './icon/components/IconAddressBook';
@@ -93,6 +94,7 @@ export {
   IconArchive,
   IconArchiveOff,
   IconArrowBackUp,
+  IconArrowBarToDown,
   IconArrowDown,
   IconArrowLeft,
   IconArrowMerge,
@@ -123,6 +125,7 @@ export {
   IconBracketsContain,
   IconBrain,
   IconBrandDaysCounter,
+  IconBrandDocker,
   IconBrandGithub,
   IconBrandGoogle,
   IconBrandGraphql,
@@ -278,6 +281,7 @@ export {
   IconFrame,
   IconFunction,
   IconGauge,
+  IconGitBranch,
   IconGitBranchDeleted,
   IconGitCommit,
   IconGizmo,
@@ -304,8 +308,11 @@ export {
   IconHome,
   IconHourglassHigh,
   IconHours24,
+  IconHttpDelete,
   IconHttpGet,
+  IconHttpPatch,
   IconHttpPost,
+  IconHttpPut,
   IconId,
   IconInbox,
   IconInfoCircle,

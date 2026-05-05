@@ -5,7 +5,13 @@ import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
 import { PageLayoutWidgetNoDataDisplay } from '@/page-layout/widgets/components/PageLayoutWidgetNoDataDisplay';
 import { WidgetSkeletonLoader } from '@/page-layout/widgets/components/WidgetSkeletonLoader';
 import { styled } from '@linaria/react';
-import { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type SyntheticEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { isDefined } from 'twenty-shared/utils';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
@@ -112,7 +118,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Whether the widget iframe has announced readiness (widget:ready received).
-  const isWidgetReady = useRef(false);
+  const [isWidgetReady, setIsWidgetReady] = useState(false);
 
   const accessToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
 
@@ -144,7 +150,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
       if (!isDefined(msg) || msg.version !== 1) return;
 
       if (msg.type === 'widget:ready') {
-        isWidgetReady.current = true;
+        setIsWidgetReady(true);
         sendContext('widget:context');
       }
       // widget:ack is informational — no action needed.
@@ -157,9 +163,9 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
   // Send widget:context:update whenever the access token changes after
   // the widget is already loaded and has announced readiness.
   useEffect(() => {
-    if (!isWidgetReady.current) return;
+    if (!isWidgetReady) return;
     sendContext('widget:context:update');
-  }, [accessToken, sendContext]);
+  }, [accessToken, isWidgetReady, sendContext]);
 
   // Send widget:reset when the widget unmounts (logout / navigation away).
   useEffect(() => {
@@ -197,7 +203,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
 
     // The widget will announce widget:ready after mounting; we respond then.
     // If widget:ready was already received (e.g. fast load), send context now.
-    if (isWidgetReady.current) {
+    if (isWidgetReady) {
       sendContext('widget:context');
     }
   };
@@ -207,7 +213,11 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
     setHasError(true);
   };
 
-  if (hasError || !isDefined(url) || (isDefined(currentUser) && !targetOrigin)) {
+  if (
+    hasError ||
+    !isDefined(url) ||
+    (isDefined(currentUser) && !targetOrigin)
+  ) {
     return (
       <StyledContainer $isEditMode={isPageLayoutInEditMode}>
         <StyledErrorContainer>

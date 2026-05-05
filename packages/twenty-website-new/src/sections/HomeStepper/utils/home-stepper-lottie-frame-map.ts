@@ -4,12 +4,16 @@ function clampUnit(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 
-const STEP_1_TRANSITION_END = 415;
-const STEP_2_TRANSITION_END = 1045;
+const STEP_1_HOLD_END = 240;
+const STEP_1_TRANSITION_END = 285;
+const STEP_2_HOLD_END = 880;
+const STEP_2_TRANSITION_END = 925;
+
+export const HOME_STEPPER_LOTTIE_EXPECTED_TOTAL_FRAMES = 1439;
 
 export const HOME_STEPPER_HOLD_FRACTIONS = [
-  345 / STEP_1_TRANSITION_END,
-  (933 - STEP_1_TRANSITION_END) /
+  STEP_1_HOLD_END / STEP_1_TRANSITION_END,
+  (STEP_2_HOLD_END - STEP_1_TRANSITION_END) /
     (STEP_2_TRANSITION_END - STEP_1_TRANSITION_END),
   1,
 ] as const;

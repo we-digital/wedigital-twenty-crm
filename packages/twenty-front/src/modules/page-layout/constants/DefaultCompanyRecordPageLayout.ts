@@ -33,6 +33,7 @@ export const DEFAULT_COMPANY_RECORD_PAGE_LAYOUT: PageLayout = {
       widgets: [
         {
           __typename: 'PageLayoutWidget',
+          applicationId: '',
           id: 'company-widget-fields',
           isActive: true,
           pageLayoutTabId: 'company-tab-fields',
@@ -45,6 +46,11 @@ export const DEFAULT_COMPANY_RECORD_PAGE_LAYOUT: PageLayout = {
             column: 0,
             rowSpan: 12,
             columnSpan: 12,
+          },
+          position: {
+            __typename: 'PageLayoutWidgetVerticalListPosition',
+            layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
+            index: 0,
           },
           configuration: {
             __typename: 'FieldsConfiguration',
@@ -73,6 +79,7 @@ export const DEFAULT_COMPANY_RECORD_PAGE_LAYOUT: PageLayout = {
       widgets: [
         {
           __typename: 'PageLayoutWidget',
+          applicationId: '',
           id: 'company-widget-timeline',
           isActive: true,
           pageLayoutTabId: 'company-tab-timeline',
@@ -85,6 +92,10 @@ export const DEFAULT_COMPANY_RECORD_PAGE_LAYOUT: PageLayout = {
             column: 0,
             rowSpan: 6,
             columnSpan: 12,
+          },
+          position: {
+            __typename: 'PageLayoutWidgetCanvasPosition',
+            layoutMode: PageLayoutTabLayoutMode.CANVAS,
           },
           configuration: {
             __typename: 'FieldsConfiguration',
@@ -113,6 +124,7 @@ export const DEFAULT_COMPANY_RECORD_PAGE_LAYOUT: PageLayout = {
       widgets: [
         {
           __typename: 'PageLayoutWidget',
+          applicationId: '',
           id: 'company-widget-tasks',
           isActive: true,
           pageLayoutTabId: 'company-tab-tasks',
@@ -125,6 +137,10 @@ export const DEFAULT_COMPANY_RECORD_PAGE_LAYOUT: PageLayout = {
             column: 0,
             rowSpan: 6,
             columnSpan: 12,
+          },
+          position: {
+            __typename: 'PageLayoutWidgetCanvasPosition',
+            layoutMode: PageLayoutTabLayoutMode.CANVAS,
           },
           configuration: {
             __typename: 'FieldsConfiguration',
@@ -153,6 +169,7 @@ export const DEFAULT_COMPANY_RECORD_PAGE_LAYOUT: PageLayout = {
       widgets: [
         {
           __typename: 'PageLayoutWidget',
+          applicationId: '',
           id: 'company-widget-notes',
           isActive: true,
           pageLayoutTabId: 'company-tab-notes',
@@ -165,6 +182,10 @@ export const DEFAULT_COMPANY_RECORD_PAGE_LAYOUT: PageLayout = {
             column: 0,
             rowSpan: 6,
             columnSpan: 12,
+          },
+          position: {
+            __typename: 'PageLayoutWidgetCanvasPosition',
+            layoutMode: PageLayoutTabLayoutMode.CANVAS,
           },
           configuration: {
             __typename: 'FieldsConfiguration',
@@ -193,6 +214,7 @@ export const DEFAULT_COMPANY_RECORD_PAGE_LAYOUT: PageLayout = {
       widgets: [
         {
           __typename: 'PageLayoutWidget',
+          applicationId: '',
           id: 'company-widget-files',
           isActive: true,
           pageLayoutTabId: 'company-tab-files',
@@ -205,6 +227,10 @@ export const DEFAULT_COMPANY_RECORD_PAGE_LAYOUT: PageLayout = {
             column: 0,
             rowSpan: 6,
             columnSpan: 12,
+          },
+          position: {
+            __typename: 'PageLayoutWidgetCanvasPosition',
+            layoutMode: PageLayoutTabLayoutMode.CANVAS,
           },
           configuration: {
             __typename: 'FieldsConfiguration',
@@ -233,6 +259,7 @@ export const DEFAULT_COMPANY_RECORD_PAGE_LAYOUT: PageLayout = {
       widgets: [
         {
           __typename: 'PageLayoutWidget',
+          applicationId: '',
           id: 'company-widget-emails',
           isActive: true,
           pageLayoutTabId: 'company-tab-emails',
@@ -245,6 +272,10 @@ export const DEFAULT_COMPANY_RECORD_PAGE_LAYOUT: PageLayout = {
             column: 0,
             rowSpan: 6,
             columnSpan: 12,
+          },
+          position: {
+            __typename: 'PageLayoutWidgetCanvasPosition',
+            layoutMode: PageLayoutTabLayoutMode.CANVAS,
           },
           configuration: {
             __typename: 'FieldsConfiguration',
@@ -273,6 +304,7 @@ export const DEFAULT_COMPANY_RECORD_PAGE_LAYOUT: PageLayout = {
       widgets: [
         {
           __typename: 'PageLayoutWidget',
+          applicationId: '',
           id: 'company-widget-calendar',
           isActive: true,
           pageLayoutTabId: 'company-tab-calendar',
@@ -285,6 +317,10 @@ export const DEFAULT_COMPANY_RECORD_PAGE_LAYOUT: PageLayout = {
             column: 0,
             rowSpan: 6,
             columnSpan: 12,
+          },
+          position: {
+            __typename: 'PageLayoutWidgetCanvasPosition',
+            layoutMode: PageLayoutTabLayoutMode.CANVAS,
           },
           configuration: {
             __typename: 'FieldsConfiguration',

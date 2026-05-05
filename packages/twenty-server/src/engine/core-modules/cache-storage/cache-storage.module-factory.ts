@@ -34,8 +34,7 @@ export const cacheStorageModuleFactory = (
         url: redisUrl,
         pingInterval: 60_000,
         socket: {
-          reconnectStrategy: (retries: number) =>
-            Math.min(retries * 500, 5000),
+          reconnectStrategy: (retries: number) => Math.min(retries * 500, 5000),
         },
       };
     }
