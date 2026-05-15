@@ -1,544 +1,1479 @@
-.github/workflows/build-and-push.yaml              |  65 +++++++++
- .github/workflows/cd-deploy-main.yaml              |   1 +
- .gitmodules                                        |   4 +
- .upstream-version                                  |   1 +
- package.json                                       |   4 +-
- packages/twenty-docker/twenty-widgets/Dockerfile   |  38 +++++
- .../twenty-docker/twenty-widgets/nginx-mrz.conf    |   8 ++
- packages/twenty-docker/twenty-widgets/nginx.conf   |  16 +++
- .../iframe/components/IframeWidget.test.tsx        | 157 +++++++++++++++++++++
- .../widgets/iframe/components/IframeWidget.tsx     | 152 ++++++++++++++++++--
- .../cache-storage/cache-storage.module.ts          |  23 ++-
- .../file-storage/file-storage.service.ts           |   7 +-
- .../message-queue/drivers/bullmq.driver.ts         |   4 +
- .../redis-client/redis-client.service.ts           |  13 +-
- packages/twenty-server/src/main.ts                 |  21 +++
- .../twenty-server/src/queue-worker/queue-worker.ts |  25 ++++
- packages/twenty-widgets/index.html                 |  17 +++
- packages/twenty-widgets/package.json               |  16 +++
- packages/twenty-widgets/project.json               |  31 ++++
- packages/twenty-widgets/src/app.tsx                | 125 ++++++++++++++++
- packages/twenty-widgets/src/main.tsx               |  16 +++
- .../twenty-widgets/submodules/widget-mrz-input     |   1 +
- packages/twenty-widgets/tsconfig.json              |  35 +++++
- packages/twenty-widgets/vite.config.ts             |  27 ++++
- scripts/upgrade-upstream.sh                        | 133 +++++++++++++++++
- 25 files changed, 927 insertions(+), 13 deletions(-)
-
---- Changes ---
-
-.github/workflows/build-and-push.yaml
-  @@ -0,0 +1,65 @@
-  +name: Build and Push CRM Image
-  +
-  +on:
-  +  push:
-  +    branches:
-  +      - main
-  +  workflow_dispatch:
-  +    inputs:
-  +      ref:
-  +        description: 'Git ref to build (branch, tag, or SHA)'
-  +        required: false
-  +        default: 'main'
-  +
-  +jobs:
-  +  build:
-  +    runs-on: ubuntu-latest
-  +    permissions:
-  +      contents: read
-  +      packages: write
-  +    steps:
-  +      - name: Checkout repository
-  +        uses: actions/checkout@v4
-  +        with:
-  +          ref: ${{ inputs.ref || github.sha }}
-  +          fetch-depth: 0
-  +
-  +      - name: Get upstream version
-  +        id: version
-  +        run: |
-  +          if [ -f .upstream-version ]; then
-  +            UPSTREAM_TAG=$(cat .upstream-version | tr -d '[:space:]')
-  +          else
-  +            UPSTREAM_TAG=$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null || echo "v0.0.0")
-  +          fi
-  +          SHA_SHORT=$(git rev-parse --short HEAD)
-  +          echo "upstream_tag=${UPSTREAM_TAG}" >> "$GITHUB_OUTPUT"
-  +          echo "app_version=${UPSTREAM_TAG#v}" >> "$GITHUB_OUTPUT"
-  +          echo "sha_short=${SHA_SHORT}" >> "$GITHUB_OUTPUT"
-  +          echo "Built version: ${UPSTREAM_TAG} (sha: ${SHA_SHORT})"
-  +
-  +      - name: Set up Docker Buildx
-  +        uses: docker/setup-buildx-action@v3
-  +
-  +      - name: Login to GitHub Container Registry
-  +        uses: docker/login-action@v3
-  +        with:
-  +          registry: ghcr.io
-  +          username: ${{ github.actor }}
-  +          password: ${{ secrets.GITHUB_TOKEN }}
-  +
-  +      - name: Build and push CRM image
-  +        uses: docker/build-push-action@v6
-  +        with:
-  +          context: .
-  +          file: packages/twenty-docker/twenty/Dockerfile
-  +          target: twenty
-  +          push: true
-  +          tags: |
-  +            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.upstream_tag }}
-  +            ghcr.io/${{ github.repository }}:sha-${{ steps.version.outputs.sha_short }}
-  +            ghcr.io/${{ github.repository }}:latest
-  +          build-args: |
-  +            APP_VERSION=${{ steps.version.outputs.app_version }}
-  +          cache-from: type=gha
-  +          cache-to: type=gha,mode=max
-  +65 -0
-
-.github/workflows/cd-deploy-main.yaml
-  @@ -10,6 +10,7 @@ on:
-  +    if: github.repository == 'twentyhq/twenty'
-       timeout-minutes: 3
-       runs-on: ubuntu-latest
-       steps:
-  +1 -0
-
-.gitmodules
-  @@ -0,0 +1,4 @@
-  +[submodule "packages/twenty-widgets/submodules/widget-mrz-input"]
-  +	path = packages/twenty-widgets/submodules/widget-mrz-input
-  +	url = https://github.com/we-digital/widget-mrz-input
-  +	branch = main
-  +4 -0
-
-.upstream-version
-  @@ -0,0 +1 @@
-  +v2.3.0
-  +1 -0
-
-package.json
-  @@ -43,7 +43,8 @@
-  -    "start": "npx concurrently --kill-others 'npx nx run-many -t start -p twenty-server twenty-front' 'npx wait-on tcp:3000 && npx nx run twenty-server:worker'"
-  +    "start": "npx concurrently --kill-others 'npx nx run-many -t start -p twenty-server twenty-front' 'npx wait-on tcp:3000 && npx nx run twenty-server:worker'",
-  +    "start:with-widgets": "npx concurrently --kill-others -n main,worker,widgets 'npx nx run-many -t start -p twenty-server twenty-front' 'npx wait-on tcp:3000 && npx nx run twenty-server:worker' 'npx nx run twenty-widgets:start'"
-     },
-     "workspaces": {
-       "packages": [
-  @@ -57,6 +58,7 @@
-  +      "packages/twenty-widgets",
-         "packages/twenty-sdk",
-         "packages/twenty-front-component-renderer",
-         "packages/twenty-client-sdk",
-  +3 -1
-
-packages/twenty-docker/twenty-widgets/Dockerfile
-  @@ -0,0 +1,38 @@
-  +FROM node:24-alpine AS deps
-  +
-  +WORKDIR /app
-  +
-  +COPY . .
-  +
-  +RUN yarn install --immutable
-  +
-  +FROM deps AS build
-  +
-  +RUN yarn nx build twenty-widgets
-  +
-  +FROM node:24-alpine AS widget-mrz-input-build
-  +
-  +ARG VITE_TWENTY_URL
-  +ARG VITE_SCANNER_POLL_URL
-  +ENV VITE_TWENTY_URL=${VITE_TWENTY_URL}
-  +ENV VITE_SCANNER_POLL_URL=${VITE_SCANNER_POLL_URL}
-  +
-  +WORKDIR /widget
-  +
-  +RUN corepack enable && corepack prepare pnpm@10.30.1 --activate
-  +
-  +COPY packages/twenty-widgets/submodules/widget-mrz-input ./
-  +
-  +RUN sed -i "s/routeTree,/routeTree, basepath: '\/wedigital\/mrz-input',/" src/router.tsx
-  +
-  +RUN pnpm install --frozen-lockfile && pnpm exec vite build --base /wedigital/mrz-input/
-  +
-  +FROM nginx:alpine AS runner
-  +
-  +COPY --from=build /app/packages/twenty-widgets/build /usr/share/nginx/html
-  +COPY --from=widget-mrz-input-build /widget/dist /usr/share/nginx/html/wedigital/mrz-input
-  +COPY packages/twenty-docker/twenty-widgets/nginx.conf /etc/nginx/conf.d/default.conf
-  +
-  +EXPOSE 4175
-  +
-  +CMD ["nginx", "-g", "daemon off;"]
-  +38 -0
-
-packages/twenty-docker/twenty-widgets/nginx-mrz.conf
-  @@ -0,0 +1,8 @@
-  +server {
-  +    listen 4175;
-  +    root /usr/share/nginx/html/widget-mrz-input;
-  +
-  +    location / {
-  +        try_files $uri $uri/ /index.html;
-  +    }
-  +}
-  +8 -0
-
-packages/twenty-docker/twenty-widgets/nginx.conf
-  @@ -0,0 +1,16 @@
-  +server {
-  +    listen 4175;
-  +    root /usr/share/nginx/html;
-  +
-  +    location /wedigital/mrz-input/assets/ {
-  +        alias /usr/share/nginx/html/wedigital/mrz-input/assets/;
-  +    }
-  +
-  +    location /wedigital/mrz-input {
-  +        try_files $uri $uri/ /wedigital/mrz-input/index.html;
-  +    }
-  +
-  +    location / {
-  +        try_files $uri $uri/ /index.html;
-  +    }
-  +}
-  +16 -0
-
-packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.test.tsx
-  @@ -0,0 +1,157 @@
-  +import { currentUserState } from '@/auth/states/currentUserState';
-  +import { PageLayoutComponentInstanceContext } from '@/page-layout/states/contexts/PageLayoutComponentInstanceContext';
-  +import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
-  +import { IframeWidget } from '@/page-layout/widgets/iframe/components/IframeWidget';
-  +import { ThemeProvider } from '@emotion/react';
-  +import { fireEvent, render, screen } from '@testing-library/react';
-  +import { Provider as JotaiProvider, createStore } from 'jotai';
-  +import { type ReactNode } from 'react';
-  +import { THEME_LIGHT } from 'twenty-ui/theme';
-  +import { OnboardingStatus, WidgetType } from '~/generated-metadata/graphql';
-  +
-  +jest.mock(
-  +  '@/page-layout/widgets/components/PageLayoutWidgetNoDataDisplay',
-  +  () => ({
-  +    PageLayoutWidgetNoDataDisplay: () => <div>Invalid URL</div>,
-  +  }),
-  +);
-  +
-  +const mockCurrentUser = {
-  +  id: 'user-id-123',
-  +  email: 'john.doe@acme.com',
-  +  supportUserHash: null,
-  +  canAccessFullAdminPanel: false,
-  +  canImpersonate: false,
-  +  onboardingStatus: OnboardingStatus.COMPLETED,
-  +  userVars: {},
-  +  firstName: 'John',
-  +  lastName: 'Doe',
-  +  hasPassword: true,
-  +};
-  +
-  +const buildWidget = (url: string | null): PageLayoutWidget =>
-  +  ({
-  +    __typename: 'PageLayoutWidget',
-  +    id: 'widget-id',
-  +    pageLayoutTabId: 'tab-id',
-  +    title: 'Dashboard',
-  +    type: WidgetType.IFRAME,
-  +    configuration: {
-  +      __typename: 'IframeConfiguration',
-  +      configurationType: 'IFRAME',
-  +      url,
-  +    },
-  +    gridPosition: {
-  +      __typename: 'GridPosition',
-  +      row: 0,
-  +      column: 0,
-  +      rowSpan: 4,
-  +      columnSpan: 4,
-  +    },
-  +    createdAt: new Date().toISOString(),
-  +    updatedAt: new Date().toISOString(),
-  +    deletedAt: null,
-  +    objectMetadataId: null,
-  +  }) as PageLayoutWidget;
-  +
-  +const Wrapper = ({
-  +  children,
-  +  initializeStore,
-  +}: {
-  +  children: ReactNode;
-  +  initializeStore?: (store: ReturnType<typeof createStore>) => void;
-  +}) => {
-  +  const store = createStore();
-  +  initializeStore?.(store);
-  +
-  +  return (
-  +    <ThemeProvider theme={THEME_LIGHT}>
-  +      <JotaiProvider store={store}>
-  +        <PageLayoutComponentInstanceContext.Provider
-  +          value={{
-  +            instanceId: 'test',
-  +          }}
-  +        >
-  +          {children}
-  +        </PageLayoutComponentInstanceContext.Provider>
-  +      </JotaiProvider>
-  +    </ThemeProvider>
-  +  );
-  +};
-  +
-  +describe('IframeWidget', () => {
-  +  afterEach(() => {
-  +    jest.restoreAllMocks();
-  +  });
-  +
-  +  it('keeps original URL and sends full user context via postMessage on load', () => {
-  +    const postMessageSpy = jest.spyOn(Window.prototype, 'postMessage');
-  +
-  +    render(<IframeWidget widget={buildWidget('https://example.com/embed')} />, {
-  +      wrapper: ({ children }) => (
-  +        <Wrapper
-  +          initializeStore={(store) => {
-  +            store.set(currentUserState.atom, mockCurrentUser);
-  +          }}
-  +        >
-  +          {children}
-  +        </Wrapper>
-  +      ),
-  +    });
-  ... (57 lines truncated)
-  +157 -0
-
-packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
-  @@ -1,10 +1,19 @@
-  +import { currentUserState } from '@/auth/states/currentUserState';
-  +import { tokenPairState } from '@/auth/states/tokenPairState';
-   import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
-   import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
-   import { PageLayoutWidgetNoDataDisplay } from '@/page-layout/widgets/components/PageLayoutWidgetNoDataDisplay';
-   import { WidgetSkeletonLoader } from '@/page-layout/widgets/components/WidgetSkeletonLoader';
-   import { styled } from '@linaria/react';
-  -import { useState } from 'react';
-  -import { getSafeUrl, isDefined } from 'twenty-shared/utils';
-  +import {
-  +  type SyntheticEvent,
-  +  useCallback,
-  +  useEffect,
-  +  useRef,
-  +  useState,
-  +} from 'react';
-  +import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
-  +import { isDefined } from 'twenty-shared/utils';
-   import { themeCssVariables } from 'twenty-ui/theme-constants';
-   
-   const StyledContainer = styled.div<{ $isEditMode: boolean }>`
-  @@ -55,9 +64,43 @@ export type IframeWidgetProps = {
-  +const getUrlOrigin = (url: string): string | null => {
-  +  try {
-  +    return new URL(url).origin;
-  +  } catch {
-  +    return null;
-  +  }
-  +};
-  +
-  +// Builds a widget:context or widget:context:update envelope following the
-  +// canonical iframe postMessage contract (docs/iframe-postmessage-contract.md
-  +// in widget-mrz-input).
-  +function buildWidgetContextMessage(
-  +  type: 'widget:context' | 'widget:context:update',
-  +  token: string | undefined,
-  +  userContext: unknown,
-  +) {
-  +  return {
-  +    source: 'twenty' as const,
-  +    target: 'widget-mrz-input',
-  +    version: 1 as const,
-  +    type,
-  +    requestId: crypto.randomUUID(),
-  +    payload: {
-  +      ...(isDefined(token) && {
-  +        auth: { scheme: 'bearer' as const, token },
-  +      }),
-  +      userContext,
-  +    },
-  +  };
-  +}
-  +
-   export const IframeWidget = ({ widget }: IframeWidgetProps) => {
-     const isPageLayoutInEditMode = useIsPageLayoutInEditMode();
-   
-  +  const currentUser = useAtomStateValue(currentUserState);
-  +  const tokenPair = useAtomStateValue(tokenPairState);
-  +
-     const configuration = widget.configuration;
-   
-     if (!isDefined(configuration) || !('url' in configuration)) {
-  @@ -66,12 +109,103 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
-  +  const targetOrigin = isDefined(url) ? getUrlOrigin(url) : null;
-   
-     const [isLoading, setIsLoading] = useState(true);
-     const [hasError, setHasError] = useState(false);
-   
-  -  const handleIframeLoad = () => {
-  +  // Ref to the iframe DOM element so we can verify event.source on inbound messages.
-  +  const iframeRef = useRef<HTMLIFrameElement>(null);
-  +
-  +  // Whether the widget iframe has announced readiness (widget:ready received).
-  +  const [isWidgetReady, setIsWidgetReady] = useState(false);
-  +
-  +  const accessToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
-  +
-  +  // Sends widget:context to the iframe. Called after widget:ready and whenever
-  +  // the token changes (as widget:context:update).
-  +  const sendContext = useCallback(
-  +    (type: 'widget:context' | 'widget:context:update') => {
-  +      if (!isDefined(targetOrigin) || !isDefined(iframeRef.current)) return;
-  +      iframeRef.current.contentWindow?.postMessage(
-  +        buildWidgetContextMessage(type, accessToken, currentUser),
-  +        targetOrigin,
-  +      );
-  +    },
-  +    [targetOrigin, accessToken, currentUser],
-  +  );
-  +
-  +  // Listen for widget:ready and widget:ack from the iframe.
-  +  // Responds to widget:ready with widget:context (auth + userContext).
-  +  // Security: only accept messages from our own iframe element at the expected origin.
-  +  useEffect(() => {
-  +    if (!isDefined(targetOrigin)) return;
-  +
-  +    function onMessage(event: MessageEvent) {
-  +      // Must come from our iframe window at the configured origin.
-  +      if (event.source !== iframeRef.current?.contentWindow) return;
-  +      if (event.origin !== targetOrigin) return;
-  +
-  +      const msg = event.data as Record<string, unknown> | null;
-  +      if (!isDefined(msg) || msg.version !== 1) return;
-  +
-  +      if (msg.type === 'widget:ready') {
-  +        setIsWidgetReady(true);
-  +        sendContext('widget:context');
-  +      }
-  +      // widget:ack is informational — no action needed.
-  +    }
-  +
-  +    window.addEventListener('message', onMessage);
-  +    return () => window.removeEventListener('message', onMessage);
-  +  }, [targetOrigin, sendContext]);
-  +
-  +  // Send widget:context:update whenever the access token changes after
-  +  // the widget is already loaded and has announced readiness.
-  +  useEffect(() => {
-  +    if (!isWidgetReady) return;
-  +    sendContext('widget:context:update');
-  +  }, [accessToken, isWidgetReady, sendContext]);
-  +
-  +  // Send widget:reset when the widget unmounts (logout / navigation away).
-  +  useEffect(() => {
-  +    return () => {
-  +      if (!isDefined(targetOrigin) || !isDefined(iframeRef.current)) return;
-  +      iframeRef.current.contentWindow?.postMessage(
-  +        {
-  +          source: 'twenty',
-  +          target: 'widget-mrz-input',
-  +          version: 1,
-  +          type: 'widget:reset',
-  +          requestId: crypto.randomUUID(),
-  +          payload: {},
-  +        },
-  +        targetOrigin,
-  +      );
-  +    };
-  +  }, [targetOrigin]);
-  +
-  +  const handleIframeLoad = (event: SyntheticEvent<HTMLIFrameElement>) => {
-       setIsLoading(false);
-  +
-  +    if (!isDefined(currentUser) || !isDefined(targetOrigin)) {
-  +      return;
-  +    }
-  +
-  +    // Also send the legacy twenty:user-context for any non-upgraded consumers.
-  +    event.currentTarget.contentWindow?.postMessage(
-  +      {
-  +        type: 'twenty:user-context',
-  +        payload: { userContext: currentUser },
-  +      },
-  +      targetOrigin,
-  +    );
-  +
-  +    // The widget will announce widget:ready after mounting; we respond then.
-  +    // If widget:ready was already received (e.g. fast load), send context now.
-  +    if (isWidgetReady) {
-  +      sendContext('widget:context');
-  +    }
-     };
-   
-  @@ -79,10 +213,11 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
-  -  const safeUrl = isDefined(url) ? getSafeUrl(url) : undefined;
-  -  const isHttpUrl = isDefined(safeUrl) && /^https?:\/\//i.test(safeUrl);
-  -
-  -  if (hasError || !isHttpUrl) {
-  +  if (
-  +    hasError ||
-  +    !isDefined(url) ||
-  +    (isDefined(currentUser) && !targetOrigin)
-  +  ) {
-       return (
-         <StyledContainer $isEditMode={isPageLayoutInEditMode}>
-           <StyledErrorContainer>
-  @@ -101,7 +236,8 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
-  -        src={safeUrl}
-  +        ref={iframeRef}
-  +        src={url}
-           title={title}
-           onLoad={handleIframeLoad}
-           onError={handleIframeError}
-  +144 -8
-
-packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module.ts
-  @@ -1,5 +1,12 @@
-  -import { Global, Inject, Module, type OnModuleDestroy } from '@nestjs/common';
-  +import {
-  +  Global,
-  +  Inject,
-  +  Logger,
-  +  Module,
-  +  type OnModuleDestroy,
-  +  type OnModuleInit,
-  +} from '@nestjs/common';
-   import { ConfigModule } from '@nestjs/config';
-   
-   import { cacheStorageModuleFactory } from 'src/engine/core-modules/cache-storage/cache-storage.module-factory';
-  @@ -30,9 +37,21 @@ import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twent
-  -export class CacheStorageModule implements OnModuleDestroy {
-  +export class CacheStorageModule implements OnModuleInit, OnModuleDestroy {
-  +  private readonly logger = new Logger(CacheStorageModule.name);
-  +
-     constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
-   
-  +  onModuleInit() {
-  +    const store = this.cacheManager.store as any;
-  +
-  +    if (store?.client?.on) {
-  +      store.client.on('error', (err: Error) => {
-  +        this.logger.error(`Cache Redis client error: ${err.message}`);
-  +      });
-  +    }
-  +  }
-  +
-     async onModuleDestroy() {
-       // oxlint-disable-next-line @typescripttypescript/no-explicit-any
-       if ((this.cacheManager.store as any)?.name === 'redis') {
-  +21 -2
-
-packages/twenty-server/src/engine/core-modules/file-storage/file-storage.service.ts
-  @@ -226,8 +226,13 @@ export class FileStorageService {
-  +    const application = await this.applicationRepository.findOneOrFail({
-  +      where: { id: file.applicationId, workspaceId },
-
-... (more changes truncated)
-  +2 -0
-[full diff: rtk git diff --no-compact]
+diff --git a/.github/workflows/build-and-push.yaml b/.github/workflows/build-and-push.yaml
+new file mode 100644
+index 0000000000..6b83e83754
+--- /dev/null
++++ b/.github/workflows/build-and-push.yaml
+@@ -0,0 +1,65 @@
++name: Build and Push CRM Image
++
++on:
++  push:
++    branches:
++      - main
++  workflow_dispatch:
++    inputs:
++      ref:
++        description: 'Git ref to build (branch, tag, or SHA)'
++        required: false
++        default: 'main'
++
++jobs:
++  build:
++    runs-on: ubuntu-latest
++    permissions:
++      contents: read
++      packages: write
++    steps:
++      - name: Checkout repository
++        uses: actions/checkout@v4
++        with:
++          ref: ${{ inputs.ref || github.sha }}
++          fetch-depth: 0
++
++      - name: Get upstream version
++        id: version
++        run: |
++          if [ -f .upstream-version ]; then
++            UPSTREAM_TAG=$(cat .upstream-version | tr -d '[:space:]')
++          else
++            UPSTREAM_TAG=$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null || echo "v0.0.0")
++          fi
++          SHA_SHORT=$(git rev-parse --short HEAD)
++          echo "upstream_tag=${UPSTREAM_TAG}" >> "$GITHUB_OUTPUT"
++          echo "app_version=${UPSTREAM_TAG#v}" >> "$GITHUB_OUTPUT"
++          echo "sha_short=${SHA_SHORT}" >> "$GITHUB_OUTPUT"
++          echo "Built version: ${UPSTREAM_TAG} (sha: ${SHA_SHORT})"
++
++      - name: Set up Docker Buildx
++        uses: docker/setup-buildx-action@v3
++
++      - name: Login to GitHub Container Registry
++        uses: docker/login-action@v3
++        with:
++          registry: ghcr.io
++          username: ${{ github.actor }}
++          password: ${{ secrets.GITHUB_TOKEN }}
++
++      - name: Build and push CRM image
++        uses: docker/build-push-action@v6
++        with:
++          context: .
++          file: packages/twenty-docker/twenty/Dockerfile
++          target: twenty
++          push: true
++          tags: |
++            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.upstream_tag }}
++            ghcr.io/${{ github.repository }}:sha-${{ steps.version.outputs.sha_short }}
++            ghcr.io/${{ github.repository }}:latest
++          build-args: |
++            APP_VERSION=${{ steps.version.outputs.app_version }}
++          cache-from: type=gha
++          cache-to: type=gha,mode=max
+diff --git a/.github/workflows/cd-deploy-main.yaml b/.github/workflows/cd-deploy-main.yaml
+index 7fe62465b1..a8a1c73b17 100644
+--- a/.github/workflows/cd-deploy-main.yaml
++++ b/.github/workflows/cd-deploy-main.yaml
+@@ -10,6 +10,7 @@ on:
+ 
+ jobs:
+   deploy-main:
++    if: github.repository == 'twentyhq/twenty'
+     timeout-minutes: 3
+     runs-on: ubuntu-latest
+     steps:
+diff --git a/.gitmodules b/.gitmodules
+new file mode 100644
+index 0000000000..785775967e
+--- /dev/null
++++ b/.gitmodules
+@@ -0,0 +1,4 @@
++[submodule "packages/twenty-widgets/submodules/widget-mrz-input"]
++	path = packages/twenty-widgets/submodules/widget-mrz-input
++	url = https://github.com/we-digital/widget-mrz-input
++	branch = main
+diff --git a/.upstream-version b/.upstream-version
+new file mode 100644
+index 0000000000..8721bbc46a
+--- /dev/null
++++ b/.upstream-version
+@@ -0,0 +1 @@
++v2.4.0
+diff --git a/docs/UPGRADE.md b/docs/UPGRADE.md
+new file mode 100644
+index 0000000000..1ce4bb84be
+--- /dev/null
++++ b/docs/UPGRADE.md
+@@ -0,0 +1,211 @@
++# Обновление wedigital-twenty-crm
++
++Подробная инструкция по апгрейду форка Twenty CRM с upstream `twentyhq/twenty` и последующему деплою в prod-стек we-digital.
++
++## 0. Архитектура: build vs deploy
++
++Разделение жёсткое, никогда не путать:
++
++| Репо | Роль |
++|---|---|
++| `we-digital/wedigital-twenty-crm` | **Только build.** Поддержка форка, патч, сборка образа в GHCR. Никакого деплоя. |
++| `we-digital/bbc-devops` | **Только deploy.** Меняет `CRM_IMAGE_TAG` + `APP_VERSION`, рендерит DO App Platform spec, делает бэкапы и `force-deploy`. |
++
++Любая попытка задеплоить из CRM-репо — ошибка. И наоборот: апгрейд upstream-кода никогда не идёт через `bbc-devops`.
++
++---
++
++## 1. Pre-flight (CRM-репо)
++
++```bash
++cd /path/to/wedigital-twenty-crm
++git status                          # дерево чистое
++git checkout main && git pull
++cat .upstream-version               # текущий тег
++git remote -v                       # upstream → twentyhq/twenty.git
++```
++
++Проверить, поддерживается ли cross-version jump до целевого тега:
++
++```bash
++grep -r "TWENTY_PREVIOUS_VERSIONS" packages/twenty-server/src --include="*.ts" -l
++```
++
++Cross-version поддерживается с **v1.21.0+**. Если шаг слишком большой и каких-то промежуточных версий нет в `TWENTY_PREVIOUS_VERSIONS` — апгрейд делается ступенями (как было `v1.19.11 → v1.20.11 → v1.21 → v1.22`).
++
++---
++
++## 2. Запуск апгрейда
++
++```bash
++./scripts/upgrade-upstream.sh v2.3.0    # пример
++```
++
++Что скрипт делает (в этом порядке):
++
++1. **Safety tag** `pre-<tag>-upgrade` на `main` — точка отката.
++2. **Fetch** upstream-тега (`upstream` remote = `twentyhq/twenty.git`, добавляется автоматически).
++3. **Branch** `chore/upgrade-to-<tag>` от `main`.
++4. **`git rm -rf .` + `git checkout <tag> -- .`** — полная замена дерева на upstream.
++5. **`git apply --3way we-digital-custom.patch`** — наложение наших правок.
++6. `.upstream-version` → новый тег.
++7. `yarn install` (обновить lockfile).
++8. Commit `chore: upgrade Twenty CRM to <tag>`.
++9. **Регенерация патча**: `git diff <tag> HEAD > we-digital-custom.patch` + `commit --amend`.
++
++---
++
++## 3. Резолв конфликтов патча
++
++`--3way` сам справляется с большинством шифтов. Если что-то падает — конфликтные маркеры `<<<<` в файлах. Места, где регулярно ломается:
++
++- **`packages/twenty-server/src/main.ts`** — `configTransformers` + `process.on('uncaughtException')` / `unhandledRejection`. Upstream вставляет новые импорты между нашими блоками — context shift.
++- **`IframeWidget.tsx`** — наш `useState` + `postMessage('widget:context')` протокол. Если upstream добавит security-фиксы для iframe — посмотреть, не дублируется ли логика. **Будет удалён** после миграции на Twenty Apps SDK (см. `visard-twenty`).
++- **Redis/Valkey** (`cache-storage`, `redis-client`, `session-storage`) — наши `keepAlive`, `pingInterval`, `IORedis` для session store. Upstream иногда меняет сигнатуры.
++- **`file-storage.service.ts`** — `deleteByFileId` использует `application.universalIdentifier`.
++- **`bullmq.driver.ts`** — наш worker error handler.
++- **`queue-worker.ts`** — process-level handlers (как в `main.ts`).
++- **Deploy-workflows** (`build-and-push.yaml`, `cd-deploy-main.yaml`) — наша GHCR-сборка.
++
++После ручного резолва:
++
++```bash
++git add -A && git commit
++# затем регенерировать патч ВРУЧНУЮ (скрипт упал на шаге 5):
++git diff <tag> HEAD -- . ':(exclude)we-digital-custom.patch' > we-digital-custom.patch
++git add we-digital-custom.patch
++git commit --amend --no-edit
++```
++
++Размер патча для ориентира: **v2.2.0 — 1322 строки, 28 файлов**. Резкий рост может означать, что регенерация захватила что-то лишнее.
++
++---
++
++## 4. PR в форк
++
++```bash
++git push -u origin chore/upgrade-to-<tag>
++gh pr create --repo we-digital/wedigital-twenty-crm \
++  --base main \
++  --title "chore: upgrade to <tag>" \
++  --body "..."
++```
++
++**Критично: `--repo we-digital/...`.** Без флага `gh pr create` уходит в upstream `twentyhq/twenty` (был инцидент — PR #19778, пришлось закрывать и чистить body).
++
++После merge в `main` — `build-and-push.yaml` сам собирает образ и пушит в GHCR с тегами `<tag>`, `<tag>-N`, `latest`.
++
++---
++
++## 5. Деплой (bbc-devops)
++
++```bash
++cd /path/to/bbc-devops
++git checkout -b chore/crm-<tag>
++```
++
++Поменять **три места одновременно**:
++
++```diff
++# .env.prod
++- CRM_IMAGE_TAG=v2.2.0
+++ CRM_IMAGE_TAG=v2.3.0
++
++# prod/.env.crm-server
++- APP_VERSION=2.2.0
+++ APP_VERSION=2.3.0
++
++# prod/.env.crm-worker
++- APP_VERSION=2.2.0
+++ APP_VERSION=2.3.0
++```
++
++**Почему три:** `.env.prod` → тег образа в spec'е. `APP_VERSION` живёт в **runtime env контейнера** (`prod/.env.crm-server`, `prod/.env.crm-worker`) и читается upgrade-командами Twenty при старте. Если `APP_VERSION` отстал от образа — upgrade abort на каждом деплое (это и был корень саги `v1.21 → v1.22`).
++
++PR + merge, затем:
++
++```bash
++./sync-env.sh --env prod --doctl-context bbc --force-deploy
++```
++
++Скрипт сам:
++
++- проверит свежий бэкап Postgres (`twentydb` через прямой порт 25060, не пулер 25061) и Valkey RDB → `~/backups/bbc-YYYY-MM-DD/`,
++- отрендерит spec из `app-spec.yaml.tpl`,
++- обновит DO App,
++- запустит deploy.
++
++**Не запускать одновременно с деплоем `visard-twenty`** — DO App Platform restart прерывает Twenty App install.
++
++---
++
++## 6. Проверка после деплоя
++
++```bash
++# CRM
++curl -fsS https://crm.respon.io/healthz
++
++# Логи в DO (через doctl)
++doctl apps logs <app-id> --type run --component crm-server --tail 200 --context bbc
++```
++
++В Postgres `twentydb` должны появиться новые строки в `core."upgradeMigration"` (для v2.2.0 было +27). Если строк нет или статус `failed` — смотреть логи `crm-server` сразу после старта контейнера.
++
++---
++
++## 7. Подводные камни (исторические)
++
++- **v1.22.0 bootstrap migration баг.** `runBootstrapMigrations()` не находил миграцию в NestJS DataSource (glob'ы не заполняются). Помечено `RemovedSinceVersion<'1.23.0'>` — в v1.23 убрано upstream'ом.
++- **v1.22.0 sequence order баг.** Workspace iterator ходит в ORM с `workspaceId` до того, как instance command добавит колонку. Лечилось ручным SQL.
++- **`workspace.version` не обновляется в v1.22.0** — трекинг ушёл в `core."upgradeMigration"`.
++- **`bodyV2` field metadata после v1.20** — `MigrateRichTextToText` записал `type=TEXT`, ORM генерирует flat query. Фикс: `UPDATE core."fieldMetadata" SET type='RICH_TEXT' WHERE name='bodyV2'`.
++- **oxlint `no-state-useref`** — `useRef` для state не пройдёт CI (v2.2.0). Использовать `useState`.
++- **Workspace upgrade commands удаляются** через несколько минорных. Пропущенные апдейты требуют поэтапного прохода.
++
++Все ручные SQL — только после бэкапа и через `psql` напрямую (порт 25060), не через пулер.
++
++---
++
++## 8. Rollback
++
++В `bbc-devops`:
++
++```diff
++- CRM_IMAGE_TAG=v2.3.0
+++ CRM_IMAGE_TAG=v2.2.0
++```
++
++\+ откат `APP_VERSION` в обоих `.env.crm-*` → PR → merge → `sync-env.sh --force-deploy`.
++
++Для отката данных — restore дампа `defaultdb_*.dump` в `twentydb` (cluster `bbc-db-sgp`, id `e50dca84-9e67-4e01-a330-d214e85602ae`, план `db-s-1vcpu-1gb`, лимит ~22 user-коннектов).
++
++В CRM-репо — safety tag `pre-<tag>-upgrade` всегда на месте:
++
++```bash
++git reset --hard pre-<tag>-upgrade   # только если PR ещё не вмёржен
++```
++
++---
++
++## 9. Где искать артефакты
++
++- **GHCR:** `ghcr.io/we-digital/wedigital-twenty-crm:<tag>`.
++- **DO:** doctl context `bbc`, app `crm-server` + `crm-worker`, cluster `bbc-db-sgp`.
++- **Прод:** `crm.respon.io` (мульти-тенантный — BBC, Visard, и др.).
++- **Бэкапы:** `~/backups/bbc-YYYY-MM-DD/` на машине, с которой запускается `sync-env.sh`.
++
++---
++
++## 10. Чеклист апгрейда
++
++- [ ] `git status` чистый, на `main`
++- [ ] Целевой тег есть в `TWENTY_PREVIOUS_VERSIONS` от текущего `.upstream-version`
++- [ ] `./scripts/upgrade-upstream.sh <tag>` отработал без конфликтов (или конфликты разрешены вручную)
++- [ ] `.upstream-version` обновлён, `we-digital-custom.patch` регенерирован
++- [ ] `yarn install` без ошибок, lockfile в коммите
++- [ ] PR через `gh pr create --repo we-digital/wedigital-twenty-crm`
++- [ ] CI зелёный, PR смёржен → образ в GHCR
++- [ ] В `bbc-devops` обновлены три места: `.env.prod` (`CRM_IMAGE_TAG`) + `prod/.env.crm-server` (`APP_VERSION`) + `prod/.env.crm-worker` (`APP_VERSION`)
++- [ ] Свежий бэкап Postgres + Valkey
++- [ ] `sync-env.sh --env prod --doctl-context bbc --force-deploy`
++- [ ] `crm.respon.io/healthz` ok, новые строки в `core."upgradeMigration"`, в логах нет ошибок
+diff --git a/package.json b/package.json
+index d228d33f2c..98999e3ea8 100644
+--- a/package.json
++++ b/package.json
+@@ -43,7 +43,8 @@
+     "docs:generate": "tsx packages/twenty-docs/scripts/generate-docs-json.ts",
+     "docs:generate-navigation-template": "tsx packages/twenty-docs/scripts/generate-navigation-template.ts",
+     "docs:generate-paths": "tsx packages/twenty-docs/scripts/generate-documentation-paths.ts",
+-    "start": "npx concurrently --kill-others 'npx nx run-many -t start -p twenty-server twenty-front' 'npx wait-on tcp:3000 && npx nx run twenty-server:worker'"
++    "start": "npx concurrently --kill-others 'npx nx run-many -t start -p twenty-server twenty-front' 'npx wait-on tcp:3000 && npx nx run twenty-server:worker'",
++    "start:with-widgets": "npx concurrently --kill-others -n main,worker,widgets 'npx nx run-many -t start -p twenty-server twenty-front' 'npx wait-on tcp:3000 && npx nx run twenty-server:worker' 'npx nx run twenty-widgets:start'"
+   },
+   "workspaces": {
+     "packages": [
+@@ -57,6 +58,7 @@
+       "packages/twenty-docs",
+       "packages/twenty-e2e-testing",
+       "packages/twenty-shared",
++      "packages/twenty-widgets",
+       "packages/twenty-sdk",
+       "packages/twenty-front-component-renderer",
+       "packages/twenty-client-sdk",
+diff --git a/packages/twenty-docker/twenty-widgets/Dockerfile b/packages/twenty-docker/twenty-widgets/Dockerfile
+new file mode 100644
+index 0000000000..089f8b0d3f
+--- /dev/null
++++ b/packages/twenty-docker/twenty-widgets/Dockerfile
+@@ -0,0 +1,38 @@
++FROM node:24-alpine AS deps
++
++WORKDIR /app
++
++COPY . .
++
++RUN yarn install --immutable
++
++FROM deps AS build
++
++RUN yarn nx build twenty-widgets
++
++FROM node:24-alpine AS widget-mrz-input-build
++
++ARG VITE_TWENTY_URL
++ARG VITE_SCANNER_POLL_URL
++ENV VITE_TWENTY_URL=${VITE_TWENTY_URL}
++ENV VITE_SCANNER_POLL_URL=${VITE_SCANNER_POLL_URL}
++
++WORKDIR /widget
++
++RUN corepack enable && corepack prepare pnpm@10.30.1 --activate
++
++COPY packages/twenty-widgets/submodules/widget-mrz-input ./
++
++RUN sed -i "s/routeTree,/routeTree, basepath: '\/wedigital\/mrz-input',/" src/router.tsx
++
++RUN pnpm install --frozen-lockfile && pnpm exec vite build --base /wedigital/mrz-input/
++
++FROM nginx:alpine AS runner
++
++COPY --from=build /app/packages/twenty-widgets/build /usr/share/nginx/html
++COPY --from=widget-mrz-input-build /widget/dist /usr/share/nginx/html/wedigital/mrz-input
++COPY packages/twenty-docker/twenty-widgets/nginx.conf /etc/nginx/conf.d/default.conf
++
++EXPOSE 4175
++
++CMD ["nginx", "-g", "daemon off;"]
+diff --git a/packages/twenty-docker/twenty-widgets/nginx-mrz.conf b/packages/twenty-docker/twenty-widgets/nginx-mrz.conf
+new file mode 100644
+index 0000000000..544c068b71
+--- /dev/null
++++ b/packages/twenty-docker/twenty-widgets/nginx-mrz.conf
+@@ -0,0 +1,8 @@
++server {
++    listen 4175;
++    root /usr/share/nginx/html/widget-mrz-input;
++
++    location / {
++        try_files $uri $uri/ /index.html;
++    }
++}
+diff --git a/packages/twenty-docker/twenty-widgets/nginx.conf b/packages/twenty-docker/twenty-widgets/nginx.conf
+new file mode 100644
+index 0000000000..f4c9e59970
+--- /dev/null
++++ b/packages/twenty-docker/twenty-widgets/nginx.conf
+@@ -0,0 +1,16 @@
++server {
++    listen 4175;
++    root /usr/share/nginx/html;
++
++    location /wedigital/mrz-input/assets/ {
++        alias /usr/share/nginx/html/wedigital/mrz-input/assets/;
++    }
++
++    location /wedigital/mrz-input {
++        try_files $uri $uri/ /wedigital/mrz-input/index.html;
++    }
++
++    location / {
++        try_files $uri $uri/ /index.html;
++    }
++}
+diff --git a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.test.tsx b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.test.tsx
+new file mode 100644
+index 0000000000..ca64be557d
+--- /dev/null
++++ b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.test.tsx
+@@ -0,0 +1,157 @@
++import { currentUserState } from '@/auth/states/currentUserState';
++import { PageLayoutComponentInstanceContext } from '@/page-layout/states/contexts/PageLayoutComponentInstanceContext';
++import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
++import { IframeWidget } from '@/page-layout/widgets/iframe/components/IframeWidget';
++import { ThemeProvider } from '@emotion/react';
++import { fireEvent, render, screen } from '@testing-library/react';
++import { Provider as JotaiProvider, createStore } from 'jotai';
++import { type ReactNode } from 'react';
++import { THEME_LIGHT } from 'twenty-ui/theme';
++import { OnboardingStatus, WidgetType } from '~/generated-metadata/graphql';
++
++jest.mock(
++  '@/page-layout/widgets/components/PageLayoutWidgetNoDataDisplay',
++  () => ({
++    PageLayoutWidgetNoDataDisplay: () => <div>Invalid URL</div>,
++  }),
++);
++
++const mockCurrentUser = {
++  id: 'user-id-123',
++  email: 'john.doe@acme.com',
++  supportUserHash: null,
++  canAccessFullAdminPanel: false,
++  canImpersonate: false,
++  onboardingStatus: OnboardingStatus.COMPLETED,
++  userVars: {},
++  firstName: 'John',
++  lastName: 'Doe',
++  hasPassword: true,
++};
++
++const buildWidget = (url: string | null): PageLayoutWidget =>
++  ({
++    __typename: 'PageLayoutWidget',
++    id: 'widget-id',
++    pageLayoutTabId: 'tab-id',
++    title: 'Dashboard',
++    type: WidgetType.IFRAME,
++    configuration: {
++      __typename: 'IframeConfiguration',
++      configurationType: 'IFRAME',
++      url,
++    },
++    gridPosition: {
++      __typename: 'GridPosition',
++      row: 0,
++      column: 0,
++      rowSpan: 4,
++      columnSpan: 4,
++    },
++    createdAt: new Date().toISOString(),
++    updatedAt: new Date().toISOString(),
++    deletedAt: null,
++    objectMetadataId: null,
++  }) as PageLayoutWidget;
++
++const Wrapper = ({
++  children,
++  initializeStore,
++}: {
++  children: ReactNode;
++  initializeStore?: (store: ReturnType<typeof createStore>) => void;
++}) => {
++  const store = createStore();
++  initializeStore?.(store);
++
++  return (
++    <ThemeProvider theme={THEME_LIGHT}>
++      <JotaiProvider store={store}>
++        <PageLayoutComponentInstanceContext.Provider
++          value={{
++            instanceId: 'test',
++          }}
++        >
++          {children}
++        </PageLayoutComponentInstanceContext.Provider>
++      </JotaiProvider>
++    </ThemeProvider>
++  );
++};
++
++describe('IframeWidget', () => {
++  afterEach(() => {
++    jest.restoreAllMocks();
++  });
++
++  it('keeps original URL and sends full user context via postMessage on load', () => {
++    const postMessageSpy = jest.spyOn(Window.prototype, 'postMessage');
++
++    render(<IframeWidget widget={buildWidget('https://example.com/embed')} />, {
++      wrapper: ({ children }) => (
++        <Wrapper
++          initializeStore={(store) => {
++            store.set(currentUserState.atom, mockCurrentUser);
++          }}
++        >
++          {children}
++        </Wrapper>
++      ),
++    });
++
++    const iframeElement = screen.getByTitle('Dashboard');
++    expect(iframeElement.getAttribute('src')).toBe('https://example.com/embed');
++
++    fireEvent.load(iframeElement);
++
++    expect(postMessageSpy).toHaveBeenCalledWith(
++      {
++        type: 'twenty:user-context',
++        payload: {
++          userContext: mockCurrentUser,
++        },
++      },
++      'https://example.com',
++    );
++  });
++
++  it('does not send postMessage when current user is not loaded', () => {
++    const postMessageSpy = jest.spyOn(Window.prototype, 'postMessage');
++
++    render(
++      <IframeWidget
++        widget={buildWidget('https://example.com/embed?foo=bar')}
++      />,
++      {
++        wrapper: ({ children }) => <Wrapper>{children}</Wrapper>,
++      },
++    );
++
++    const iframeElement = screen.getByTitle('Dashboard');
++
++    expect(iframeElement.getAttribute('src')).toBe(
++      'https://example.com/embed?foo=bar',
++    );
++
++    fireEvent.load(iframeElement);
++
++    expect(postMessageSpy).not.toHaveBeenCalled();
++  });
++
++  it('renders fallback when URL cannot be parsed with user context', () => {
++    render(<IframeWidget widget={buildWidget('not-a-valid-url')} />, {
++      wrapper: ({ children }) => (
++        <Wrapper
++          initializeStore={(store) => {
++            store.set(currentUserState.atom, mockCurrentUser);
++          }}
++        >
++          {children}
++        </Wrapper>
++      ),
++    });
++
++    expect(screen.queryByTitle('Dashboard')).not.toBeInTheDocument();
++    expect(screen.getByText('Invalid URL')).toBeInTheDocument();
++  });
++});
+diff --git a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
+index 7d46c20801..aa6c8ddf5c 100644
+--- a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
++++ b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
+@@ -1,10 +1,19 @@
++import { currentUserState } from '@/auth/states/currentUserState';
++import { tokenPairState } from '@/auth/states/tokenPairState';
+ import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
+ import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
+ import { PageLayoutWidgetNoDataDisplay } from '@/page-layout/widgets/components/PageLayoutWidgetNoDataDisplay';
+ import { WidgetSkeletonLoader } from '@/page-layout/widgets/components/WidgetSkeletonLoader';
+ import { styled } from '@linaria/react';
+-import { useState } from 'react';
+-import { getSafeUrl, isDefined } from 'twenty-shared/utils';
++import {
++  type SyntheticEvent,
++  useCallback,
++  useEffect,
++  useRef,
++  useState,
++} from 'react';
++import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
++import { isDefined } from 'twenty-shared/utils';
+ import { themeCssVariables } from 'twenty-ui/theme-constants';
+ 
+ const StyledContainer = styled.div<{ $isEditMode: boolean }>`
+@@ -55,9 +64,43 @@ export type IframeWidgetProps = {
+   widget: PageLayoutWidget;
+ };
+ 
++const getUrlOrigin = (url: string): string | null => {
++  try {
++    return new URL(url).origin;
++  } catch {
++    return null;
++  }
++};
++
++// Builds a widget:context or widget:context:update envelope following the
++// canonical iframe postMessage contract (docs/iframe-postmessage-contract.md
++// in widget-mrz-input).
++function buildWidgetContextMessage(
++  type: 'widget:context' | 'widget:context:update',
++  token: string | undefined,
++  userContext: unknown,
++) {
++  return {
++    source: 'twenty' as const,
++    target: 'widget-mrz-input',
++    version: 1 as const,
++    type,
++    requestId: crypto.randomUUID(),
++    payload: {
++      ...(isDefined(token) && {
++        auth: { scheme: 'bearer' as const, token },
++      }),
++      userContext,
++    },
++  };
++}
++
+ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
+   const isPageLayoutInEditMode = useIsPageLayoutInEditMode();
+ 
++  const currentUser = useAtomStateValue(currentUserState);
++  const tokenPair = useAtomStateValue(tokenPairState);
++
+   const configuration = widget.configuration;
+ 
+   if (!isDefined(configuration) || !('url' in configuration)) {
+@@ -66,12 +109,103 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
+ 
+   const url = configuration.url;
+   const title = widget.title;
++  const targetOrigin = isDefined(url) ? getUrlOrigin(url) : null;
+ 
+   const [isLoading, setIsLoading] = useState(true);
+   const [hasError, setHasError] = useState(false);
+ 
+-  const handleIframeLoad = () => {
++  // Ref to the iframe DOM element so we can verify event.source on inbound messages.
++  const iframeRef = useRef<HTMLIFrameElement>(null);
++
++  // Whether the widget iframe has announced readiness (widget:ready received).
++  const [isWidgetReady, setIsWidgetReady] = useState(false);
++
++  const accessToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
++
++  // Sends widget:context to the iframe. Called after widget:ready and whenever
++  // the token changes (as widget:context:update).
++  const sendContext = useCallback(
++    (type: 'widget:context' | 'widget:context:update') => {
++      if (!isDefined(targetOrigin) || !isDefined(iframeRef.current)) return;
++      iframeRef.current.contentWindow?.postMessage(
++        buildWidgetContextMessage(type, accessToken, currentUser),
++        targetOrigin,
++      );
++    },
++    [targetOrigin, accessToken, currentUser],
++  );
++
++  // Listen for widget:ready and widget:ack from the iframe.
++  // Responds to widget:ready with widget:context (auth + userContext).
++  // Security: only accept messages from our own iframe element at the expected origin.
++  useEffect(() => {
++    if (!isDefined(targetOrigin)) return;
++
++    function onMessage(event: MessageEvent) {
++      // Must come from our iframe window at the configured origin.
++      if (event.source !== iframeRef.current?.contentWindow) return;
++      if (event.origin !== targetOrigin) return;
++
++      const msg = event.data as Record<string, unknown> | null;
++      if (!isDefined(msg) || msg.version !== 1) return;
++
++      if (msg.type === 'widget:ready') {
++        setIsWidgetReady(true);
++        sendContext('widget:context');
++      }
++      // widget:ack is informational — no action needed.
++    }
++
++    window.addEventListener('message', onMessage);
++    return () => window.removeEventListener('message', onMessage);
++  }, [targetOrigin, sendContext]);
++
++  // Send widget:context:update whenever the access token changes after
++  // the widget is already loaded and has announced readiness.
++  useEffect(() => {
++    if (!isWidgetReady) return;
++    sendContext('widget:context:update');
++  }, [accessToken, isWidgetReady, sendContext]);
++
++  // Send widget:reset when the widget unmounts (logout / navigation away).
++  useEffect(() => {
++    return () => {
++      if (!isDefined(targetOrigin) || !isDefined(iframeRef.current)) return;
++      iframeRef.current.contentWindow?.postMessage(
++        {
++          source: 'twenty',
++          target: 'widget-mrz-input',
++          version: 1,
++          type: 'widget:reset',
++          requestId: crypto.randomUUID(),
++          payload: {},
++        },
++        targetOrigin,
++      );
++    };
++  }, [targetOrigin]);
++
++  const handleIframeLoad = (event: SyntheticEvent<HTMLIFrameElement>) => {
+     setIsLoading(false);
++
++    if (!isDefined(currentUser) || !isDefined(targetOrigin)) {
++      return;
++    }
++
++    // Also send the legacy twenty:user-context for any non-upgraded consumers.
++    event.currentTarget.contentWindow?.postMessage(
++      {
++        type: 'twenty:user-context',
++        payload: { userContext: currentUser },
++      },
++      targetOrigin,
++    );
++
++    // The widget will announce widget:ready after mounting; we respond then.
++    // If widget:ready was already received (e.g. fast load), send context now.
++    if (isWidgetReady) {
++      sendContext('widget:context');
++    }
+   };
+ 
+   const handleIframeError = () => {
+@@ -79,10 +213,11 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
+     setHasError(true);
+   };
+ 
+-  const safeUrl = isDefined(url) ? getSafeUrl(url) : undefined;
+-  const isHttpUrl = isDefined(safeUrl) && /^https?:\/\//i.test(safeUrl);
+-
+-  if (hasError || !isHttpUrl) {
++  if (
++    hasError ||
++    !isDefined(url) ||
++    (isDefined(currentUser) && !targetOrigin)
++  ) {
+     return (
+       <StyledContainer $isEditMode={isPageLayoutInEditMode}>
+         <StyledErrorContainer>
+@@ -101,7 +236,8 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
+       )}
+       <StyledIframe
+         $isEditMode={isPageLayoutInEditMode}
+-        src={safeUrl}
++        ref={iframeRef}
++        src={url}
+         title={title}
+         onLoad={handleIframeLoad}
+         onError={handleIframeError}
+diff --git a/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module.ts b/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module.ts
+index 7832d9bb16..ac3986f6dd 100644
+--- a/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module.ts
++++ b/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module.ts
+@@ -1,5 +1,12 @@
+ import { CACHE_MANAGER, Cache, CacheModule } from '@nestjs/cache-manager';
+-import { Global, Inject, Module, type OnModuleDestroy } from '@nestjs/common';
++import {
++  Global,
++  Inject,
++  Logger,
++  Module,
++  type OnModuleDestroy,
++  type OnModuleInit,
++} from '@nestjs/common';
+ import { ConfigModule } from '@nestjs/config';
+ 
+ import { cacheStorageModuleFactory } from 'src/engine/core-modules/cache-storage/cache-storage.module-factory';
+@@ -30,9 +37,21 @@ import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twent
+   ],
+   exports: [...Object.values(CacheStorageNamespace), FlushCacheCommand],
+ })
+-export class CacheStorageModule implements OnModuleDestroy {
++export class CacheStorageModule implements OnModuleInit, OnModuleDestroy {
++  private readonly logger = new Logger(CacheStorageModule.name);
++
+   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+ 
++  onModuleInit() {
++    const store = this.cacheManager.store as any;
++
++    if (store?.client?.on) {
++      store.client.on('error', (err: Error) => {
++        this.logger.error(`Cache Redis client error: ${err.message}`);
++      });
++    }
++  }
++
+   async onModuleDestroy() {
+     // oxlint-disable-next-line @typescripttypescript/no-explicit-any
+     if ((this.cacheManager.store as any)?.name === 'redis') {
+diff --git a/packages/twenty-server/src/engine/core-modules/file-storage/file-storage.service.ts b/packages/twenty-server/src/engine/core-modules/file-storage/file-storage.service.ts
+index c27390d441..a81dc7245a 100644
+--- a/packages/twenty-server/src/engine/core-modules/file-storage/file-storage.service.ts
++++ b/packages/twenty-server/src/engine/core-modules/file-storage/file-storage.service.ts
+@@ -226,8 +226,13 @@ export class FileStorageService {
+     });
+     const driver = this.fileStorageDriverFactory.getCurrentDriver();
+ 
++    const application = await this.applicationRepository.findOneOrFail({
++      where: { id: file.applicationId, workspaceId },
++      select: ['universalIdentifier'],
++    });
++
+     await driver.delete({
+-      folderPath: `${file.workspaceId}/${file.applicationId}`,
++      folderPath: `${file.workspaceId}/${application.universalIdentifier}`,
+       filename: file.path,
+     });
+ 
+diff --git a/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts b/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
+index dedb66ac09..736446414e 100644
+--- a/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
++++ b/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
+@@ -158,6 +158,10 @@ export class BullMQDriver
+         shouldStoreInCache: false,
+       });
+     });
++
++    this.workerMap[queueName].on('error', (error) => {
++      this.logger.error(`Worker error on queue ${queueName}: ${error.message}`);
++    });
+   }
+ 
+   async addCron<T>({
+diff --git a/packages/twenty-server/src/engine/core-modules/redis-client/redis-client.service.ts b/packages/twenty-server/src/engine/core-modules/redis-client/redis-client.service.ts
+index c974374fbd..786df59fcc 100644
+--- a/packages/twenty-server/src/engine/core-modules/redis-client/redis-client.service.ts
++++ b/packages/twenty-server/src/engine/core-modules/redis-client/redis-client.service.ts
+@@ -1,4 +1,4 @@
+-import { Injectable, type OnModuleDestroy } from '@nestjs/common';
++import { Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
+ 
+ import IORedis from 'ioredis';
+ import { isDefined } from 'twenty-shared/utils';
+@@ -8,12 +8,19 @@ import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twent
+ 
+ @Injectable()
+ export class RedisClientService implements OnModuleDestroy {
++  private readonly logger = new Logger(RedisClientService.name);
+   private redisClient: IORedis | null = null;
+   private redisQueueClient: IORedis | null = null;
+   private redisPubSubClient: RedisPubSub | null = null;
+ 
+   constructor(private readonly twentyConfigService: TwentyConfigService) {}
+ 
++  private attachErrorHandler(client: IORedis, label: string) {
++    client.on('error', (err) => {
++      this.logger.error(`Redis ${label} error: ${err.message}`);
++    });
++  }
++
+   getQueueClient() {
+     if (!this.redisQueueClient) {
+       const redisQueueUrl =
+@@ -26,7 +33,9 @@ export class RedisClientService implements OnModuleDestroy {
+ 
+       this.redisQueueClient = new IORedis(redisQueueUrl, {
+         maxRetriesPerRequest: null,
++        keepAlive: 60_000,
+       });
++      this.attachErrorHandler(this.redisQueueClient, 'queue');
+     }
+ 
+     return this.redisQueueClient;
+@@ -42,7 +51,9 @@ export class RedisClientService implements OnModuleDestroy {
+ 
+       this.redisClient = new IORedis(redisUrl, {
+         maxRetriesPerRequest: null,
++        keepAlive: 60_000,
+       });
++      this.attachErrorHandler(this.redisClient, 'general');
+     }
+ 
+     return this.redisClient;
+diff --git a/packages/twenty-server/src/main.ts b/packages/twenty-server/src/main.ts
+index d1a5b83d24..f548fdf22b 100644
+--- a/packages/twenty-server/src/main.ts
++++ b/packages/twenty-server/src/main.ts
+@@ -15,6 +15,8 @@ import { LoggerService } from 'src/engine/core-modules/logger/logger.service';
+ import { getSessionStorageOptions } from 'src/engine/core-modules/session-storage/session-storage.module-factory';
+ import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
+ import { configTransformers } from 'src/engine/core-modules/twenty-config/utils/config-transformers.util';
++import { ExceptionHandlerService } from 'src/engine/core-modules/exception-handler/exception-handler.service';
++import { shouldCaptureException } from 'src/engine/utils/global-exception-handler.util';
+ import { UnhandledExceptionFilter } from 'src/filters/unhandled-exception.filter';
+ 
+ import { AppModule } from './app.module';
+@@ -45,6 +47,25 @@ const bootstrap = async () => {
+   });
+   const logger = app.get(LoggerService);
+   const twentyConfigService = app.get(TwentyConfigService);
++  const exceptionHandlerService = app.get(ExceptionHandlerService);
++
++  process.on('uncaughtException', (err) => {
++    logger.error(`Uncaught exception: ${err.message}`, err.stack ?? err.name);
++
++    if (shouldCaptureException(err)) {
++      exceptionHandlerService.captureExceptions([err]);
++    }
++  });
++
++  process.on('unhandledRejection', (reason) => {
++    logger.error(`Unhandled rejection: ${reason}`, 'UnhandledRejection');
++
++    const error = reason instanceof Error ? reason : new Error(String(reason));
++
++    if (shouldCaptureException(error)) {
++      exceptionHandlerService.captureExceptions([error]);
++    }
++  });
+ 
+   const trustProxyRaw = twentyConfigService.get('TRUST_PROXY');
+   const trustProxy = /^\d+$/.test(trustProxyRaw)
+diff --git a/packages/twenty-server/src/queue-worker/queue-worker.ts b/packages/twenty-server/src/queue-worker/queue-worker.ts
+index 61ebe2a6b4..529113f074 100644
+--- a/packages/twenty-server/src/queue-worker/queue-worker.ts
++++ b/packages/twenty-server/src/queue-worker/queue-worker.ts
+@@ -20,6 +20,31 @@ async function bootstrap() {
+ 
+     // Inject our logger
+     app.useLogger(loggerService ?? false);
++
++    process.on('uncaughtException', (err) => {
++      loggerService?.error(
++        `Uncaught exception: ${err.message}`,
++        err.stack ?? err.name,
++      );
++
++      if (shouldCaptureException(err)) {
++        exceptionHandlerService?.captureExceptions([err]);
++      }
++    });
++
++    process.on('unhandledRejection', (reason) => {
++      loggerService?.error(
++        `Unhandled rejection: ${reason}`,
++        'UnhandledRejection',
++      );
++
++      const error =
++        reason instanceof Error ? reason : new Error(String(reason));
++
++      if (shouldCaptureException(error)) {
++        exceptionHandlerService?.captureExceptions([error]);
++      }
++    });
+   } catch (err) {
+     loggerService?.error(err?.message, err?.name);
+ 
+diff --git a/packages/twenty-widgets/index.html b/packages/twenty-widgets/index.html
+new file mode 100644
+index 0000000000..4cec61f286
+--- /dev/null
++++ b/packages/twenty-widgets/index.html
+@@ -0,0 +1,17 @@
++<!doctype html>
++<html lang="en">
++  <head>
++    <meta charset="UTF-8" />
++    <title>Twenty Widgets</title>
++    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++    <style>
++      html, body { margin: 0; min-height: 100%; }
++      #root { min-height: 100vh; }
++    </style>
++  </head>
++  <body>
++    <div id="root"></div>
++    <script type="module" src="/src/main.tsx"></script>
++  </body>
++</html>
++
+diff --git a/packages/twenty-widgets/package.json b/packages/twenty-widgets/package.json
+new file mode 100644
+index 0000000000..3c836ad750
+--- /dev/null
++++ b/packages/twenty-widgets/package.json
+@@ -0,0 +1,16 @@
++{
++  "name": "twenty-widgets",
++  "private": true,
++  "type": "module",
++  "dependencies": {
++    "@emotion/react": "^11.11.1",
++    "@emotion/styled": "^11.11.0",
++    "react": "^18.2.0",
++    "react-dom": "^18.2.0",
++    "twenty-shared": "workspace:*"
++  },
++  "scripts": {
++    "build": "NODE_ENV=production npx vite build",
++    "start:prod": "NODE_ENV=production npx serve -s build"
++  }
++}
+diff --git a/packages/twenty-widgets/project.json b/packages/twenty-widgets/project.json
+new file mode 100644
+index 0000000000..e7f634e752
+--- /dev/null
++++ b/packages/twenty-widgets/project.json
+@@ -0,0 +1,31 @@
++{
++  "name": "twenty-widgets",
++  "$schema": "../../node_modules/nx/schemas/project-schema.json",
++  "projectType": "application",
++  "tags": ["scope:frontend"],
++  "targets": {
++    "build": {
++      "executor": "@nx/vite:build",
++      "dependsOn": ["^build"],
++      "outputs": ["{options.outputPath}"],
++      "options": {
++        "outputPath": "{projectRoot}/build"
++      }
++    },
++    "start": {
++      "executor": "@nx/vite:dev-server",
++      "options": {
++        "buildTarget": "twenty-widgets:build",
++        "hmr": true
++      }
++    },
++    "preview": {
++      "executor": "@nx/vite:preview-server",
++      "options": {
++        "buildTarget": "twenty-widgets:build",
++        "port": 4173,
++        "open": true
++      }
++    }
++  }
++}
+diff --git a/packages/twenty-widgets/src/app.tsx b/packages/twenty-widgets/src/app.tsx
+new file mode 100644
+index 0000000000..fdf5af5510
+--- /dev/null
++++ b/packages/twenty-widgets/src/app.tsx
+@@ -0,0 +1,125 @@
++import styled from '@emotion/styled';
++import type { EmailRecipients } from 'twenty-shared/workflow';
++
++const sampleTwentyType: EmailRecipients = {
++  to: 'widget@example.com',
++  cc: 'copy@twenty.local',
++};
++
++if (typeof window !== 'undefined') {
++  console.log(
++    '[Twenty] Тип из текущего проекта (twenty-shared/workflow EmailRecipients):',
++    sampleTwentyType,
++    '→ typeof sampleTwentyType:',
++    typeof sampleTwentyType,
++  );
++}
++
++type WidgetDefinition = {
++  id: string;
++  name: string;
++  description: string;
++  url: string;
++};
++
++const widgets: WidgetDefinition[] = [
++  {
++    id: 'widget-mrz-input',
++    name: 'MRZ Input Widget',
++    description: 'Виджет с паспортными данными',
++    url: '/wedigital/mrz-input/'
++  }
++];
++
++const Page = styled.div`
++  min-height: 100vh;
++  display: flex;
++  justify-content: center;
++  padding: 40px 16px;
++  background-color: #050816;
++  color: #f9fafb;
++  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Inter',
++    'Segoe UI', sans-serif;
++`;
++
++const Content = styled.div`
++  width: 100%;
++  max-width: 960px;
++`;
++
++const Title = styled.h1`
++  font-size: 28px;
++  font-weight: 600;
++  margin-bottom: 8px;
++`;
++
++const Subtitle = styled.p`
++  font-size: 14px;
++  color: #9ca3af;
++  margin-bottom: 24px;
++`;
++
++const List = styled.div`
++  display: grid;
++  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
++  gap: 16px;
++`;
++
++const Card = styled.a`
++  display: block;
++  padding: 16px 18px;
++  border-radius: 12px;
++  background: linear-gradient(135deg, #020617, #111827);
++  border: 1px solid rgba(148, 163, 184, 0.35);
++  text-decoration: none;
++  color: inherit;
++  transition: transform 160ms ease-out, box-shadow 160ms ease-out,
++    border-color 160ms ease-out, background 160ms ease-out;
++
++  &:hover {
++    transform: translateY(-2px);
++    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
++    border-color: rgba(56, 189, 248, 0.7);
++    background: linear-gradient(135deg, #020617, #0f172a);
++  }
++`;
++
++const CardTitle = styled.div`
++  font-size: 16px;
++  font-weight: 600;
++  margin-bottom: 4px;
++`;
++
++const CardDescription = styled.div`
++  font-size: 13px;
++  color: #9ca3af;
++  margin-bottom: 10px;
++`;
++
++const CardUrl = styled.div`
++  font-size: 12px;
++  color: #38bdf8;
++  word-break: break-all;
++`;
++
++export const App = () => (
++  <Page>
++    <Content>
++      <Title>Widgets для Twenty</Title>
++      <Subtitle>
++        Список подключенных микрофронтендов. Здесь вы можете собрать внешние
++        виджеты из других репозиториев.
++      </Subtitle>
++      <List>
++        {widgets.map((widget) => (
++          <Card key={widget.id} href={widget.url} target="_blank" rel="noreferrer">
++            <CardTitle>{widget.name}</CardTitle>
++            <CardDescription>{widget.description}</CardDescription>
++            <CardUrl>{widget.url}</CardUrl>
++          </Card>
++        ))}
++      </List>
++    </Content>
++  </Page>
++);
++
+diff --git a/packages/twenty-widgets/src/main.tsx b/packages/twenty-widgets/src/main.tsx
+new file mode 100644
+index 0000000000..f078f8cd3c
+--- /dev/null
++++ b/packages/twenty-widgets/src/main.tsx
+@@ -0,0 +1,16 @@
++import { StrictMode } from 'react';
++import { createRoot } from 'react-dom/client';
++import { App } from './app';
++
++const container = document.getElementById('root');
++
++if (container !== null) {
++  const root = createRoot(container);
++
++  root.render(
++    <StrictMode>
++      <App />
++    </StrictMode>,
++  );
++}
++
+diff --git a/packages/twenty-widgets/submodules/widget-mrz-input b/packages/twenty-widgets/submodules/widget-mrz-input
+new file mode 160000
+index 0000000000..25116985ea
+--- /dev/null
++++ b/packages/twenty-widgets/submodules/widget-mrz-input
+@@ -0,0 +1 @@
++Subproject commit 25116985ea888725d6cae8801c72b4d80ed9a434
+diff --git a/packages/twenty-widgets/tsconfig.json b/packages/twenty-widgets/tsconfig.json
+new file mode 100644
+index 0000000000..b7fd79420c
+--- /dev/null
++++ b/packages/twenty-widgets/tsconfig.json
+@@ -0,0 +1,35 @@
++{
++  "extends": "../../tsconfig.base.json",
++  "compilerOptions": {
++    "target": "ES2020",
++    "useDefineForClassFields": true,
++    "lib": [
++      "ES2020",
++      "DOM",
++      "DOM.Iterable"
++    ],
++    "module": "ESNext",
++    "skipLibCheck": true,
++    "allowJs": true,
++    "esModuleInterop": true,
++    "moduleResolution": "bundler",
++    "allowSyntheticDefaultImports": true,
++    "allowImportingTsExtensions": false,
++    "resolveJsonModule": true,
++    "isolatedModules": true,
++    "noEmit": true,
++    "jsx": "react-jsx",
++    "strict": true,
++    "noUnusedLocals": false,
++    "noUnusedParameters": false,
++    "noFallthroughCasesInSwitch": true,
++    "forceConsistentCasingInFileNames": true,
++    "outDir": "../../.cache/tsc"
++  },
++  "include": [
++    "src/**/*.ts",
++    "src/**/*.tsx",
++    "vite.config.ts"
++  ]
++}
++
+diff --git a/packages/twenty-widgets/vite.config.ts b/packages/twenty-widgets/vite.config.ts
+new file mode 100644
+index 0000000000..a0632eb92d
+--- /dev/null
++++ b/packages/twenty-widgets/vite.config.ts
+@@ -0,0 +1,27 @@
++import react from '@vitejs/plugin-react-swc';
++import { defineConfig } from 'vite';
++import tsconfigPaths from 'vite-tsconfig-paths';
++
++export default defineConfig({
++  base: '/wedigital/',
++  root: __dirname,
++  cacheDir: '../../node_modules/.vite/packages/twenty-widgets',
++  server: {
++    port: 4175,
++    host: true
++  },
++  build: {
++    outDir: 'build',
++    emptyOutDir: true
++  },
++  plugins: [
++    react({
++      jsxImportSource: '@emotion/react'
++    }),
++    tsconfigPaths({
++      root: __dirname,
++      projects: ['tsconfig.json']
++    })
++  ]
++});
++
+diff --git a/scripts/upgrade-upstream.sh b/scripts/upgrade-upstream.sh
+new file mode 100755
+index 0000000000..10a48ad54c
+--- /dev/null
++++ b/scripts/upgrade-upstream.sh
+@@ -0,0 +1,133 @@
++#!/usr/bin/env bash
++# ============================================================================
++# We Digital — Twenty CRM Upstream Upgrade Script
++#
++# Usage:
++#   ./scripts/upgrade-upstream.sh v1.22.0
++#
++# What it does:
++#   1. Creates a safety tag on main (pre-<tag>-upgrade)
++#   2. Fetches the target upstream tag
++#   3. Creates a new branch from main
++#   4. Replaces the entire tree with the upstream tag
++#   5. Applies the We Digital custom patch (we-digital-custom.patch)
++#   6. Updates .upstream-version
++#   7. Runs yarn install to sync lockfile
++#   8. Commits everything
++#   9. Regenerates the patch for the next upgrade
++#
++# Prerequisites:
++#   - 'upstream' remote pointing to https://github.com/twentyhq/twenty.git
++#   - Clean working tree (no uncommitted changes)
++#   - we-digital-custom.patch in repo root
++# ============================================================================
++
++set -euo pipefail
++
++TARGET_TAG="${1:-}"
++
++if [[ -z "$TARGET_TAG" ]]; then
++  echo "Usage: $0 <upstream-tag>"
++  echo "Example: $0 v1.22.0"
++  exit 1
++fi
++
++REPO_ROOT="$(git rev-parse --show-toplevel)"
++PATCH_FILE="$REPO_ROOT/we-digital-custom.patch"
++BRANCH_NAME="chore/upgrade-to-${TARGET_TAG}"
++
++# Preflight checks
++if [[ ! -f "$PATCH_FILE" ]]; then
++  echo "ERROR: $PATCH_FILE not found"
++  exit 1
++fi
++
++if ! git diff --quiet || ! git diff --cached --quiet; then
++  echo "ERROR: Working tree is not clean. Commit or stash changes first."
++  exit 1
++fi
++
++echo "=== Step 1: Create safety tag on main ==="
++SAFETY_TAG="pre-${TARGET_TAG}-upgrade"
++if git rev-parse "$SAFETY_TAG" >/dev/null 2>&1; then
++  echo "Tag $SAFETY_TAG already exists, skipping."
++else
++  git tag "$SAFETY_TAG" main
++  echo "Created tag: $SAFETY_TAG"
++fi
++
++echo ""
++echo "=== Step 2: Fetch upstream tag $TARGET_TAG ==="
++if ! git remote | grep -q upstream; then
++  echo "Adding upstream remote..."
++  git remote add upstream https://github.com/twentyhq/twenty.git
++fi
++git fetch upstream tag "$TARGET_TAG" --no-tags
++
++echo ""
++echo "=== Step 3: Create branch $BRANCH_NAME from main ==="
++git checkout main
++git checkout -b "$BRANCH_NAME"
++
++echo ""
++echo "=== Step 4: Replace tree with $TARGET_TAG ==="
++# Save patch to temp — git rm deletes all tracked files including the patch itself
++PATCH_BACKUP=$(mktemp)
++cp "$PATCH_FILE" "$PATCH_BACKUP"
++git rm -rf . --quiet
++git checkout "$TARGET_TAG" -- .
++
++echo ""
++echo "=== Step 5: Apply We Digital custom patch ==="
++# --3way allows git to handle conflicts if upstream changed our patched files
++if git apply --3way "$PATCH_BACKUP"; then
++  echo "Patch applied cleanly."
++else
++  echo ""
++  echo "WARNING: Patch had conflicts. Resolve them manually, then:"
++  echo "  git add -A && git commit"
++  echo ""
++  echo "Conflicting files will have <<<< markers."
++  echo "Check if upstream changed any of these files:"
++  echo "  - IframeWidget.tsx (check for new security fixes)"
++  echo "  - cache-storage, redis-client, session-storage (check for API changes)"
++  echo "  - file-storage.service.ts (check deleteByFileId signature)"
++  echo "  - main.ts, queue-worker.ts (check bootstrap changes)"
++  exit 1
++fi
++
++echo ""
++echo "=== Step 6: Update .upstream-version ==="
++echo "$TARGET_TAG" > "$REPO_ROOT/.upstream-version"
++echo "Set .upstream-version to $TARGET_TAG"
++
++echo ""
++echo "=== Step 7: Update yarn.lock ==="
++yarn install || true
++
++echo ""
++echo "=== Step 8: Stage and commit ==="
++git add -A
++git commit -m "chore: upgrade Twenty CRM to ${TARGET_TAG}
++
++Replace entire codebase with upstream ${TARGET_TAG} and re-apply
++We Digital custom patches (see we-digital-custom.patch).
++"
++
++echo ""
++echo "=== Step 9: Regenerate patch for next upgrade ==="
++git diff "${TARGET_TAG}" HEAD > "$PATCH_FILE"
++git add "$PATCH_FILE"
++git commit --amend --no-edit
++
++rm -f "$PATCH_BACKUP"
++
++echo ""
++echo "============================================"
++echo "Done! Next steps:"
++echo "  1. git push -u origin $BRANCH_NAME"
++echo "  2. Create PR: gh pr create --base main"
++echo "  3. Wait for CI to pass"
++echo "  4. After merge: build-and-push auto-builds + triggers deploy"
++echo "  5. For controlled upgrades: set CRM_IMAGE_TAG=${TARGET_TAG} in bbc-devops"
++echo "============================================"
+diff --git a/yarn.lock b/yarn.lock
+index cc5d4585aa..7b1ac20150 100644
+--- a/yarn.lock
++++ b/yarn.lock
+@@ -4856,7 +4856,7 @@ __metadata:
+   languageName: node
+   linkType: hard
+ 
+-"@emotion/react@npm:^11.14.0":
++"@emotion/react@npm:^11.11.1, @emotion/react@npm:^11.14.0":
+   version: 11.14.0
+   resolution: "@emotion/react@npm:11.14.0"
+   dependencies:
+@@ -4897,7 +4897,7 @@ __metadata:
+   languageName: node
+   linkType: hard
+ 
+-"@emotion/styled@npm:^11.14.0":
++"@emotion/styled@npm:^11.11.0, @emotion/styled@npm:^11.14.0":
+   version: 11.14.1
+   resolution: "@emotion/styled@npm:11.14.1"
+   dependencies:
+@@ -54511,6 +54511,18 @@ __metadata:
+   languageName: unknown
+   linkType: soft
+ 
++"twenty-widgets@workspace:packages/twenty-widgets":
++  version: 0.0.0-use.local
++  resolution: "twenty-widgets@workspace:packages/twenty-widgets"
++  dependencies:
++    "@emotion/react": "npm:^11.11.1"
++    "@emotion/styled": "npm:^11.11.0"
++    react: "npm:^18.2.0"
++    react-dom: "npm:^18.2.0"
++    twenty-shared: "workspace:*"
++  languageName: unknown
++  linkType: soft
++
+ "twenty-zapier@workspace:packages/twenty-zapier":
+   version: 0.0.0-use.local
+   resolution: "twenty-zapier@workspace:packages/twenty-zapier"
