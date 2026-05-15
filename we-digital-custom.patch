@@ -93,11 +93,11 @@ index 0000000000..785775967e
 +	branch = main
 diff --git a/.upstream-version b/.upstream-version
 new file mode 100644
-index 0000000000..b1d18bc43f
+index 0000000000..8721bbc46a
 --- /dev/null
 +++ b/.upstream-version
 @@ -0,0 +1 @@
-+v2.3.0
++v2.4.0
 diff --git a/docs/UPGRADE.md b/docs/UPGRADE.md
 new file mode 100644
 index 0000000000..1ce4bb84be
@@ -316,7 +316,7 @@ index 0000000000..1ce4bb84be
 +- [ ] `sync-env.sh --env prod --doctl-context bbc --force-deploy`
 +- [ ] `crm.respon.io/healthz` ok, новые строки в `core."upgradeMigration"`, в логах нет ошибок
 diff --git a/package.json b/package.json
-index f68418e144..6b9b675437 100644
+index d228d33f2c..98999e3ea8 100644
 --- a/package.json
 +++ b/package.json
 @@ -43,7 +43,8 @@
@@ -907,7 +907,7 @@ index c974374fbd..786df59fcc 100644
  
      return this.redisClient;
 diff --git a/packages/twenty-server/src/main.ts b/packages/twenty-server/src/main.ts
-index 3190a50953..197151e8a4 100644
+index d1a5b83d24..f548fdf22b 100644
 --- a/packages/twenty-server/src/main.ts
 +++ b/packages/twenty-server/src/main.ts
 @@ -15,6 +15,8 @@ import { LoggerService } from 'src/engine/core-modules/logger/logger.service';
@@ -1436,3 +1436,44 @@ index 0000000000..10a48ad54c
 +echo "  4. After merge: build-and-push auto-builds + triggers deploy"
 +echo "  5. For controlled upgrades: set CRM_IMAGE_TAG=${TARGET_TAG} in bbc-devops"
 +echo "============================================"
+diff --git a/yarn.lock b/yarn.lock
+index cc5d4585aa..7b1ac20150 100644
+--- a/yarn.lock
++++ b/yarn.lock
+@@ -4856,7 +4856,7 @@ __metadata:
+   languageName: node
+   linkType: hard
+ 
+-"@emotion/react@npm:^11.14.0":
++"@emotion/react@npm:^11.11.1, @emotion/react@npm:^11.14.0":
+   version: 11.14.0
+   resolution: "@emotion/react@npm:11.14.0"
+   dependencies:
+@@ -4897,7 +4897,7 @@ __metadata:
+   languageName: node
+   linkType: hard
+ 
+-"@emotion/styled@npm:^11.14.0":
++"@emotion/styled@npm:^11.11.0, @emotion/styled@npm:^11.14.0":
+   version: 11.14.1
+   resolution: "@emotion/styled@npm:11.14.1"
+   dependencies:
+@@ -54511,6 +54511,18 @@ __metadata:
+   languageName: unknown
+   linkType: soft
+ 
++"twenty-widgets@workspace:packages/twenty-widgets":
++  version: 0.0.0-use.local
++  resolution: "twenty-widgets@workspace:packages/twenty-widgets"
++  dependencies:
++    "@emotion/react": "npm:^11.11.1"
++    "@emotion/styled": "npm:^11.11.0"
++    react: "npm:^18.2.0"
++    react-dom: "npm:^18.2.0"
++    twenty-shared: "workspace:*"
++  languageName: unknown
++  linkType: soft
++
+ "twenty-zapier@workspace:packages/twenty-zapier":
+   version: 0.0.0-use.local
+   resolution: "twenty-zapier@workspace:packages/twenty-zapier"
