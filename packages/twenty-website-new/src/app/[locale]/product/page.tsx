@@ -4,10 +4,7 @@ import { Faq, FAQ_QUESTIONS } from '@/sections/Faq';
 import { TRUSTED_BY_LOGOS, TrustedBy } from '@/sections/TrustedBy';
 import { TalkToUsButton } from '@/sections/ContactCal';
 import { APP_PREVIEW_DATA } from '@/app/[locale]/(home)/app-preview.data';
-import {
-  FEATURE_MASK,
-  FEATURE_TILES,
-} from '@/app/[locale]/product/feature.data';
+import { FEATURE_TILES } from '@/app/[locale]/product/feature.data';
 import { TABS } from '@/app/[locale]/product/tabs.data';
 import { ILLUSTRATION_CARDS } from '@/app/[locale]/product/three-cards.data';
 import {
@@ -32,6 +29,9 @@ import {
   ProductStepper,
   type ProductStepperStepType,
 } from '@/sections/ProductStepper';
+import { DataModelVisual } from '@/sections/ProductStepper/visuals/DataModelVisual';
+import { WorkflowVisual } from '@/sections/ProductStepper/visuals/WorkflowVisual';
+import { LayoutVisual } from '@/sections/ProductStepper/visuals/LayoutVisual';
 import { Tabs } from '@/sections/Tabs';
 import { ThreeCards } from '@/sections/ThreeCards';
 import { theme } from '@/theme';
@@ -61,10 +61,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <HeadingPart fontFamily="sans">{i18n._(msg`Data model`)}</HeadingPart>
       ),
       body: msg`Add objects and fields`,
-      image: {
-        src: '/images/product/stepper/step-one.webp',
-        alt: 'Twenty data model: add objects and fields',
-      },
+      visual: DataModelVisual,
     },
     {
       icon: 'check',
@@ -72,10 +69,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <HeadingPart fontFamily="sans">{i18n._(msg`Automation`)}</HeadingPart>
       ),
       body: msg`Create a workflow`,
-      image: {
-        src: '/images/product/stepper/step-two.webp',
-        alt: 'Twenty automation: create a workflow',
-      },
+      visual: WorkflowVisual,
     },
     {
       icon: 'eye',
@@ -83,10 +77,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <HeadingPart fontFamily="sans">{i18n._(msg`Layout`)}</HeadingPart>
       ),
       body: msg`Tailor record pages, menus, and views`,
-      image: {
-        src: '/images/product/stepper/step-three.webp',
-        alt: 'Twenty layout: record pages, menus, and views',
-      },
+      visual: LayoutVisual,
     },
   ];
 
@@ -100,11 +91,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
           ],
           i18n.locale as AppLocale,
         )}
-      />
-      <link
-        as="fetch"
-        href="/illustrations/product/hero/hero.glb"
-        rel="preload"
       />
       <Menu.Root
         backgroundColor={theme.colors.primary.background[100]}
@@ -140,7 +126,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             variant="contained"
           />
         </Hero.Cta>
-        <Hero.ProductVisual />
+        <Hero.ProductVisual visual={APP_PREVIEW_DATA.visual} />
       </Hero.Root>
 
       <TrustedBy.Root
@@ -189,7 +175,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </HeadingPart>
           </Heading>
         </Feature.Intro>
-        <Feature.Tiles mask={FEATURE_MASK} tiles={FEATURE_TILES} />
+        <Feature.Tiles tiles={FEATURE_TILES} />
       </Feature.Root>
 
       <ThreeCards.Root scheme="light">
