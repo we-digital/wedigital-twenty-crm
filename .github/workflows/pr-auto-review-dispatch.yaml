@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   dispatch:
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft == false && secrets.CI_PRIVILEGED_DISPATCH_TOKEN != ''
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -24,3 +24,9 @@ jobs:
           gh api repos/twentyhq/ci-privileged/dispatches \
             -f event_type=pr-review \
             -f "client_payload[pr_number]=$PR_NUMBER"
+  dispatch-skip:
+    if: github.event.pull_request.draft == false && secrets.CI_PRIVILEGED_DISPATCH_TOKEN == ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip without CI privileged token
+        run: echo "CI_PRIVILEGED_DISPATCH_TOKEN is not configured; skipping PR review dispatch."
