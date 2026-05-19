@@ -216,10 +216,6 @@ export class FileStorageService {
       },
     });
 
-    const application = await this.applicationRepository.findOneOrFail({
-      where: { id: file.applicationId, workspaceId: file.workspaceId },
-    });
-
     const driver = this.fileStorageDriverFactory.getCurrentDriver();
 
     const application = await this.applicationRepository.findOneOrFail({
