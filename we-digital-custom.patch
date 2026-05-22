@@ -70,7 +70,7 @@ index 0000000000..6b83e83754
 +          cache-from: type=gha
 +          cache-to: type=gha,mode=max
 diff --git a/.github/workflows/cd-deploy-main.yaml b/.github/workflows/cd-deploy-main.yaml
-index 7fe62465b1..a8a1c73b17 100644
+index 9c3213f997..a3cccae4a6 100644
 --- a/.github/workflows/cd-deploy-main.yaml
 +++ b/.github/workflows/cd-deploy-main.yaml
 @@ -10,6 +10,7 @@ on:
@@ -93,11 +93,11 @@ index 0000000000..785775967e
 +	branch = main
 diff --git a/.upstream-version b/.upstream-version
 new file mode 100644
-index 0000000000..8721bbc46a
+index 0000000000..8a965c1168
 --- /dev/null
 +++ b/.upstream-version
 @@ -0,0 +1 @@
-+v2.4.0
++v2.6.0
 diff --git a/docs/UPGRADE.md b/docs/UPGRADE.md
 new file mode 100644
 index 0000000000..1ce4bb84be
@@ -316,7 +316,7 @@ index 0000000000..1ce4bb84be
 +- [ ] `sync-env.sh --env prod --doctl-context bbc --force-deploy`
 +- [ ] `crm.respon.io/healthz` ok, новые строки в `core."upgradeMigration"`, в логах нет ошибок
 diff --git a/package.json b/package.json
-index d228d33f2c..98999e3ea8 100644
+index 3ad189426d..0868eea602 100644
 --- a/package.json
 +++ b/package.json
 @@ -43,7 +43,8 @@
@@ -823,11 +823,11 @@ index 7832d9bb16..ac3986f6dd 100644
      // oxlint-disable-next-line @typescripttypescript/no-explicit-any
      if ((this.cacheManager.store as any)?.name === 'redis') {
 diff --git a/packages/twenty-server/src/engine/core-modules/file-storage/file-storage.service.ts b/packages/twenty-server/src/engine/core-modules/file-storage/file-storage.service.ts
-index c27390d441..a81dc7245a 100644
+index 95d64004db..86a27f35ef 100644
 --- a/packages/twenty-server/src/engine/core-modules/file-storage/file-storage.service.ts
 +++ b/packages/twenty-server/src/engine/core-modules/file-storage/file-storage.service.ts
-@@ -226,8 +226,13 @@ export class FileStorageService {
-     });
+@@ -222,6 +222,11 @@ export class FileStorageService {
+ 
      const driver = this.fileStorageDriverFactory.getCurrentDriver();
  
 +    const application = await this.applicationRepository.findOneOrFail({
@@ -836,13 +836,10 @@ index c27390d441..a81dc7245a 100644
 +    });
 +
      await driver.delete({
--      folderPath: `${file.workspaceId}/${file.applicationId}`,
-+      folderPath: `${file.workspaceId}/${application.universalIdentifier}`,
+       folderPath: `${file.workspaceId}/${application.universalIdentifier}`,
        filename: file.path,
-     });
- 
 diff --git a/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts b/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
-index dedb66ac09..736446414e 100644
+index 0830a90188..1c199b5458 100644
 --- a/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
 +++ b/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
 @@ -158,6 +158,10 @@ export class BullMQDriver
@@ -907,7 +904,7 @@ index c974374fbd..786df59fcc 100644
  
      return this.redisClient;
 diff --git a/packages/twenty-server/src/main.ts b/packages/twenty-server/src/main.ts
-index d1a5b83d24..f548fdf22b 100644
+index 9b65bfa59e..8f5ba25a44 100644
 --- a/packages/twenty-server/src/main.ts
 +++ b/packages/twenty-server/src/main.ts
 @@ -15,6 +15,8 @@ import { LoggerService } from 'src/engine/core-modules/logger/logger.service';
@@ -946,7 +943,7 @@ index d1a5b83d24..f548fdf22b 100644
    const trustProxyRaw = twentyConfigService.get('TRUST_PROXY');
    const trustProxy = /^\d+$/.test(trustProxyRaw)
 diff --git a/packages/twenty-server/src/queue-worker/queue-worker.ts b/packages/twenty-server/src/queue-worker/queue-worker.ts
-index 61ebe2a6b4..529113f074 100644
+index 68bec8617d..62996ed38f 100644
 --- a/packages/twenty-server/src/queue-worker/queue-worker.ts
 +++ b/packages/twenty-server/src/queue-worker/queue-worker.ts
 @@ -20,6 +20,31 @@ async function bootstrap() {
@@ -1437,7 +1434,7 @@ index 0000000000..10a48ad54c
 +echo "  5. For controlled upgrades: set CRM_IMAGE_TAG=${TARGET_TAG} in bbc-devops"
 +echo "============================================"
 diff --git a/yarn.lock b/yarn.lock
-index cc5d4585aa..7b1ac20150 100644
+index aa4bb03e62..922cf6f820 100644
 --- a/yarn.lock
 +++ b/yarn.lock
 @@ -4856,7 +4856,7 @@ __metadata:
@@ -1458,7 +1455,7 @@ index cc5d4585aa..7b1ac20150 100644
    version: 11.14.1
    resolution: "@emotion/styled@npm:11.14.1"
    dependencies:
-@@ -54511,6 +54511,18 @@ __metadata:
+@@ -54458,6 +54458,18 @@ __metadata:
    languageName: unknown
    linkType: soft
  

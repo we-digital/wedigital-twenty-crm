@@ -242,7 +242,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
         onLoad={handleIframeLoad}
         onError={handleIframeError}
         sandbox="allow-scripts allow-forms allow-popups allow-same-origin"
-        allow="encrypted-media"
+        allow="clipboard-write; encrypted-media"
         allowFullScreen
       />
     </StyledContainer>

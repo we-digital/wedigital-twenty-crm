@@ -152,15 +152,6 @@ export class FileStorageService {
     });
   }
 
-  deleteLegacy(params: {
-    folderPath: string;
-    filename?: string;
-  }): Promise<void> {
-    const driver = this.fileStorageDriverFactory.getCurrentDriver();
-
-    return driver.delete(params);
-  }
-
   async deleteApplicationFiles({
     applicationUniversalIdentifier,
     workspaceId,
@@ -224,6 +215,7 @@ export class FileStorageService {
         path: Like(`${fileFolder}/%`),
       },
     });
+
     const driver = this.fileStorageDriverFactory.getCurrentDriver();
 
     const application = await this.applicationRepository.findOneOrFail({
@@ -237,6 +229,18 @@ export class FileStorageService {
     });
 
     await this.fileRepository.delete(fileId);
+  }
+
+  async checkIfWorkspaceFolderExists(workspaceId: string): Promise<boolean> {
+    const driver = this.fileStorageDriverFactory.getCurrentDriver();
+
+    return driver.checkFolderExists({ folderPath: workspaceId });
+  }
+
+  async deleteWorkspaceFolder(workspaceId: string): Promise<void> {
+    const driver = this.fileStorageDriverFactory.getCurrentDriver();
+
+    await driver.delete({ folderPath: workspaceId });
   }
 
   copyLegacy(params: {
@@ -273,12 +277,6 @@ export class FileStorageService {
       from: { folderPath: fromPath },
       to: { folderPath: toPath },
     });
-  }
-
-  checkFolderExistsLegacy(params: { folderPath: string }): Promise<boolean> {
-    const driver = this.fileStorageDriverFactory.getCurrentDriver();
-
-    return driver.checkFolderExists(params);
   }
 
   checkFileExists(params: ResourceIdentifier): Promise<boolean> {
