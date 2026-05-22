@@ -101,6 +101,9 @@ describe('IframeWidget', () => {
 
     const iframeElement = screen.getByTitle('Dashboard');
     expect(iframeElement.getAttribute('src')).toBe('https://example.com/embed');
+    expect(iframeElement.getAttribute('allow')).toBe(
+      'clipboard-write; encrypted-media',
+    );
 
     fireEvent.load(iframeElement);
 
