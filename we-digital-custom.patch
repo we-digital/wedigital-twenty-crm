@@ -93,11 +93,11 @@ index 0000000000..785775967e
 +	branch = main
 diff --git a/.upstream-version b/.upstream-version
 new file mode 100644
-index 0000000000..8a965c1168
+index 0000000000..873ca0fa62
 --- /dev/null
 +++ b/.upstream-version
 @@ -0,0 +1 @@
-+v2.6.0
++v2.7.0
 diff --git a/docs/UPGRADE.md b/docs/UPGRADE.md
 new file mode 100644
 index 0000000000..1ce4bb84be
@@ -316,7 +316,7 @@ index 0000000000..1ce4bb84be
 +- [ ] `sync-env.sh --env prod --doctl-context bbc --force-deploy`
 +- [ ] `crm.respon.io/healthz` ok, новые строки в `core."upgradeMigration"`, в логах нет ошибок
 diff --git a/package.json b/package.json
-index 3ad189426d..0868eea602 100644
+index 2af1bbbca3..37c8f3686d 100644
 --- a/package.json
 +++ b/package.json
 @@ -43,7 +43,8 @@
@@ -823,10 +823,10 @@ index 7832d9bb16..ac3986f6dd 100644
      // oxlint-disable-next-line @typescripttypescript/no-explicit-any
      if ((this.cacheManager.store as any)?.name === 'redis') {
 diff --git a/packages/twenty-server/src/engine/core-modules/file-storage/file-storage.service.ts b/packages/twenty-server/src/engine/core-modules/file-storage/file-storage.service.ts
-index 95d64004db..86a27f35ef 100644
+index 77c07786b1..156dd1954c 100644
 --- a/packages/twenty-server/src/engine/core-modules/file-storage/file-storage.service.ts
 +++ b/packages/twenty-server/src/engine/core-modules/file-storage/file-storage.service.ts
-@@ -222,6 +222,11 @@ export class FileStorageService {
+@@ -235,6 +235,11 @@ export class FileStorageService {
  
      const driver = this.fileStorageDriverFactory.getCurrentDriver();
  
@@ -978,6 +978,10 @@ index 68bec8617d..62996ed38f 100644
    } catch (err) {
      loggerService?.error(err?.message, err?.name);
  
+diff --git a/packages/twenty-website/public/illustrations/pricing/price/organization.glb b/packages/twenty-website/public/illustrations/pricing/price/organization.glb
+deleted file mode 100644
+index 5da02fe5af..0000000000
+Binary files a/packages/twenty-website/public/illustrations/pricing/price/organization.glb and /dev/null differ
 diff --git a/packages/twenty-widgets/index.html b/packages/twenty-widgets/index.html
 new file mode 100644
 index 0000000000..4cec61f286
@@ -1434,10 +1438,10 @@ index 0000000000..10a48ad54c
 +echo "  5. For controlled upgrades: set CRM_IMAGE_TAG=${TARGET_TAG} in bbc-devops"
 +echo "============================================"
 diff --git a/yarn.lock b/yarn.lock
-index aa4bb03e62..922cf6f820 100644
+index 6cb39689cf..94db21e1d6 100644
 --- a/yarn.lock
 +++ b/yarn.lock
-@@ -4856,7 +4856,7 @@ __metadata:
+@@ -5764,7 +5764,7 @@ __metadata:
    languageName: node
    linkType: hard
  
@@ -1446,7 +1450,7 @@ index aa4bb03e62..922cf6f820 100644
    version: 11.14.0
    resolution: "@emotion/react@npm:11.14.0"
    dependencies:
-@@ -4897,7 +4897,7 @@ __metadata:
+@@ -5805,7 +5805,7 @@ __metadata:
    languageName: node
    linkType: hard
  
@@ -1455,7 +1459,7 @@ index aa4bb03e62..922cf6f820 100644
    version: 11.14.1
    resolution: "@emotion/styled@npm:11.14.1"
    dependencies:
-@@ -54458,6 +54458,18 @@ __metadata:
+@@ -56600,6 +56600,18 @@ __metadata:
    languageName: unknown
    linkType: soft
  

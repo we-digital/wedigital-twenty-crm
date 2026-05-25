@@ -28,14 +28,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - name: Login to Docker Hub
-        if: ${{ vars.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_PASSWORD != '' }}
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-      - name: Skip Docker Hub login
-        if: ${{ vars.DOCKERHUB_USERNAME == '' || secrets.DOCKERHUB_PASSWORD == '' }}
-        run: echo "Docker Hub credentials are not configured; continuing without authenticated login."
       - name: Run compose
         run: |
           echo "Patching docker-compose.yml..."
@@ -107,14 +103,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - name: Login to Docker Hub
-        if: ${{ vars.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_PASSWORD != '' }}
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-      - name: Skip Docker Hub login
-        if: ${{ vars.DOCKERHUB_USERNAME == '' || secrets.DOCKERHUB_PASSWORD == '' }}
-        run: echo "Docker Hub credentials are not configured; continuing without authenticated login."
       - name: Create frontend placeholder
         run: |
           mkdir -p packages/twenty-front/build
