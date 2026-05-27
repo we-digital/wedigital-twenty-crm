@@ -316,10 +316,10 @@ index 0000000000..1ce4bb84be
 +- [ ] `sync-env.sh --env prod --doctl-context bbc --force-deploy`
 +- [ ] `crm.respon.io/healthz` ok, новые строки в `core."upgradeMigration"`, в логах нет ошибок
 diff --git a/package.json b/package.json
-index 3ad189426d..0868eea602 100644
+index 2b4bd1d928..f1287f0149 100644
 --- a/package.json
 +++ b/package.json
-@@ -43,7 +43,8 @@
+@@ -44,7 +44,8 @@
      "docs:generate": "tsx packages/twenty-docs/scripts/generate-docs-json.ts",
      "docs:generate-navigation-template": "tsx packages/twenty-docs/scripts/generate-navigation-template.ts",
      "docs:generate-paths": "tsx packages/twenty-docs/scripts/generate-documentation-paths.ts",
@@ -329,7 +329,7 @@ index 3ad189426d..0868eea602 100644
    },
    "workspaces": {
      "packages": [
-@@ -57,6 +58,7 @@
+@@ -58,6 +59,7 @@
        "packages/twenty-docs",
        "packages/twenty-e2e-testing",
        "packages/twenty-shared",
@@ -822,24 +822,8 @@ index 7832d9bb16..ac3986f6dd 100644
    async onModuleDestroy() {
      // oxlint-disable-next-line @typescripttypescript/no-explicit-any
      if ((this.cacheManager.store as any)?.name === 'redis') {
-diff --git a/packages/twenty-server/src/engine/core-modules/file-storage/file-storage.service.ts b/packages/twenty-server/src/engine/core-modules/file-storage/file-storage.service.ts
-index 95d64004db..86a27f35ef 100644
---- a/packages/twenty-server/src/engine/core-modules/file-storage/file-storage.service.ts
-+++ b/packages/twenty-server/src/engine/core-modules/file-storage/file-storage.service.ts
-@@ -222,6 +222,11 @@ export class FileStorageService {
- 
-     const driver = this.fileStorageDriverFactory.getCurrentDriver();
- 
-+    const application = await this.applicationRepository.findOneOrFail({
-+      where: { id: file.applicationId, workspaceId },
-+      select: ['universalIdentifier'],
-+    });
-+
-     await driver.delete({
-       folderPath: `${file.workspaceId}/${application.universalIdentifier}`,
-       filename: file.path,
 diff --git a/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts b/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
-index 0830a90188..1c199b5458 100644
+index abfb79b2b4..0ee69c5d1f 100644
 --- a/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
 +++ b/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
 @@ -158,6 +158,10 @@ export class BullMQDriver
@@ -1434,10 +1418,10 @@ index 0000000000..10a48ad54c
 +echo "  5. For controlled upgrades: set CRM_IMAGE_TAG=${TARGET_TAG} in bbc-devops"
 +echo "============================================"
 diff --git a/yarn.lock b/yarn.lock
-index aa4bb03e62..922cf6f820 100644
+index e79486ac62..68ff055762 100644
 --- a/yarn.lock
 +++ b/yarn.lock
-@@ -4856,7 +4856,7 @@ __metadata:
+@@ -5764,7 +5764,7 @@ __metadata:
    languageName: node
    linkType: hard
  
@@ -1446,7 +1430,7 @@ index aa4bb03e62..922cf6f820 100644
    version: 11.14.0
    resolution: "@emotion/react@npm:11.14.0"
    dependencies:
-@@ -4897,7 +4897,7 @@ __metadata:
+@@ -5805,7 +5805,7 @@ __metadata:
    languageName: node
    linkType: hard
  
@@ -1455,7 +1439,7 @@ index aa4bb03e62..922cf6f820 100644
    version: 11.14.1
    resolution: "@emotion/styled@npm:11.14.1"
    dependencies:
-@@ -54458,6 +54458,18 @@ __metadata:
+@@ -57123,6 +57123,18 @@ __metadata:
    languageName: unknown
    linkType: soft
  

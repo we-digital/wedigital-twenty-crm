@@ -37,6 +37,13 @@ export type {
   FrontComponentType,
 } from '@/sdk/define/front-component/front-component-config';
 
+export { defineIndex } from '@/sdk/define/indexes/define-index';
+export type { IndexConfig } from '@/sdk/define/indexes/index-config';
+export type {
+  IndexFieldManifest,
+  IndexManifest,
+} from 'twenty-shared/application';
+
 export { defineLogicFunction } from '@/sdk/define/logic-functions/define-logic-function';
 export { definePostInstallLogicFunction } from '@/sdk/define/logic-functions/define-post-install-logic-function';
 export { definePreInstallLogicFunction } from '@/sdk/define/logic-functions/define-pre-install-logic-function';
@@ -86,7 +93,7 @@ export type {
 
 export { defineApplicationRole } from '@/sdk/define/roles/define-application-role';
 export { defineRole } from '@/sdk/define/roles/define-role';
-export { PermissionFlag } from '@/sdk/define/roles/permission-flag-type';
+export { SystemPermissionFlag } from 'twenty-shared/constants';
 
 export { defineSkill } from '@/sdk/define/skills/define-skill';
 
@@ -102,8 +109,6 @@ export type {
   ViewManifestFilterValue,
   ViewSortManifest,
 } from 'twenty-shared/application';
-
-export { getPublicAssetUrl } from '@/sdk/define/get-public-asset-url';
 
 export {
   AggregateOperations,
