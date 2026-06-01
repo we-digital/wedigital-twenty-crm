@@ -56,7 +56,7 @@ export class GoogleAPIsAuthController {
     return;
   }
 
-  @Get('get-access-token')
+  @Get(['get-access-token', 'callback'])
   @UseGuards(
     GoogleAPIsOauthExchangeCodeForTokenGuard,
     PublicEndpointGuard,

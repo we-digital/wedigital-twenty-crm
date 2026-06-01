@@ -36,7 +36,7 @@ export class GoogleAuthController {
     return;
   }
 
-  @Get('redirect')
+  @Get(['redirect', 'callback'])
   @UseGuards(
     GoogleProviderEnabledGuard,
     GoogleOauthGuard,
