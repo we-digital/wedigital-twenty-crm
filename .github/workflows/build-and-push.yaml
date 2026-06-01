@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '.github/**'
   workflow_dispatch:
     inputs:
       ref:
@@ -65,7 +67,6 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Trigger bbc-devops auto-deploy
-        if: github.event_name == 'push'
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.BBC_DEVOPS_DISPATCH_TOKEN }}
