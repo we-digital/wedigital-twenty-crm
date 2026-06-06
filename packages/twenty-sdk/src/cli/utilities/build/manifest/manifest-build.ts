@@ -9,6 +9,7 @@ import { extractManifestFromFile } from '@/cli/utilities/build/manifest/manifest
 import { addMissingFieldOptionIds } from '@/cli/utilities/build/manifest/utils/add-missing-field-option-ids';
 import { fromRoleConfigToRoleManifest } from '@/cli/utilities/build/manifest/utils/from-role-config-to-role-manifest';
 import { getDefaultFieldsInObjectFields } from '@/cli/utilities/build/manifest/utils/get-default-fields-in-object-fields';
+import { validateConditionalAvailabilityUsage } from '@/cli/utilities/build/manifest/utils/validate-conditional-availability-usage';
 import { validateViewFilterOperands } from '@/cli/utilities/build/manifest/utils/validate-view-filter-operands';
 import { type ApplicationConfig, type LogicFunctionConfig } from '@/sdk/define';
 import { type CommandMenuItemConfig } from '@/sdk/define/command-menu-items/command-menu-item-config';
@@ -40,6 +41,7 @@ import {
   type ObjectManifest,
   type PageLayoutManifest,
   type PageLayoutTabManifest,
+  type PermissionFlagManifest,
   type PostInstallLogicFunctionApplicationManifest,
   type PreInstallLogicFunctionApplicationManifest,
   type RoleManifest,
@@ -85,6 +87,7 @@ export const buildManifest = async (
   const objects: ObjectManifest[] = [];
   const fields: FieldManifest[] = [];
   const indexes: IndexManifest[] = [];
+  const permissionFlags: PermissionFlagManifest[] = [];
   const roles: RoleManifest[] = [];
   const skills: SkillManifest[] = [];
   const agents: AgentManifest[] = [];
@@ -106,6 +109,7 @@ export const buildManifest = async (
   const objectsFilePaths: string[] = [];
   const fieldsFilePaths: string[] = [];
   const indexesFilePaths: string[] = [];
+  const permissionFlagsFilePaths: string[] = [];
   const rolesFilePaths: string[] = [];
   const skillsFilePaths: string[] = [];
   const agentsFilePaths: string[] = [];
@@ -122,6 +126,10 @@ export const buildManifest = async (
   for (const filePath of filePaths) {
     const fileContent = await readFile(filePath, 'utf-8');
     const relativePath = relative(appPath, filePath);
+
+    errors.push(
+      ...validateConditionalAvailabilityUsage(fileContent, relativePath),
+    );
 
     const targetFunctionName = extractDefineEntity(fileContent);
 
@@ -191,6 +199,17 @@ export const buildManifest = async (
         errors.push(...extract.errors);
         warnings.push(...(extract.warnings ?? []));
         fieldsFilePaths.push(relativePath);
+        break;
+      }
+      case ManifestEntityKey.PermissionFlags: {
+        const extract = await extractManifestFromFile<PermissionFlagManifest>({
+          appPath,
+          filePath,
+        });
+        permissionFlags.push(extract.config);
+        errors.push(...extract.errors);
+        warnings.push(...(extract.warnings ?? []));
+        permissionFlagsFilePaths.push(relativePath);
         break;
       }
       case ManifestEntityKey.Roles: {
@@ -547,6 +566,7 @@ export const buildManifest = async (
         objects: objects.sort(byId),
         fields: fields.sort(byId),
         indexes: indexes.sort(byId),
+        permissionFlags: permissionFlags.sort(byId),
         roles: roles.sort(byId),
         skills: skills.sort(byId),
         agents: agents.sort(byId),
@@ -566,6 +586,7 @@ export const buildManifest = async (
     objects: objectsFilePaths,
     fields: fieldsFilePaths,
     indexes: indexesFilePaths,
+    permissionFlags: permissionFlagsFilePaths,
     roles: rolesFilePaths,
     skills: skillsFilePaths,
     agents: agentsFilePaths,

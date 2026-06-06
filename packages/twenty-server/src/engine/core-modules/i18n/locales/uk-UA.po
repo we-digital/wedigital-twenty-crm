@@ -164,11 +164,6 @@ msgstr ""
 msgid "A payment processing error occurred."
 msgstr "Сталася помилка обробки платежу."
 
-#. js-lingui-id: CazRIU
-#: src/engine/workspace-manager/workspace-migration/workspace-migration-builder/validators/services/flat-permission-flag-validator.service.ts
-msgid "A permission flag with this key already exists"
-msgstr ""
-
 #. js-lingui-id: Io42ej
 #: src/engine/workspace-manager/twenty-standard-application/utils/object-metadata/create-standard-flat-object-metadata.util.ts
 msgid "A person"
@@ -464,6 +459,11 @@ msgstr "Під час імпорту повідомлень сталася по�
 msgid "An error occurred during workspace migration."
 msgstr "Під час міграції робочого простору сталася помилка."
 
+#. js-lingui-id: X3mSup
+#: src/engine/core-modules/messaging-webhooks/messaging-webhook.exception.ts
+msgid "An error occurred while processing the webhook."
+msgstr ""
+
 #. js-lingui-id: S7yZl9
 #: src/engine/core-modules/two-factor-authentication/two-factor-authentication.exception.ts
 msgid "An error occurred with two-factor authentication data."
@@ -542,6 +542,11 @@ msgstr "Сталася невідома помилка календаря."
 #: src/engine/workspace-manager/twenty-standard-application/utils/field-metadata/compute-company-standard-flat-field-metadata.util.ts
 msgid "Annual Recurring Revenue: The actual or estimated annual revenue of the company"
 msgstr "Щорічний повторюваний дохід: фактичний або оцінений річний дохід компанії"
+
+#. js-lingui-id: 4XvK/4
+#: src/engine/workspace-manager/workspace-migration/workspace-migration-builder/validators/services/flat-permission-flag-validator.service.ts
+msgid "Another application in this workspace has already registered a permission flag with this key."
+msgstr ""
 
 #. js-lingui-id: fRWsMD
 #: src/engine/metadata-modules/ai/ai.exception.ts
@@ -694,10 +699,10 @@ msgstr "Виконавець"
 msgid "Associated User Id"
 msgstr "Пов’язаний ідентифікатор користувача"
 
-#. js-lingui-id: K9efby
+#. js-lingui-id: IlaQdj
 #: src/engine/metadata-modules/flat-field-metadata/validators/utils/validate-morph-relation-creation-payload.util.ts
-msgid "At least one relation is require"
-msgstr "Потрібно щонайменше одне відношення"
+msgid "At least one relation is required"
+msgstr ""
 
 #. js-lingui-id: UY1vmE
 #: src/engine/workspace-manager/twenty-standard-application/utils/object-metadata/create-standard-flat-object-metadata.util.ts
@@ -1136,6 +1141,16 @@ msgstr "Не можна видалити останнього адміністр
 #: src/engine/workspace-manager/workspace-migration/workspace-migration-builder/validators/services/flat-view-validator.service.ts
 msgid "Cannot delete the only view for this object"
 msgstr "Неможливо видалити єдине подання для цього об’єкта"
+
+#. js-lingui-id: aqua7x
+#: src/engine/metadata-modules/role/role.service.ts
+msgid "Cannot delete this role: it is still assigned to one or more agents, and the workspace default role cannot be assigned to agents. Please reassign these agents to another role first."
+msgstr ""
+
+#. js-lingui-id: mGasIh
+#: src/engine/metadata-modules/role/role.service.ts
+msgid "Cannot delete this role: it is still assigned to one or more API keys, and the workspace default role cannot be assigned to API keys. Please reassign these API keys to another role first."
+msgstr ""
 
 #. js-lingui-id: mWk3X+
 #: src/engine/metadata-modules/flat-field-metadata/utils/handle-index-changes-during-field-update.util.ts
@@ -3406,6 +3421,16 @@ msgstr "Неправильне вхідне відношення морфу"
 msgid "Invalid navigation menu item input."
 msgstr "Некоректні вхідні дані для пункту навігаційного меню."
 
+#. js-lingui-id: pQNAUc
+#: src/engine/metadata-modules/flat-page-layout-widget/validators/utils/validate-fields-flat-page-layout-widget-for-creation.util.ts
+msgid "Invalid newFieldDefaultVisibility for fields widget"
+msgstr ""
+
+#. js-lingui-id: 1FhQYt
+#: src/engine/metadata-modules/flat-page-layout-widget/validators/utils/validate-fields-flat-page-layout-widget-for-creation.util.ts
+msgid "Invalid newFieldDefaultVisibility for fields widget \"{widgetTitle}\". Expected a boolean"
+msgstr ""
+
 #. js-lingui-id: 5ZHOkh
 #: src/engine/metadata-modules/object-metadata/object-metadata.exception.ts
 msgid "Invalid object input."
@@ -4146,6 +4171,14 @@ msgstr ""
 #: src/engine/workspace-manager/workspace-migration/workspace-migration-builder/validators/services/flat-logic-function-validator.service.ts
 msgid "Logic function already exists"
 msgstr "Логічна функція вже існує"
+
+#. js-lingui-id: MovvuJ
+#: src/engine/workspace-manager/workspace-migration/workspace-migration-builder/validators/services/flat-logic-function-validator.service.ts
+#: src/engine/workspace-manager/workspace-migration/workspace-migration-builder/validators/services/flat-logic-function-validator.service.ts
+#: src/engine/workspace-manager/workspace-migration/workspace-migration-builder/validators/services/flat-logic-function-validator.service.ts
+#: src/engine/workspace-manager/workspace-migration/workspace-migration-builder/validators/services/flat-logic-function-validator.service.ts
+msgid "Logic function cannot be in PREBUILT mode without a fresh build and a checksum"
+msgstr ""
 
 #. js-lingui-id: mZvaAV
 #: src/engine/core-modules/logic-function/logic-function-trigger/triggers/route/exceptions/route-trigger.exception.ts
@@ -5198,6 +5231,8 @@ msgstr "Макет сторінки не знайдено."
 #. js-lingui-id: qJ9V6q
 #: src/engine/workspace-manager/workspace-migration/workspace-migration-builder/validators/services/flat-page-layout-widget-validator.service.ts
 #: src/engine/workspace-manager/workspace-migration/workspace-migration-builder/validators/services/flat-page-layout-widget-validator.service.ts
+#: src/engine/workspace-manager/workspace-migration/workspace-migration-builder/validators/services/flat-page-layout-widget-validator.service.ts
+#: src/engine/workspace-manager/workspace-migration/workspace-migration-builder/validators/services/flat-page-layout-widget-validator.service.ts
 #: src/engine/workspace-manager/workspace-migration/workspace-migration-builder/validators/services/flat-page-layout-tab-validator.service.ts
 #: src/engine/workspace-manager/workspace-migration/workspace-migration-builder/validators/services/flat-page-layout-tab-validator.service.ts
 #: src/engine/workspace-manager/workspace-migration/workspace-migration-builder/validators/services/flat-page-layout-tab-validator.service.ts
@@ -5340,6 +5375,11 @@ msgstr ""
 msgid "People linked to the company."
 msgstr ""
 
+#. js-lingui-id: XDAwzW
+#: src/engine/workspace-manager/twenty-standard-application/utils/field-metadata/compute-workflow-run-standard-flat-field-metadata.util.ts
+msgid "Per-step observability payload (token usage, tool calls, log entries)"
+msgstr ""
+
 #. js-lingui-id: 3zRddX
 #: src/engine/metadata-modules/permission-flag/permission-flag.exception.ts
 msgid "Permission flag already exists."
@@ -5382,10 +5422,10 @@ msgstr ""
 msgid "Permission flag definition to update not found"
 msgstr ""
 
-#. js-lingui-id: O/v4Uv
+#. js-lingui-id: KNBagU
 #. placeholder {0}: flatPermissionFlagToValidate.key
 #: src/engine/workspace-manager/workspace-migration/workspace-migration-builder/validators/services/flat-permission-flag-validator.service.ts
-msgid "Permission flag definition with key {0} already exists in this workspace"
+msgid "Permission flag definition with key \"{0}\" is already registered in this workspace."
 msgstr ""
 
 #. js-lingui-id: FxbCOo
@@ -5578,6 +5618,11 @@ msgstr "layoutMode позиції \"{layoutMode}\" не відповідає lay
 msgid "Position must be a finite number"
 msgstr "Позиція має бути скінченним числом"
 
+#. js-lingui-id: YzUxdC
+#: src/engine/metadata-modules/logic-function/logic-function.exception.ts
+msgid "Prebuilt bundle is not installed on the function. Rebuild and try again."
+msgstr ""
+
 #. js-lingui-id: TTHIbk
 #: src/engine/workspace-manager/twenty-standard-application/utils/field-metadata/compute-workspace-member-standard-flat-field-metadata.util.ts
 msgid "Preferred color scheme"
@@ -5710,6 +5755,7 @@ msgid "Record table widget has no associated view"
 msgstr ""
 
 #. js-lingui-id: KnnILY
+#: src/engine/metadata-modules/view/services/view-widget-upsert.service.ts
 #: src/engine/metadata-modules/view/services/view-widget-upsert.service.ts
 msgid "Record table widget not found"
 msgstr ""
@@ -6145,6 +6191,11 @@ msgstr "Архів клієнта SDK не знайдено. Можливо, к�
 msgid "Search vector"
 msgstr "Вектор пошуку"
 
+#. js-lingui-id: CTcVpP
+#: src/engine/core-modules/emailing-domain/drivers/exceptions/emailing-domain-driver.exception.ts
+msgid "Sending is currently suspended for this email domain."
+msgstr ""
+
 #. js-lingui-id: hgvbYY
 #: src/engine/api/graphql/graphql-query-runner/group-by/resolvers/utils/format-result-with-group-by-dimension-values.util.ts
 msgid "September"
@@ -6316,6 +6367,11 @@ msgstr "Статуси не можуть бути встановлені вру�
 #: src/modules/workflow/workflow-runner/workspace-services/workflow-runner.workspace-service.ts
 msgid "Step is not a form"
 msgstr "Крок не є формою"
+
+#. js-lingui-id: nLBQ0Y
+#: src/engine/workspace-manager/twenty-standard-application/utils/field-metadata/compute-workflow-run-standard-flat-field-metadata.util.ts
+msgid "Step logs"
+msgstr ""
 
 #. js-lingui-id: 1D+4NY
 #: src/engine/metadata-modules/page-layout-widget/constants/standard-page-layout-widget-titles.ts
@@ -6759,7 +6815,7 @@ msgid "The field you are trying to set permissions for could not be found. It ma
 msgstr "Поле, для якого ви намагаєтеся встановити дозволи, не знайдено. Воно могло бути видалено."
 
 #. js-lingui-id: bAGU1r
-#: src/engine/core-modules/file/utils/extract-file-info.utils.ts
+#: src/engine/core-modules/file/utils/extract-file-info-or-throw.utils.ts
 msgid "The file extension doesn't match the file content. Please check that your file is not corrupted and has the correct extension."
 msgstr "Розширення файлу не відповідає вмісту файлу. Перевірте, чи ваш файл не пошкоджений і має правильне розширення."
 
@@ -6841,6 +6897,16 @@ msgstr ""
 #: src/engine/metadata-modules/flat-object-metadata/validators/utils/validate-flat-object-metadata-name.util.ts
 msgid "The singular and plural names cannot be the same for an object"
 msgstr "Єдині та множинні імена не можуть бути однаковими для об'єкта"
+
+#. js-lingui-id: 9bYo5E
+#: src/engine/core-modules/messaging-webhooks/messaging-webhook.exception.ts
+msgid "The webhook request could not be authenticated."
+msgstr ""
+
+#. js-lingui-id: 3nHyuH
+#: src/engine/core-modules/messaging-webhooks/messaging-webhook.exception.ts
+msgid "The webhook request could not be processed."
+msgstr ""
 
 #. js-lingui-id: 5N6QtE
 #: src/engine/workspace-manager/twenty-standard-application/utils/field-metadata/compute-workflow-automated-trigger-standard-flat-field-metadata.util.ts
@@ -6986,6 +7052,11 @@ msgstr "Цей домен уже зайнятий."
 msgid "This email is already in use."
 msgstr "Цю електронну адресу вже використано."
 
+#. js-lingui-id: mjE4RD
+#: src/engine/metadata-modules/ai/ai-agent-monitor/services/agent-turn-grader.service.ts
+msgid "This evaluation target could not be found."
+msgstr ""
+
 #. js-lingui-id: hsi+jf
 #: src/engine/core-modules/workspace/workspace.exception.ts
 msgid "This feature is not enabled."
@@ -7094,11 +7165,13 @@ msgid "This record does not exist or has been deleted."
 msgstr "Цей запис не існує або був видалений."
 
 #. js-lingui-id: rExecr
+#: src/engine/metadata-modules/permissions/permissions.exception.ts
 #: src/engine/metadata-modules/ai/ai.exception.ts
 msgid "This role cannot be assigned to agents."
 msgstr "Цю роль не можна призначати агентам."
 
 #. js-lingui-id: UP3ZAj
+#: src/engine/metadata-modules/permissions/permissions.exception.ts
 #: src/engine/core-modules/api-key/exceptions/api-key.exception.ts
 msgid "This role cannot be assigned to API keys."
 msgstr "Цю роль не можна призначати ключам API."
