@@ -93,11 +93,11 @@ index 0000000000..785775967e
 +	branch = main
 diff --git a/.upstream-version b/.upstream-version
 new file mode 100644
-index 0000000000..f367ae3351
+index 0000000000..80de12c558
 --- /dev/null
 +++ b/.upstream-version
 @@ -0,0 +1 @@
-+v2.9.0
++v2.10.0
 diff --git a/docs/UPGRADE.md b/docs/UPGRADE.md
 new file mode 100644
 index 0000000000..1ce4bb84be
@@ -316,7 +316,7 @@ index 0000000000..1ce4bb84be
 +- [ ] `sync-env.sh --env prod --doctl-context bbc --force-deploy`
 +- [ ] `crm.respon.io/healthz` ok, новые строки в `core."upgradeMigration"`, в логах нет ошибок
 diff --git a/package.json b/package.json
-index 84383f9075..93c5472d7b 100644
+index ede05332b2..ca99824386 100644
 --- a/package.json
 +++ b/package.json
 @@ -44,7 +44,8 @@
@@ -329,7 +329,7 @@ index 84383f9075..93c5472d7b 100644
    },
    "workspaces": {
      "packages": [
-@@ -58,6 +59,7 @@
+@@ -59,6 +60,7 @@
        "packages/twenty-docs",
        "packages/twenty-e2e-testing",
        "packages/twenty-shared",
@@ -782,7 +782,7 @@ index 7d46c20801..aa6c8ddf5c 100644
          onLoad={handleIframeLoad}
          onError={handleIframeError}
 diff --git a/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module.ts b/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module.ts
-index 7832d9bb16..ac3986f6dd 100644
+index eb446b81a3..9bc5448fda 100644
 --- a/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module.ts
 +++ b/packages/twenty-server/src/engine/core-modules/cache-storage/cache-storage.module.ts
 @@ -1,5 +1,12 @@
@@ -820,7 +820,7 @@ index 7832d9bb16..ac3986f6dd 100644
 +  }
 +
    async onModuleDestroy() {
-     // oxlint-disable-next-line @typescripttypescript/no-explicit-any
+     // oxlint-disable-next-line typescript/no-explicit-any
      if ((this.cacheManager.store as any)?.name === 'redis') {
 diff --git a/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts b/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
 index abfb79b2b4..0ee69c5d1f 100644
@@ -1418,10 +1418,10 @@ index 0000000000..10a48ad54c
 +echo "  5. For controlled upgrades: set CRM_IMAGE_TAG=${TARGET_TAG} in bbc-devops"
 +echo "============================================"
 diff --git a/yarn.lock b/yarn.lock
-index df80dc0f11..742b820ba9 100644
+index 680d6967fd..311cd62f19 100644
 --- a/yarn.lock
 +++ b/yarn.lock
-@@ -5829,7 +5829,7 @@ __metadata:
+@@ -5873,7 +5873,7 @@ __metadata:
    languageName: node
    linkType: hard
  
@@ -1430,7 +1430,7 @@ index df80dc0f11..742b820ba9 100644
    version: 11.14.0
    resolution: "@emotion/react@npm:11.14.0"
    dependencies:
-@@ -5870,7 +5870,7 @@ __metadata:
+@@ -5914,7 +5914,7 @@ __metadata:
    languageName: node
    linkType: hard
  
@@ -1439,7 +1439,7 @@ index df80dc0f11..742b820ba9 100644
    version: 11.14.1
    resolution: "@emotion/styled@npm:11.14.1"
    dependencies:
-@@ -56115,6 +56115,18 @@ __metadata:
+@@ -56693,6 +56693,18 @@ __metadata:
    languageName: unknown
    linkType: soft
  

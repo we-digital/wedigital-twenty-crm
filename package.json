@@ -53,6 +53,7 @@
       "packages/twenty-server",
       "packages/twenty-emails",
       "packages/twenty-ui",
+      "packages/twenty-new-ui",
       "packages/twenty-utils",
       "packages/twenty-zapier",
       "packages/twenty-website",

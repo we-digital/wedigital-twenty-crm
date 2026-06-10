@@ -53,9 +53,9 @@ export class CacheStorageModule implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
+    // oxlint-disable-next-line typescript/no-explicit-any
     if ((this.cacheManager.store as any)?.name === 'redis') {
-      // oxlint-disable-next-line @typescripttypescript/no-explicit-any
+      // oxlint-disable-next-line typescript/no-explicit-any
       await (this.cacheManager.store as any).client.quit();
     }
   }
