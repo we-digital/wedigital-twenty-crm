@@ -316,10 +316,10 @@ index 0000000000..1ce4bb84be
 +- [ ] `sync-env.sh --env prod --doctl-context bbc --force-deploy`
 +- [ ] `crm.respon.io/healthz` ok, новые строки в `core."upgradeMigration"`, в логах нет ошибок
 diff --git a/package.json b/package.json
-index ede05332b2..ca99824386 100644
+index 01cd5962dc..c9507b0b42 100644
 --- a/package.json
 +++ b/package.json
-@@ -44,7 +44,8 @@
+@@ -51,7 +51,8 @@
      "docs:generate": "tsx packages/twenty-docs/scripts/generate-docs-json.ts",
      "docs:generate-navigation-template": "tsx packages/twenty-docs/scripts/generate-navigation-template.ts",
      "docs:generate-paths": "tsx packages/twenty-docs/scripts/generate-documentation-paths.ts",
@@ -329,7 +329,7 @@ index ede05332b2..ca99824386 100644
    },
    "workspaces": {
      "packages": [
-@@ -59,6 +60,7 @@
+@@ -66,6 +67,7 @@
        "packages/twenty-docs",
        "packages/twenty-e2e-testing",
        "packages/twenty-shared",
@@ -581,10 +581,10 @@ index 0000000000..ca64be557d
 +  });
 +});
 diff --git a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
-index 7d46c20801..aa6c8ddf5c 100644
+index dc32dbce19..aa6c8ddf5c 100644
 --- a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
 +++ b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
-@@ -1,10 +1,19 @@
+@@ -1,11 +1,20 @@
 +import { currentUserState } from '@/auth/states/currentUserState';
 +import { tokenPairState } from '@/auth/states/tokenPairState';
  import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
@@ -594,6 +594,7 @@ index 7d46c20801..aa6c8ddf5c 100644
  import { styled } from '@linaria/react';
 -import { useState } from 'react';
 -import { getSafeUrl, isDefined } from 'twenty-shared/utils';
+-import { themeCssVariables } from 'twenty-ui-deprecated/theme-constants';
 +import {
 +  type SyntheticEvent,
 +  useCallback,
@@ -603,9 +604,10 @@ index 7d46c20801..aa6c8ddf5c 100644
 +} from 'react';
 +import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 +import { isDefined } from 'twenty-shared/utils';
- import { themeCssVariables } from 'twenty-ui/theme-constants';
++import { themeCssVariables } from 'twenty-ui/theme-constants';
  
  const StyledContainer = styled.div<{ $isEditMode: boolean }>`
+   background: ${themeCssVariables.background.primary};
 @@ -55,9 +64,43 @@ export type IframeWidgetProps = {
    widget: PageLayoutWidget;
  };
@@ -823,10 +825,10 @@ index eb446b81a3..9bc5448fda 100644
      // oxlint-disable-next-line typescript/no-explicit-any
      if ((this.cacheManager.store as any)?.name === 'redis') {
 diff --git a/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts b/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
-index abfb79b2b4..0ee69c5d1f 100644
+index 5daf3e0134..571defad7c 100644
 --- a/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
 +++ b/packages/twenty-server/src/engine/core-modules/message-queue/drivers/bullmq.driver.ts
-@@ -158,6 +158,10 @@ export class BullMQDriver
+@@ -173,6 +173,10 @@ export class BullMQDriver
          shouldStoreInCache: false,
        });
      });
@@ -1418,10 +1420,10 @@ index 0000000000..10a48ad54c
 +echo "  5. For controlled upgrades: set CRM_IMAGE_TAG=${TARGET_TAG} in bbc-devops"
 +echo "============================================"
 diff --git a/yarn.lock b/yarn.lock
-index 680d6967fd..311cd62f19 100644
+index 2f9b29eae5..b547e33473 100644
 --- a/yarn.lock
 +++ b/yarn.lock
-@@ -5873,7 +5873,7 @@ __metadata:
+@@ -6096,7 +6096,7 @@ __metadata:
    languageName: node
    linkType: hard
  
@@ -1430,7 +1432,7 @@ index 680d6967fd..311cd62f19 100644
    version: 11.14.0
    resolution: "@emotion/react@npm:11.14.0"
    dependencies:
-@@ -5914,7 +5914,7 @@ __metadata:
+@@ -6137,7 +6137,7 @@ __metadata:
    languageName: node
    linkType: hard
  
@@ -1439,7 +1441,7 @@ index 680d6967fd..311cd62f19 100644
    version: 11.14.1
    resolution: "@emotion/styled@npm:11.14.1"
    dependencies:
-@@ -56693,6 +56693,18 @@ __metadata:
+@@ -56983,6 +56983,18 @@ __metadata:
    languageName: unknown
    linkType: soft
  
