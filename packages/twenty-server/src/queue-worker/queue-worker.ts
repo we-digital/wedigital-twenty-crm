@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { inspect } from 'util';
 
 import { ExceptionHandlerService } from 'src/engine/core-modules/exception-handler/exception-handler.service';
 import { LoggerService } from 'src/engine/core-modules/logger/logger.service';
@@ -34,12 +35,14 @@ async function bootstrap() {
 
     process.on('unhandledRejection', (reason) => {
       loggerService?.error(
-        `Unhandled rejection: ${reason}`,
+        `Unhandled rejection: ${String(reason)}`,
         'UnhandledRejection',
       );
 
       const error =
-        reason instanceof Error ? reason : new Error(String(reason));
+        reason instanceof Error
+          ? reason
+          : new Error(typeof reason === 'string' ? reason : inspect(reason));
 
       if (shouldCaptureException(error)) {
         exceptionHandlerService?.captureExceptions([error]);

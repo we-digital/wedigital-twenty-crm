@@ -1076,9 +1076,6 @@ export default {
             "id": [
                 52
             ],
-            "isCustom": [
-                53
-            ],
             "isRemote": [
                 53
             ],
@@ -1314,9 +1311,6 @@ export default {
             ],
             "id": [
                 52
-            ],
-            "isCustom": [
-                53
             ],
             "isActive": [
                 53
@@ -1745,6 +1739,9 @@ export default {
             "createdByUserWorkspaceId": [
                 3
             ],
+            "isActive": [
+                6
+            ],
             "__typename": [
                 1
             ]
@@ -1895,9 +1892,6 @@ export default {
             ],
             "billingEntitlements": [
                 230
-            ],
-            "hasValidEnterpriseKey": [
-                6
             ],
             "hasValidSignedEnterpriseKey": [
                 6

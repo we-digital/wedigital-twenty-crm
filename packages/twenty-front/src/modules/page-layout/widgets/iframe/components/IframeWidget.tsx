@@ -13,8 +13,8 @@ import {
   useState,
 } from 'react';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
-import { isDefined } from 'twenty-shared/utils';
-import { themeCssVariables } from 'twenty-ui/theme-constants';
+import { getSafeUrl, isDefined } from 'twenty-shared/utils';
+import { themeCssVariables } from 'twenty-ui-deprecated/theme-constants';
 
 const StyledContainer = styled.div<{ $isEditMode: boolean }>`
   background: ${themeCssVariables.background.primary};
@@ -72,9 +72,6 @@ const getUrlOrigin = (url: string): string | null => {
   }
 };
 
-// Builds a widget:context or widget:context:update envelope following the
-// canonical iframe postMessage contract (docs/iframe-postmessage-contract.md
-// in widget-mrz-input).
 function buildWidgetContextMessage(
   type: 'widget:context' | 'widget:context:update',
   token: string | undefined,
@@ -97,7 +94,6 @@ function buildWidgetContextMessage(
 
 export const IframeWidget = ({ widget }: IframeWidgetProps) => {
   const isPageLayoutInEditMode = useIsPageLayoutInEditMode();
-
   const currentUser = useAtomStateValue(currentUserState);
   const tokenPair = useAtomStateValue(tokenPairState);
 
@@ -109,68 +105,60 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
 
   const url = configuration.url;
   const title = widget.title;
-  const targetOrigin = isDefined(url) ? getUrlOrigin(url) : null;
+  const safeUrl = isDefined(url) ? getSafeUrl(url) : undefined;
+  const isHttpUrl = isDefined(safeUrl) && /^https?:\/\//i.test(safeUrl);
+  const targetOrigin = isDefined(safeUrl) ? getUrlOrigin(safeUrl) : null;
 
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-
-  // Ref to the iframe DOM element so we can verify event.source on inbound messages.
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  // Whether the widget iframe has announced readiness (widget:ready received).
   const [isWidgetReady, setIsWidgetReady] = useState(false);
-
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const accessToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
 
-  // Sends widget:context to the iframe. Called after widget:ready and whenever
-  // the token changes (as widget:context:update).
   const sendContext = useCallback(
     (type: 'widget:context' | 'widget:context:update') => {
       if (!isDefined(targetOrigin) || !isDefined(iframeRef.current)) return;
+
       iframeRef.current.contentWindow?.postMessage(
         buildWidgetContextMessage(type, accessToken, currentUser),
         targetOrigin,
       );
     },
-    [targetOrigin, accessToken, currentUser],
+    [accessToken, currentUser, targetOrigin],
   );
 
-  // Listen for widget:ready and widget:ack from the iframe.
-  // Responds to widget:ready with widget:context (auth + userContext).
-  // Security: only accept messages from our own iframe element at the expected origin.
   useEffect(() => {
     if (!isDefined(targetOrigin)) return;
 
     function onMessage(event: MessageEvent) {
-      // Must come from our iframe window at the configured origin.
       if (event.source !== iframeRef.current?.contentWindow) return;
       if (event.origin !== targetOrigin) return;
 
       const msg = event.data as Record<string, unknown> | null;
+
       if (!isDefined(msg) || msg.version !== 1) return;
 
       if (msg.type === 'widget:ready') {
         setIsWidgetReady(true);
         sendContext('widget:context');
       }
-      // widget:ack is informational — no action needed.
     }
 
     window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
-  }, [targetOrigin, sendContext]);
 
-  // Send widget:context:update whenever the access token changes after
-  // the widget is already loaded and has announced readiness.
+    return () => window.removeEventListener('message', onMessage);
+  }, [sendContext, targetOrigin]);
+
   useEffect(() => {
     if (!isWidgetReady) return;
+
     sendContext('widget:context:update');
   }, [accessToken, isWidgetReady, sendContext]);
 
-  // Send widget:reset when the widget unmounts (logout / navigation away).
   useEffect(() => {
     return () => {
       if (!isDefined(targetOrigin) || !isDefined(iframeRef.current)) return;
+
       iframeRef.current.contentWindow?.postMessage(
         {
           source: 'twenty',
@@ -192,7 +180,6 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
       return;
     }
 
-    // Also send the legacy twenty:user-context for any non-upgraded consumers.
     event.currentTarget.contentWindow?.postMessage(
       {
         type: 'twenty:user-context',
@@ -201,8 +188,6 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
       targetOrigin,
     );
 
-    // The widget will announce widget:ready after mounting; we respond then.
-    // If widget:ready was already received (e.g. fast load), send context now.
     if (isWidgetReady) {
       sendContext('widget:context');
     }
@@ -213,11 +198,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
     setHasError(true);
   };
 
-  if (
-    hasError ||
-    !isDefined(url) ||
-    (isDefined(currentUser) && !targetOrigin)
-  ) {
+  if (hasError || !isHttpUrl || (isDefined(currentUser) && !targetOrigin)) {
     return (
       <StyledContainer $isEditMode={isPageLayoutInEditMode}>
         <StyledErrorContainer>
@@ -237,7 +218,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
       <StyledIframe
         $isEditMode={isPageLayoutInEditMode}
         ref={iframeRef}
-        src={url}
+        src={safeUrl}
         title={title}
         onLoad={handleIframeLoad}
         onError={handleIframeError}
