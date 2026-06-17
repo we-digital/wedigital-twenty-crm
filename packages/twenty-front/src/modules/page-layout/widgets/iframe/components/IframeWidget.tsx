@@ -1,18 +1,9 @@
-import { currentUserState } from '@/auth/states/currentUserState';
-import { tokenPairState } from '@/auth/states/tokenPairState';
 import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
 import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
 import { PageLayoutWidgetNoDataDisplay } from '@/page-layout/widgets/components/PageLayoutWidgetNoDataDisplay';
 import { WidgetSkeletonLoader } from '@/page-layout/widgets/components/WidgetSkeletonLoader';
 import { styled } from '@linaria/react';
-import {
-  type SyntheticEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
-import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { useState } from 'react';
 import { getSafeUrl, isDefined } from 'twenty-shared/utils';
 import { themeCssVariables } from 'twenty-ui-deprecated/theme-constants';
 
@@ -64,38 +55,8 @@ export type IframeWidgetProps = {
   widget: PageLayoutWidget;
 };
 
-const getUrlOrigin = (url: string): string | null => {
-  try {
-    return new URL(url).origin;
-  } catch {
-    return null;
-  }
-};
-
-function buildWidgetContextMessage(
-  type: 'widget:context' | 'widget:context:update',
-  token: string | undefined,
-  userContext: unknown,
-) {
-  return {
-    source: 'twenty' as const,
-    target: 'widget-mrz-input',
-    version: 1 as const,
-    type,
-    requestId: crypto.randomUUID(),
-    payload: {
-      ...(isDefined(token) && {
-        auth: { scheme: 'bearer' as const, token },
-      }),
-      userContext,
-    },
-  };
-}
-
 export const IframeWidget = ({ widget }: IframeWidgetProps) => {
   const isPageLayoutInEditMode = useIsPageLayoutInEditMode();
-  const currentUser = useAtomStateValue(currentUserState);
-  const tokenPair = useAtomStateValue(tokenPairState);
 
   const configuration = widget.configuration;
 
@@ -105,92 +66,12 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
 
   const url = configuration.url;
   const title = widget.title;
-  const safeUrl = isDefined(url) ? getSafeUrl(url) : undefined;
-  const isHttpUrl = isDefined(safeUrl) && /^https?:\/\//i.test(safeUrl);
-  const targetOrigin = isDefined(safeUrl) ? getUrlOrigin(safeUrl) : null;
 
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [isWidgetReady, setIsWidgetReady] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const accessToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
 
-  const sendContext = useCallback(
-    (type: 'widget:context' | 'widget:context:update') => {
-      if (!isDefined(targetOrigin) || !isDefined(iframeRef.current)) return;
-
-      iframeRef.current.contentWindow?.postMessage(
-        buildWidgetContextMessage(type, accessToken, currentUser),
-        targetOrigin,
-      );
-    },
-    [accessToken, currentUser, targetOrigin],
-  );
-
-  useEffect(() => {
-    if (!isDefined(targetOrigin)) return;
-
-    function onMessage(event: MessageEvent) {
-      if (event.source !== iframeRef.current?.contentWindow) return;
-      if (event.origin !== targetOrigin) return;
-
-      const msg = event.data as Record<string, unknown> | null;
-
-      if (!isDefined(msg) || msg.version !== 1) return;
-
-      if (msg.type === 'widget:ready') {
-        setIsWidgetReady(true);
-        sendContext('widget:context');
-      }
-    }
-
-    window.addEventListener('message', onMessage);
-
-    return () => window.removeEventListener('message', onMessage);
-  }, [sendContext, targetOrigin]);
-
-  useEffect(() => {
-    if (!isWidgetReady) return;
-
-    sendContext('widget:context:update');
-  }, [accessToken, isWidgetReady, sendContext]);
-
-  useEffect(() => {
-    return () => {
-      if (!isDefined(targetOrigin) || !isDefined(iframeRef.current)) return;
-
-      iframeRef.current.contentWindow?.postMessage(
-        {
-          source: 'twenty',
-          target: 'widget-mrz-input',
-          version: 1,
-          type: 'widget:reset',
-          requestId: crypto.randomUUID(),
-          payload: {},
-        },
-        targetOrigin,
-      );
-    };
-  }, [targetOrigin]);
-
-  const handleIframeLoad = (event: SyntheticEvent<HTMLIFrameElement>) => {
+  const handleIframeLoad = () => {
     setIsLoading(false);
-
-    if (!isDefined(currentUser) || !isDefined(targetOrigin)) {
-      return;
-    }
-
-    event.currentTarget.contentWindow?.postMessage(
-      {
-        type: 'twenty:user-context',
-        payload: { userContext: currentUser },
-      },
-      targetOrigin,
-    );
-
-    if (isWidgetReady) {
-      sendContext('widget:context');
-    }
   };
 
   const handleIframeError = () => {
@@ -198,7 +79,10 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
     setHasError(true);
   };
 
-  if (hasError || !isHttpUrl || (isDefined(currentUser) && !targetOrigin)) {
+  const safeUrl = isDefined(url) ? getSafeUrl(url) : undefined;
+  const isHttpUrl = isDefined(safeUrl) && /^https?:\/\//i.test(safeUrl);
+
+  if (hasError || !isHttpUrl) {
     return (
       <StyledContainer $isEditMode={isPageLayoutInEditMode}>
         <StyledErrorContainer>
@@ -217,7 +101,6 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
       )}
       <StyledIframe
         $isEditMode={isPageLayoutInEditMode}
-        ref={iframeRef}
         src={safeUrl}
         title={title}
         onLoad={handleIframeLoad}

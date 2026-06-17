@@ -50,17 +50,7 @@ const bootstrap = async () => {
   const twentyConfigService = app.get(TwentyConfigService);
   const exceptionHandlerService = app.get(ExceptionHandlerService);
 
-  process.on('uncaughtException', (err) => {
-    logger.error(`Uncaught exception: ${err.message}`, err.stack ?? err.name);
-
-    if (shouldCaptureException(err)) {
-      exceptionHandlerService.captureExceptions([err]);
-    }
-  });
-
   process.on('unhandledRejection', (reason) => {
-    logger.error(`Unhandled rejection: ${String(reason)}`, 'UnhandledRejection');
-
     const error =
       reason instanceof Error
         ? reason

@@ -1,5 +1,4 @@
 import { NestFactory } from '@nestjs/core';
-import { inspect } from 'util';
 
 import { ExceptionHandlerService } from 'src/engine/core-modules/exception-handler/exception-handler.service';
 import { LoggerService } from 'src/engine/core-modules/logger/logger.service';
@@ -21,33 +20,6 @@ async function bootstrap() {
 
     // Inject our logger
     app.useLogger(loggerService ?? false);
-
-    process.on('uncaughtException', (err) => {
-      loggerService?.error(
-        `Uncaught exception: ${err.message}`,
-        err.stack ?? err.name,
-      );
-
-      if (shouldCaptureException(err)) {
-        exceptionHandlerService?.captureExceptions([err]);
-      }
-    });
-
-    process.on('unhandledRejection', (reason) => {
-      loggerService?.error(
-        `Unhandled rejection: ${String(reason)}`,
-        'UnhandledRejection',
-      );
-
-      const error =
-        reason instanceof Error
-          ? reason
-          : new Error(typeof reason === 'string' ? reason : inspect(reason));
-
-      if (shouldCaptureException(error)) {
-        exceptionHandlerService?.captureExceptions([error]);
-      }
-    });
   } catch (err) {
     loggerService?.error(err?.message, err?.name);
 
