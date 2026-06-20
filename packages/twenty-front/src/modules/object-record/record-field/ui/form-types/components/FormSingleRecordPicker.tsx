@@ -18,8 +18,11 @@ import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
 import { useCallback, useContext, useId } from 'react';
 import { CustomError, isDefined, isValidUuid } from 'twenty-shared/utils';
-import { IconChevronDown, IconForbid } from 'twenty-ui/display';
-import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
+import { IconChevronDown, IconForbid } from 'twenty-ui-deprecated/display';
+import {
+  ThemeContext,
+  themeCssVariables,
+} from 'twenty-ui-deprecated/theme-constants';
 
 const StyledFormSelectContainerWrapper = styled.div<{ readonly?: boolean }>`
   cursor: ${({ readonly }) => (readonly ? 'default' : 'pointer')};
@@ -55,7 +58,12 @@ export type FormSingleRecordPickerProps = {
   defaultValue?: RecordId | Variable | null;
   onChange: (value: RecordId | Variable | null) => void;
   onClear?: () => void;
+  onCreate?: (searchInput?: string) => void | Promise<void>;
   objectNameSingulars: string[];
+  selectedObjectNameSingular?: string;
+  onMorphItemSelected?: (
+    selectedMorphItem: RecordPickerPickableMorphItem,
+  ) => void;
   disabled?: boolean;
   testId?: string;
   VariablePicker?: VariablePickerComponent;
@@ -65,13 +73,19 @@ export const FormSingleRecordPicker = ({
   label,
   defaultValue,
   objectNameSingulars,
+  selectedObjectNameSingular,
   onChange,
   onClear,
+  onMorphItemSelected,
+  onCreate,
   disabled,
   testId,
   VariablePicker,
 }: FormSingleRecordPickerProps) => {
   const { theme } = useContext(ThemeContext);
+
+  const resolvedObjectNameSingular =
+    selectedObjectNameSingular ?? objectNameSingulars[0];
 
   const draftValue: FormSingleRecordPickerValue =
     defaultValue === null
@@ -92,7 +106,7 @@ export const FormSingleRecordPicker = ({
       isDefined(defaultValue) && !isStandaloneVariableString(defaultValue)
         ? defaultValue
         : '',
-    objectNameSingular: objectNameSingulars[0],
+    objectNameSingular: resolvedObjectNameSingular,
     withSoftDeleted: true,
     skip: !isDefined(defaultValue) || !isValidUuid(defaultValue),
   });
@@ -128,9 +142,16 @@ export const FormSingleRecordPicker = ({
 
     if (defaultValue === selectedMorphItem.recordId) {
       onClear?.();
+    } else if (isDefined(onMorphItemSelected)) {
+      onMorphItemSelected(selectedMorphItem);
     } else {
       onChange(selectedMorphItem.recordId);
     }
+    closeDropdown(dropdownId);
+  };
+
+  const handleCreateRecord = async (searchInput?: string) => {
+    await onCreate?.(searchInput);
     closeDropdown(dropdownId);
   };
 
@@ -175,7 +196,7 @@ export const FormSingleRecordPicker = ({
               <FormSingleRecordFieldChip
                 draftValue={draftValue}
                 selectedRecord={selectedRecord}
-                objectNameSingular={objectNameSingulars[0]}
+                objectNameSingular={resolvedObjectNameSingular}
                 onRemove={handleUnlinkVariable}
                 disabled={disabled}
               />
@@ -202,7 +223,7 @@ export const FormSingleRecordPicker = ({
                   <FormSingleRecordFieldChip
                     draftValue={draftValue}
                     selectedRecord={selectedRecord}
-                    objectNameSingular={objectNameSingulars[0]}
+                    objectNameSingular={resolvedObjectNameSingular}
                     onRemove={handleUnlinkVariable}
                     disabled={disabled}
                   />
@@ -222,6 +243,7 @@ export const FormSingleRecordPicker = ({
                 EmptyIcon={IconForbid}
                 emptyLabel={t`No record`}
                 onCancel={() => closeDropdown(dropdownId)}
+                onCreate={isDefined(onCreate) ? handleCreateRecord : undefined}
                 onMorphItemSelected={handleMorphItemSelected}
                 objectNameSingulars={objectNameSingulars}
                 recordPickerInstanceId={dropdownId}
@@ -237,6 +259,7 @@ export const FormSingleRecordPicker = ({
             onVariableSelect={handleVariableTagInsert}
             shouldDisplayRecordObjects={true}
             shouldDisplayRecordFields={false}
+            objectNameSingularsToSelect={objectNameSingulars}
           />
         )}
       </FormFieldInputRowContainer>

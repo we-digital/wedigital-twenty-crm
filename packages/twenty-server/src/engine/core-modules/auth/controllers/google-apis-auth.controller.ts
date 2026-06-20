@@ -56,7 +56,7 @@ export class GoogleAPIsAuthController {
     return;
   }
 
-  @Get(['get-access-token', 'callback'])
+  @Get('get-access-token')
   @UseGuards(
     GoogleAPIsOauthExchangeCodeForTokenGuard,
     PublicEndpointGuard,
@@ -96,7 +96,7 @@ export class GoogleAPIsAuthController {
         id: workspaceId,
       });
 
-      const handle = emails[0].value;
+      const handle = emails[0].value.toLowerCase();
 
       const connectedAccountId =
         await this.googleAPIsService.refreshGoogleRefreshToken({

@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - '.github/**'
   workflow_dispatch:
     inputs:
       ref:
@@ -65,15 +63,3 @@ jobs:
             APP_VERSION=${{ steps.version.outputs.app_version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Trigger bbc-devops auto-deploy
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.BBC_DEVOPS_DISPATCH_TOKEN }}
-          repository: we-digital/bbc-devops
-          event-type: deploy-twenty
-          client-payload: |
-            {
-              "version": "sha-${{ steps.version.outputs.sha_short }}",
-              "host": "bbc-twenty"
-            }

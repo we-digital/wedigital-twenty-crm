@@ -1,20 +1,21 @@
-import { currentUserState } from '@/auth/states/currentUserState';
+import {
+  type CurrentUser,
+  currentUserState,
+} from '@/auth/states/currentUserState';
+import {
+  type CurrentWorkspaceMember,
+  currentWorkspaceMemberState,
+} from '@/auth/states/currentWorkspaceMemberState';
 import { tokenPairState } from '@/auth/states/tokenPairState';
 import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
 import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
 import { PageLayoutWidgetNoDataDisplay } from '@/page-layout/widgets/components/PageLayoutWidgetNoDataDisplay';
 import { WidgetSkeletonLoader } from '@/page-layout/widgets/components/WidgetSkeletonLoader';
-import { styled } from '@linaria/react';
-import {
-  type SyntheticEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
-import { isDefined } from 'twenty-shared/utils';
-import { themeCssVariables } from 'twenty-ui/theme-constants';
+import { styled } from '@linaria/react';
+import { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { getSafeUrl, isDefined } from 'twenty-shared/utils';
+import { themeCssVariables } from 'twenty-ui-deprecated/theme-constants';
 
 const StyledContainer = styled.div<{ $isEditMode: boolean }>`
   background: ${themeCssVariables.background.primary};
@@ -64,6 +65,8 @@ export type IframeWidgetProps = {
   widget: PageLayoutWidget;
 };
 
+type WidgetContextMessageType = 'widget:context' | 'widget:context:update';
+
 const getUrlOrigin = (url: string): string | null => {
   try {
     return new URL(url).origin;
@@ -72,13 +75,43 @@ const getUrlOrigin = (url: string): string | null => {
   }
 };
 
-// Builds a widget:context or widget:context:update envelope following the
-// canonical iframe postMessage contract (docs/iframe-postmessage-contract.md
-// in widget-mrz-input).
+function buildWidgetUserContext(
+  currentUser: CurrentUser | null,
+  currentWorkspaceMember: CurrentWorkspaceMember | null,
+) {
+  if (!isDefined(currentUser) && !isDefined(currentWorkspaceMember)) {
+    return undefined;
+  }
+
+  return {
+    ...(isDefined(currentUser) ? currentUser : {}),
+    ...(isDefined(currentWorkspaceMember)
+      ? {
+          colorScheme: currentWorkspaceMember.colorScheme,
+          workspaceMember: currentWorkspaceMember,
+          workspaceMemberId: currentWorkspaceMember.id,
+        }
+      : {}),
+  };
+}
+
+function buildWidgetHostContext(
+  currentWorkspaceMember: CurrentWorkspaceMember | null,
+) {
+  const workspaceId = currentWorkspaceMember?.userWorkspaceId;
+
+  if (!isDefined(workspaceId)) {
+    return undefined;
+  }
+
+  return { workspaceId };
+}
+
 function buildWidgetContextMessage(
-  type: 'widget:context' | 'widget:context:update',
+  type: WidgetContextMessageType,
   token: string | undefined,
-  userContext: unknown,
+  userContext: ReturnType<typeof buildWidgetUserContext>,
+  hostContext: ReturnType<typeof buildWidgetHostContext>,
 ) {
   return {
     source: 'twenty' as const,
@@ -87,18 +120,24 @@ function buildWidgetContextMessage(
     type,
     requestId: crypto.randomUUID(),
     payload: {
-      ...(isDefined(token) && {
-        auth: { scheme: 'bearer' as const, token },
-      }),
-      userContext,
+      ...(isDefined(token)
+        ? {
+            auth: {
+              scheme: 'bearer' as const,
+              token,
+            },
+          }
+        : {}),
+      ...(isDefined(userContext) ? { userContext } : {}),
+      ...(isDefined(hostContext) ? { hostContext } : {}),
     },
   };
 }
 
 export const IframeWidget = ({ widget }: IframeWidgetProps) => {
   const isPageLayoutInEditMode = useIsPageLayoutInEditMode();
-
   const currentUser = useAtomStateValue(currentUserState);
+  const currentWorkspaceMember = useAtomStateValue(currentWorkspaceMemberState);
   const tokenPair = useAtomStateValue(tokenPairState);
 
   const configuration = widget.configuration;
@@ -109,68 +148,81 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
 
   const url = configuration.url;
   const title = widget.title;
-  const targetOrigin = isDefined(url) ? getUrlOrigin(url) : null;
 
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-
-  // Ref to the iframe DOM element so we can verify event.source on inbound messages.
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  // Whether the widget iframe has announced readiness (widget:ready received).
   const [isWidgetReady, setIsWidgetReady] = useState(false);
 
-  const accessToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Sends widget:context to the iframe. Called after widget:ready and whenever
-  // the token changes (as widget:context:update).
+  const accessToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
+  const safeUrl = isDefined(url) ? getSafeUrl(url) : undefined;
+  const isHttpUrl = isDefined(safeUrl) && /^https?:\/\//i.test(safeUrl);
+  const userContext = buildWidgetUserContext(
+    currentUser,
+    currentWorkspaceMember,
+  );
+  const hostContext = buildWidgetHostContext(currentWorkspaceMember);
+  const targetOrigin = isDefined(safeUrl) ? getUrlOrigin(safeUrl) : null;
+
   const sendContext = useCallback(
-    (type: 'widget:context' | 'widget:context:update') => {
-      if (!isDefined(targetOrigin) || !isDefined(iframeRef.current)) return;
+    (type: WidgetContextMessageType) => {
+      if (!isDefined(targetOrigin) || !isDefined(iframeRef.current)) {
+        return;
+      }
+
       iframeRef.current.contentWindow?.postMessage(
-        buildWidgetContextMessage(type, accessToken, currentUser),
+        buildWidgetContextMessage(type, accessToken, userContext, hostContext),
         targetOrigin,
       );
     },
-    [targetOrigin, accessToken, currentUser],
+    [accessToken, hostContext, targetOrigin, userContext],
   );
 
-  // Listen for widget:ready and widget:ack from the iframe.
-  // Responds to widget:ready with widget:context (auth + userContext).
-  // Security: only accept messages from our own iframe element at the expected origin.
   useEffect(() => {
-    if (!isDefined(targetOrigin)) return;
+    if (!isDefined(targetOrigin)) {
+      return;
+    }
 
     function onMessage(event: MessageEvent) {
-      // Must come from our iframe window at the configured origin.
-      if (event.source !== iframeRef.current?.contentWindow) return;
-      if (event.origin !== targetOrigin) return;
+      if (event.source !== iframeRef.current?.contentWindow) {
+        return;
+      }
+      if (event.origin !== targetOrigin) {
+        return;
+      }
 
-      const msg = event.data as Record<string, unknown> | null;
-      if (!isDefined(msg) || msg.version !== 1) return;
+      const message = event.data as Record<string, unknown> | null;
 
-      if (msg.type === 'widget:ready') {
+      if (!isDefined(message) || message.version !== 1) {
+        return;
+      }
+
+      if (message.type === 'widget:ready') {
         setIsWidgetReady(true);
         sendContext('widget:context');
       }
-      // widget:ack is informational — no action needed.
     }
 
     window.addEventListener('message', onMessage);
+
     return () => window.removeEventListener('message', onMessage);
-  }, [targetOrigin, sendContext]);
+  }, [sendContext, targetOrigin]);
 
-  // Send widget:context:update whenever the access token changes after
-  // the widget is already loaded and has announced readiness.
   useEffect(() => {
-    if (!isWidgetReady) return;
-    sendContext('widget:context:update');
-  }, [accessToken, isWidgetReady, sendContext]);
+    if (!isWidgetReady) {
+      return;
+    }
 
-  // Send widget:reset when the widget unmounts (logout / navigation away).
+    sendContext('widget:context:update');
+  }, [isWidgetReady, sendContext]);
+
   useEffect(() => {
     return () => {
-      if (!isDefined(targetOrigin) || !isDefined(iframeRef.current)) return;
+      if (!isDefined(targetOrigin) || !isDefined(iframeRef.current)) {
+        return;
+      }
+
       iframeRef.current.contentWindow?.postMessage(
         {
           source: 'twenty',
@@ -192,17 +244,14 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
       return;
     }
 
-    // Also send the legacy twenty:user-context for any non-upgraded consumers.
     event.currentTarget.contentWindow?.postMessage(
       {
         type: 'twenty:user-context',
-        payload: { userContext: currentUser },
+        payload: { userContext },
       },
       targetOrigin,
     );
 
-    // The widget will announce widget:ready after mounting; we respond then.
-    // If widget:ready was already received (e.g. fast load), send context now.
     if (isWidgetReady) {
       sendContext('widget:context');
     }
@@ -213,11 +262,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
     setHasError(true);
   };
 
-  if (
-    hasError ||
-    !isDefined(url) ||
-    (isDefined(currentUser) && !targetOrigin)
-  ) {
+  if (hasError || !isHttpUrl) {
     return (
       <StyledContainer $isEditMode={isPageLayoutInEditMode}>
         <StyledErrorContainer>
@@ -237,7 +282,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
       <StyledIframe
         $isEditMode={isPageLayoutInEditMode}
         ref={iframeRef}
-        src={url}
+        src={safeUrl}
         title={title}
         onLoad={handleIframeLoad}
         onError={handleIframeError}
