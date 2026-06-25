@@ -3,12 +3,12 @@
 # We Digital — Twenty CRM Upstream Upgrade Script
 #
 # Usage:
-#   ./scripts/upgrade-upstream.sh twenty/v2.15.0
+#   ./scripts/upgrade-upstream.sh twenty/v2.16.0
 #
 # What it does:
-#   1. Creates a safety tag on main (pre-<tag>-upgrade)
+#   1. Fast-forwards local main to origin/main and creates a safety tag
 #   2. Fetches the target upstream tag/ref
-#   3. Creates a new branch from main
+#   3. Creates a new branch from the synced main
 #   4. Replaces the entire tree with the upstream tag
 #   5. Applies the We Digital custom patch (we-digital-custom.patch)
 #   6. Updates .upstream-version with the normalized vX.Y.Z tag
@@ -28,7 +28,7 @@ TARGET_REF="${1:-}"
 
 if [[ -z "$TARGET_REF" ]]; then
   echo "Usage: $0 <upstream-tag-or-ref>"
-  echo "Example: $0 twenty/v2.15.0"
+  echo "Example: $0 twenty/v2.16.0"
   exit 1
 fi
 
@@ -45,9 +45,33 @@ fetch_tag_ref() {
   git fetch upstream "refs/tags/${ref}:refs/tags/${ref}" --no-tags
 }
 
+sync_local_main() {
+  git fetch origin --prune
+
+  if git show-ref --verify --quiet refs/heads/main; then
+    git checkout main
+    git merge --ff-only origin/main
+  else
+    git checkout -b main origin/main
+  fi
+}
+
 prune_we_digital_workflows() {
   find "$REPO_ROOT/.github/workflows" -type f ! -name 'build-and-push.yaml' -print0 |
     xargs -0 rm -f
+}
+
+write_custom_patch() {
+  local base_ref="$1"
+
+  git diff "$base_ref" HEAD -- \
+    . \
+    ':(exclude)we-digital-custom.patch' \
+    ':(exclude).github/workflows/*' > "$PATCH_FILE"
+
+  if ! git diff --quiet "$base_ref" HEAD -- .github/workflows/build-and-push.yaml; then
+    git diff "$base_ref" HEAD -- .github/workflows/build-and-push.yaml >> "$PATCH_FILE"
+  fi
 }
 
 # Preflight checks
@@ -61,7 +85,9 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
   exit 1
 fi
 
-echo "=== Step 1: Create safety tag on main ==="
+echo "=== Step 1: Sync local main and create safety tag ==="
+sync_local_main
+
 SAFETY_TAG="pre-${NORMALIZED_TAG}-upgrade"
 if git rev-parse "$SAFETY_TAG" >/dev/null 2>&1; then
   echo "Tag $SAFETY_TAG already exists, skipping."
@@ -94,13 +120,13 @@ echo "Resolved upstream ref: $RESOLVED_TAG"
 
 echo ""
 echo "=== Step 3: Create branch $BRANCH_NAME from main ==="
-git checkout main
 git checkout -b "$BRANCH_NAME"
 
 echo ""
 echo "=== Step 4: Replace tree with $RESOLVED_TAG ==="
 # Save patch to temp — git rm deletes all tracked files including the patch itself
 PATCH_BACKUP=$(mktemp)
+trap 'rm -f "$PATCH_BACKUP"' EXIT
 cp "$PATCH_FILE" "$PATCH_BACKUP"
 git rm -rf . --quiet
 git checkout "refs/tags/$RESOLVED_TAG" -- .
@@ -148,11 +174,9 @@ We Digital custom patches (see we-digital-custom.patch).
 
 echo ""
 echo "=== Step 9: Regenerate patch for next upgrade ==="
-git diff "refs/tags/${RESOLVED_TAG}" HEAD -- . ':(exclude)we-digital-custom.patch' > "$PATCH_FILE"
+write_custom_patch "refs/tags/${RESOLVED_TAG}"
 git add "$PATCH_FILE"
 git commit --amend --no-edit
-
-rm -f "$PATCH_BACKUP"
 
 echo ""
 echo "============================================"

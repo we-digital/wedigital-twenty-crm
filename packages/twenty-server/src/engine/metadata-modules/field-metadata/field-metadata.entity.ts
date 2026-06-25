@@ -136,13 +136,10 @@ export class FieldMetadataEntity<
   @Column({ default: true })
   isUIEditable: boolean;
 
-  // Superseded by isUIEditable. Some self-hosted instances already ran an older
-  // 2.13 step that physically dropped this legacy column, so once the rename
-  // step is considered applied the ORM must stop selecting it.
-  @WasRemovedInUpgrade({
-    upgradeCommandName:
-      RENAME_IS_UI_READ_ONLY_TO_IS_UI_EDITABLE_UPGRADE_COMMAND_NAME,
-  })
+  // Superseded by isUIEditable. Intentionally NOT @WasRemovedInUpgrade: dropping
+  // it in 2.13 would break the previous release's pods mid rolling-deploy, since
+  // they still SELECT it. The WasRemovedInUpgrade<T> type is kept so callers may
+  // omit it; the decorator + physical drop are deferred (core-team-issues#2542).
   @Column({ type: 'boolean', default: false })
   isUIReadOnly: WasRemovedInUpgrade<boolean>;
 
