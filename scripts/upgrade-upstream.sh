@@ -45,6 +45,11 @@ fetch_tag_ref() {
   git fetch upstream "refs/tags/${ref}:refs/tags/${ref}" --no-tags
 }
 
+prune_we_digital_workflows() {
+  find "$REPO_ROOT/.github/workflows" -type f ! -name 'build-and-push.yaml' -print0 |
+    xargs -0 rm -f
+}
+
 # Preflight checks
 if [[ ! -f "$PATCH_FILE" ]]; then
   echo "ERROR: $PATCH_FILE not found"
@@ -118,6 +123,10 @@ else
   echo "  - main.ts, queue-worker.ts (check bootstrap changes)"
   exit 1
 fi
+
+echo ""
+echo "=== Step 5b: Prune non-build GitHub workflows ==="
+prune_we_digital_workflows
 
 echo ""
 echo "=== Step 6: Update .upstream-version ==="
