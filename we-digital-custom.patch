@@ -1,9 +1,9 @@
 diff --git a/.github/workflows/build-and-push.yaml b/.github/workflows/build-and-push.yaml
 new file mode 100644
-index 0000000000..6b83e83754
+index 0000000000..68936e07e5
 --- /dev/null
 +++ b/.github/workflows/build-and-push.yaml
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,66 @@
 +name: Build and Push CRM Image
 +
 +on:
@@ -34,15 +34,16 @@ index 0000000000..6b83e83754
 +        id: version
 +        run: |
 +          if [ -f .upstream-version ]; then
-+            UPSTREAM_TAG=$(cat .upstream-version | tr -d '[:space:]')
++            RAW_UPSTREAM_TAG=$(cat .upstream-version | tr -d '[:space:]')
 +          else
-+            UPSTREAM_TAG=$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null || echo "v0.0.0")
++            RAW_UPSTREAM_TAG=$(git describe --tags --match 'v*' --match 'twenty/v*' --abbrev=0 2>/dev/null || echo "v0.0.0")
 +          fi
++          UPSTREAM_TAG=${RAW_UPSTREAM_TAG##*/}
 +          SHA_SHORT=$(git rev-parse --short HEAD)
 +          echo "upstream_tag=${UPSTREAM_TAG}" >> "$GITHUB_OUTPUT"
 +          echo "app_version=${UPSTREAM_TAG#v}" >> "$GITHUB_OUTPUT"
 +          echo "sha_short=${SHA_SHORT}" >> "$GITHUB_OUTPUT"
-+          echo "Built version: ${UPSTREAM_TAG} (sha: ${SHA_SHORT})"
++          echo "Built version: ${UPSTREAM_TAG} (source ref: ${RAW_UPSTREAM_TAG}, sha: ${SHA_SHORT})"
 +
 +      - name: Set up Docker Buildx
 +        uses: docker/setup-buildx-action@v3
@@ -81,17 +82,17 @@ index 0000000000..785775967e
 +	branch = main
 diff --git a/.upstream-version b/.upstream-version
 new file mode 100644
-index 0000000000..d4174a4e19
+index 0000000000..f855fc0f82
 --- /dev/null
 +++ b/.upstream-version
 @@ -0,0 +1 @@
-+v2.14.0
++v2.15.0
 diff --git a/docs/UPGRADE.md b/docs/UPGRADE.md
 new file mode 100644
-index 0000000000..1ce4bb84be
+index 0000000000..8d1052c1bb
 --- /dev/null
 +++ b/docs/UPGRADE.md
-@@ -0,0 +1,211 @@
+@@ -0,0 +1,213 @@
 +# Обновление wedigital-twenty-crm
 +
 +Подробная инструкция по апгрейду форка Twenty CRM с upstream `twentyhq/twenty` и последующему деплою в prod-стек we-digital.
@@ -119,6 +120,8 @@ index 0000000000..1ce4bb84be
 +git remote -v                       # upstream → twentyhq/twenty.git
 +```
 +
++Начиная с линейки `2.10.x`, upstream публикует релизы Twenty под namespaced ref'ами вида `twenty/v2.15.0`, но в нашем форке `.upstream-version` и GHCR-теги остаются в нормализованном формате `v2.15.0`.
++
 +Проверить, поддерживается ли cross-version jump до целевого тега:
 +
 +```bash
@@ -132,20 +135,20 @@ index 0000000000..1ce4bb84be
 +## 2. Запуск апгрейда
 +
 +```bash
-+./scripts/upgrade-upstream.sh v2.3.0    # пример
++./scripts/upgrade-upstream.sh twenty/v2.15.0    # пример
 +```
 +
 +Что скрипт делает (в этом порядке):
 +
 +1. **Safety tag** `pre-<tag>-upgrade` на `main` — точка отката.
-+2. **Fetch** upstream-тега (`upstream` remote = `twentyhq/twenty.git`, добавляется автоматически).
++2. **Fetch** upstream-тега/ref'а (`upstream` remote = `twentyhq/twenty.git`, добавляется автоматически). Если передан `v2.15.0`, скрипт умеет fallback на `twenty/v2.15.0`.
 +3. **Branch** `chore/upgrade-to-<tag>` от `main`.
 +4. **`git rm -rf .` + `git checkout <tag> -- .`** — полная замена дерева на upstream.
 +5. **`git apply --3way we-digital-custom.patch`** — наложение наших правок.
-+6. `.upstream-version` → новый тег.
++6. `.upstream-version` → нормализованный тег `vX.Y.Z`.
 +7. `yarn install` (обновить lockfile).
 +8. Commit `chore: upgrade Twenty CRM to <tag>`.
-+9. **Регенерация патча**: `git diff <tag> HEAD > we-digital-custom.patch` + `commit --amend`.
++9. **Регенерация патча**: `git diff <tag> HEAD -- . ':(exclude)we-digital-custom.patch' > we-digital-custom.patch` + `commit --amend`.
 +
 +---
 +
@@ -187,7 +190,7 @@ index 0000000000..1ce4bb84be
 +
 +**Критично: `--repo we-digital/...`.** Без флага `gh pr create` уходит в upstream `twentyhq/twenty` (был инцидент — PR #19778, пришлось закрывать и чистить body).
 +
-+После merge в `main` — `build-and-push.yaml` сам собирает образ и пушит в GHCR с тегами `<tag>`, `<tag>-N`, `latest`.
++После merge в `main` — `build-and-push.yaml` сам собирает образ и пушит в GHCR с нормализованными тегами `vX.Y.Z`, `sha-<short>`, `latest`.
 +
 +---
 +
@@ -305,20 +308,20 @@ index 0000000000..1ce4bb84be
 +- [ ] `crm.respon.io/healthz` ok, новые строки в `core."upgradeMigration"`, в логах нет ошибок
 diff --git a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.test.tsx b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.test.tsx
 new file mode 100644
-index 0000000000..ac3db1319f
+index 0000000000..12ce859b46
 --- /dev/null
 +++ b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.test.tsx
-@@ -0,0 +1,231 @@
+@@ -0,0 +1,235 @@
 +import { currentUserState } from '@/auth/states/currentUserState';
 +import { currentWorkspaceMemberState } from '@/auth/states/currentWorkspaceMemberState';
 +import { tokenPairState } from '@/auth/states/tokenPairState';
 +import { PageLayoutEditModeProviderContext } from '@/page-layout/contexts/PageLayoutEditModeContext';
 +import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
 +import { IframeWidget } from '@/page-layout/widgets/iframe/components/IframeWidget';
-+import { fireEvent, render, screen } from '@testing-library/react';
++import { act, fireEvent, render, screen } from '@testing-library/react';
 +import { Provider as JotaiProvider, createStore } from 'jotai';
 +import { type ReactNode } from 'react';
-+import { ThemeProvider } from 'twenty-ui-deprecated/theme-constants';
++import { ThemeProvider } from 'twenty-ui/theme-constants';
 +import {
 +  OnboardingStatus,
 +  WidgetType,
@@ -435,8 +438,6 @@ index 0000000000..ac3db1319f
 +  });
 +
 +  it('sends legacy user context on iframe load', () => {
-+    const postMessageSpy = jest.spyOn(Window.prototype, 'postMessage');
-+
 +    render(<IframeWidget widget={buildWidget('https://example.com/embed')} />, {
 +      wrapper: ({ children }) => (
 +        <Wrapper
@@ -450,7 +451,12 @@ index 0000000000..ac3db1319f
 +      ),
 +    });
 +
-+    const iframeElement = screen.getByTitle('Dashboard');
++    const iframeElement = screen.getByTitle('Dashboard') as HTMLIFrameElement;
++    const postMessageSpy = jest.spyOn(
++      iframeElement.contentWindow!,
++      'postMessage',
++    );
++
 +    fireEvent.load(iframeElement);
 +
 +    expect(postMessageSpy).toHaveBeenCalledWith(
@@ -470,8 +476,6 @@ index 0000000000..ac3db1319f
 +  });
 +
 +  it('responds to widget:ready with auth, workspace member, and host context', () => {
-+    const postMessageSpy = jest.spyOn(Window.prototype, 'postMessage');
-+
 +    render(<IframeWidget widget={buildWidget('https://example.com/embed')} />, {
 +      wrapper: ({ children }) => (
 +        <Wrapper
@@ -488,21 +492,24 @@ index 0000000000..ac3db1319f
 +
 +    const iframeElement = screen.getByTitle('Dashboard') as HTMLIFrameElement;
 +    const iframeWindow = iframeElement.contentWindow;
++    const postMessageSpy = jest.spyOn(iframeWindow!, 'postMessage');
 +
-+    window.dispatchEvent(
-+      new MessageEvent('message', {
-+        data: {
-+          source: 'widget',
-+          target: 'host',
-+          version: 1,
-+          type: 'widget:ready',
-+          requestId: 'widget-ready-id',
-+          payload: {},
-+        },
-+        origin: 'https://example.com',
-+        source: iframeWindow,
-+      }),
-+    );
++    act(() => {
++      window.dispatchEvent(
++        new MessageEvent('message', {
++          data: {
++            source: 'widget',
++            target: 'host',
++            version: 1,
++            type: 'widget:ready',
++            requestId: 'widget-ready-id',
++            payload: {},
++          },
++          origin: 'https://example.com',
++          source: iframeWindow,
++        }),
++      );
++    });
 +
 +    expect(postMessageSpy).toHaveBeenCalledWith(
 +      {
@@ -532,7 +539,7 @@ index 0000000000..ac3db1319f
 +  });
 +
 +  it('renders fallback when URL is not valid', () => {
-+    render(<IframeWidget widget={buildWidget('not-a-valid-url')} />, {
++    render(<IframeWidget widget={buildWidget('javascript:alert(1)')} />, {
 +      wrapper: ({ children }) => <Wrapper>{children}</Wrapper>,
 +    });
 +
@@ -541,7 +548,7 @@ index 0000000000..ac3db1319f
 +  });
 +});
 diff --git a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
-index dc32dbce19..c178ac4e03 100644
+index 7d46c20801..ca6c291b51 100644
 --- a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
 +++ b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
 @@ -1,9 +1,19 @@
@@ -563,7 +570,7 @@ index dc32dbce19..c178ac4e03 100644
 -import { useState } from 'react';
 +import { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
  import { getSafeUrl, isDefined } from 'twenty-shared/utils';
- import { themeCssVariables } from 'twenty-ui-deprecated/theme-constants';
+ import { themeCssVariables } from 'twenty-ui/theme-constants';
  
 @@ -55,8 +65,80 @@ export type IframeWidgetProps = {
    widget: PageLayoutWidget;
@@ -778,24 +785,24 @@ index dc32dbce19..c178ac4e03 100644
          onLoad={handleIframeLoad}
 diff --git a/scripts/upgrade-upstream.sh b/scripts/upgrade-upstream.sh
 new file mode 100755
-index 0000000000..10a48ad54c
+index 0000000000..ac64188ea5
 --- /dev/null
 +++ b/scripts/upgrade-upstream.sh
-@@ -0,0 +1,133 @@
+@@ -0,0 +1,156 @@
 +#!/usr/bin/env bash
 +# ============================================================================
 +# We Digital — Twenty CRM Upstream Upgrade Script
 +#
 +# Usage:
-+#   ./scripts/upgrade-upstream.sh v1.22.0
++#   ./scripts/upgrade-upstream.sh twenty/v2.15.0
 +#
 +# What it does:
 +#   1. Creates a safety tag on main (pre-<tag>-upgrade)
-+#   2. Fetches the target upstream tag
++#   2. Fetches the target upstream tag/ref
 +#   3. Creates a new branch from main
 +#   4. Replaces the entire tree with the upstream tag
 +#   5. Applies the We Digital custom patch (we-digital-custom.patch)
-+#   6. Updates .upstream-version
++#   6. Updates .upstream-version with the normalized vX.Y.Z tag
 +#   7. Runs yarn install to sync lockfile
 +#   8. Commits everything
 +#   9. Regenerates the patch for the next upgrade
@@ -808,17 +815,26 @@ index 0000000000..10a48ad54c
 +
 +set -euo pipefail
 +
-+TARGET_TAG="${1:-}"
++TARGET_REF="${1:-}"
 +
-+if [[ -z "$TARGET_TAG" ]]; then
-+  echo "Usage: $0 <upstream-tag>"
-+  echo "Example: $0 v1.22.0"
++if [[ -z "$TARGET_REF" ]]; then
++  echo "Usage: $0 <upstream-tag-or-ref>"
++  echo "Example: $0 twenty/v2.15.0"
 +  exit 1
 +fi
 +
++TARGET_REF="${TARGET_REF#refs/tags/}"
++NORMALIZED_TAG="${TARGET_REF##*/}"
++
 +REPO_ROOT="$(git rev-parse --show-toplevel)"
 +PATCH_FILE="$REPO_ROOT/we-digital-custom.patch"
-+BRANCH_NAME="chore/upgrade-to-${TARGET_TAG}"
++BRANCH_NAME="chore/upgrade-to-${NORMALIZED_TAG}"
++
++fetch_tag_ref() {
++  local ref="$1"
++
++  git fetch upstream "refs/tags/${ref}:refs/tags/${ref}" --no-tags
++}
 +
 +# Preflight checks
 +if [[ ! -f "$PATCH_FILE" ]]; then
@@ -832,7 +848,7 @@ index 0000000000..10a48ad54c
 +fi
 +
 +echo "=== Step 1: Create safety tag on main ==="
-+SAFETY_TAG="pre-${TARGET_TAG}-upgrade"
++SAFETY_TAG="pre-${NORMALIZED_TAG}-upgrade"
 +if git rev-parse "$SAFETY_TAG" >/dev/null 2>&1; then
 +  echo "Tag $SAFETY_TAG already exists, skipping."
 +else
@@ -841,12 +857,26 @@ index 0000000000..10a48ad54c
 +fi
 +
 +echo ""
-+echo "=== Step 2: Fetch upstream tag $TARGET_TAG ==="
++echo "=== Step 2: Fetch upstream tag/ref $TARGET_REF ==="
 +if ! git remote | grep -q upstream; then
 +  echo "Adding upstream remote..."
 +  git remote add upstream https://github.com/twentyhq/twenty.git
 +fi
-+git fetch upstream tag "$TARGET_TAG" --no-tags
++
++RESOLVED_TAG="$TARGET_REF"
++
++if ! fetch_tag_ref "$RESOLVED_TAG"; then
++  if [[ "$TARGET_REF" == v* ]]; then
++    RESOLVED_TAG="twenty/$TARGET_REF"
++    echo "Falling back to namespaced Twenty release tag: $RESOLVED_TAG"
++    fetch_tag_ref "$RESOLVED_TAG"
++  else
++    echo "ERROR: Could not fetch upstream tag/ref '$TARGET_REF'"
++    exit 1
++  fi
++fi
++
++echo "Resolved upstream ref: $RESOLVED_TAG"
 +
 +echo ""
 +echo "=== Step 3: Create branch $BRANCH_NAME from main ==="
@@ -854,12 +884,12 @@ index 0000000000..10a48ad54c
 +git checkout -b "$BRANCH_NAME"
 +
 +echo ""
-+echo "=== Step 4: Replace tree with $TARGET_TAG ==="
++echo "=== Step 4: Replace tree with $RESOLVED_TAG ==="
 +# Save patch to temp — git rm deletes all tracked files including the patch itself
 +PATCH_BACKUP=$(mktemp)
 +cp "$PATCH_FILE" "$PATCH_BACKUP"
 +git rm -rf . --quiet
-+git checkout "$TARGET_TAG" -- .
++git checkout "refs/tags/$RESOLVED_TAG" -- .
 +
 +echo ""
 +echo "=== Step 5: Apply We Digital custom patch ==="
@@ -882,8 +912,8 @@ index 0000000000..10a48ad54c
 +
 +echo ""
 +echo "=== Step 6: Update .upstream-version ==="
-+echo "$TARGET_TAG" > "$REPO_ROOT/.upstream-version"
-+echo "Set .upstream-version to $TARGET_TAG"
++echo "$NORMALIZED_TAG" > "$REPO_ROOT/.upstream-version"
++echo "Set .upstream-version to $NORMALIZED_TAG"
 +
 +echo ""
 +echo "=== Step 7: Update yarn.lock ==="
@@ -892,15 +922,15 @@ index 0000000000..10a48ad54c
 +echo ""
 +echo "=== Step 8: Stage and commit ==="
 +git add -A
-+git commit -m "chore: upgrade Twenty CRM to ${TARGET_TAG}
++git commit -m "chore: upgrade Twenty CRM to ${NORMALIZED_TAG}
 +
-+Replace entire codebase with upstream ${TARGET_TAG} and re-apply
++Replace entire codebase with upstream ${RESOLVED_TAG} and re-apply
 +We Digital custom patches (see we-digital-custom.patch).
 +"
 +
 +echo ""
 +echo "=== Step 9: Regenerate patch for next upgrade ==="
-+git diff "${TARGET_TAG}" HEAD > "$PATCH_FILE"
++git diff "refs/tags/${RESOLVED_TAG}" HEAD -- . ':(exclude)we-digital-custom.patch' > "$PATCH_FILE"
 +git add "$PATCH_FILE"
 +git commit --amend --no-edit
 +
@@ -913,5 +943,5 @@ index 0000000000..10a48ad54c
 +echo "  2. Create PR: gh pr create --base main"
 +echo "  3. Wait for CI to pass"
 +echo "  4. After merge: build-and-push auto-builds + triggers deploy"
-+echo "  5. For controlled upgrades: set CRM_IMAGE_TAG=${TARGET_TAG} in bbc-devops"
++echo "  5. For controlled upgrades: set CRM_IMAGE_TAG=${NORMALIZED_TAG} in bbc-devops"
 +echo "============================================"

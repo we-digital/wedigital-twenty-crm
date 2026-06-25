@@ -146,6 +146,7 @@ describe('WorkspaceEntityManager', () => {
       label: 'Field Name',
       objectMetadataId: 'test-entity-id',
       isNullable: true,
+      isSystemSideEffect: false,
       isLabelSyncedWithName: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -473,7 +474,13 @@ describe('WorkspaceEntityManager', () => {
   describe('Update Methods', () => {
     it('should call createQueryBuilder with permissionOptions for update', async () => {
       await withWorkspaceContext(mockWorkspaceContext, () =>
-        entityManager.update('test-entity', {}, {}, mockPermissionOptions),
+        entityManager.update(
+          'test-entity',
+          {},
+          {},
+          undefined,
+          mockPermissionOptions,
+        ),
       );
       expect(entityManager['createQueryBuilder']).toHaveBeenCalledWith(
         'test-entity',

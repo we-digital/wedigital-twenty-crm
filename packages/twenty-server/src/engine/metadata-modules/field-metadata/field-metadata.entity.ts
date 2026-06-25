@@ -22,6 +22,7 @@ import {
 
 import { WasIntroducedInUpgrade } from 'src/engine/core-modules/upgrade/decorators/was-introduced-in-upgrade.decorator';
 import { WasRemovedInUpgrade } from 'src/engine/core-modules/upgrade/decorators/was-removed-in-upgrade.decorator';
+import { ADD_IS_SYSTEM_SIDE_EFFECT_UPGRADE_COMMAND_NAME } from 'src/database/commands/upgrade-version-command/2-15/is-system-side-effect-upgrade-command-name.constant';
 import { RENAME_IS_UI_READ_ONLY_TO_IS_UI_EDITABLE_UPGRADE_COMMAND_NAME } from 'src/engine/metadata-modules/object-metadata/constants/rename-is-ui-read-only-to-is-ui-editable-upgrade-command-name.constant';
 import { type FieldStandardOverridesDTO } from 'src/engine/metadata-modules/field-metadata/dtos/field-standard-overrides.dto';
 import { AssignIfIsGivenFieldMetadataType } from 'src/engine/metadata-modules/field-metadata/types/assign-if-is-given-field-metadata-type.type';
@@ -123,19 +124,22 @@ export class FieldMetadataEntity<
   isSystem: boolean;
 
   @WasIntroducedInUpgrade({
+    upgradeCommandName: ADD_IS_SYSTEM_SIDE_EFFECT_UPGRADE_COMMAND_NAME,
+  })
+  @Column({ nullable: false, default: false, type: 'boolean' })
+  isSystemSideEffect: boolean;
+
+  @WasIntroducedInUpgrade({
     upgradeCommandName:
       RENAME_IS_UI_READ_ONLY_TO_IS_UI_EDITABLE_UPGRADE_COMMAND_NAME,
   })
   @Column({ default: true })
   isUIEditable: boolean;
 
-  // Superseded by isUIEditable. The physical column may still exist on some
-  // upgraded instances, but once the 2.13 rename step has run the ORM must stop
-  // selecting it because some databases already dropped the legacy column.
-  @WasRemovedInUpgrade({
-    upgradeCommandName:
-      RENAME_IS_UI_READ_ONLY_TO_IS_UI_EDITABLE_UPGRADE_COMMAND_NAME,
-  })
+  // Superseded by isUIEditable. Intentionally NOT @WasRemovedInUpgrade: dropping
+  // it in 2.13 would break the previous release's pods mid rolling-deploy, since
+  // they still SELECT it. The WasRemovedInUpgrade<T> type is kept so callers may
+  // omit it; the decorator + physical drop are deferred (core-team-issues#2542).
   @Column({ type: 'boolean', default: false })
   isUIReadOnly: WasRemovedInUpgrade<boolean>;
 

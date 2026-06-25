@@ -28,15 +28,16 @@ jobs:
         id: version
         run: |
           if [ -f .upstream-version ]; then
-            UPSTREAM_TAG=$(cat .upstream-version | tr -d '[:space:]')
+            RAW_UPSTREAM_TAG=$(cat .upstream-version | tr -d '[:space:]')
           else
-            UPSTREAM_TAG=$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null || echo "v0.0.0")
+            RAW_UPSTREAM_TAG=$(git describe --tags --match 'v*' --match 'twenty/v*' --abbrev=0 2>/dev/null || echo "v0.0.0")
           fi
+          UPSTREAM_TAG=${RAW_UPSTREAM_TAG##*/}
           SHA_SHORT=$(git rev-parse --short HEAD)
           echo "upstream_tag=${UPSTREAM_TAG}" >> "$GITHUB_OUTPUT"
           echo "app_version=${UPSTREAM_TAG#v}" >> "$GITHUB_OUTPUT"
           echo "sha_short=${SHA_SHORT}" >> "$GITHUB_OUTPUT"
-          echo "Built version: ${UPSTREAM_TAG} (sha: ${SHA_SHORT})"
+          echo "Built version: ${UPSTREAM_TAG} (source ref: ${RAW_UPSTREAM_TAG}, sha: ${SHA_SHORT})"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
