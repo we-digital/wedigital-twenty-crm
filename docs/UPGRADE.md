@@ -20,7 +20,8 @@
 ```bash
 cd /path/to/wedigital-twenty-crm
 git status                          # дерево чистое
-git checkout main && git pull
+git fetch origin --prune
+git checkout main && git merge --ff-only origin/main
 cat .upstream-version               # текущий тег
 git remote -v                       # upstream → twentyhq/twenty.git
 ```
@@ -40,12 +41,12 @@ Cross-version поддерживается с **v1.21.0+**. Если шаг сл
 ## 2. Запуск апгрейда
 
 ```bash
-./scripts/upgrade-upstream.sh twenty/v2.15.0    # пример
+./scripts/upgrade-upstream.sh twenty/v2.16.0    # пример
 ```
 
 Что скрипт делает (в этом порядке):
 
-1. **Safety tag** `pre-<tag>-upgrade` на `main` — точка отката.
+1. **Fast-forward local `main`** до `origin/main`, затем safety tag `pre-<tag>-upgrade` — точка отката.
 2. **Fetch** upstream-тега/ref'а (`upstream` remote = `twentyhq/twenty.git`, добавляется автоматически). Если передан `v2.15.0`, скрипт умеет fallback на `twenty/v2.15.0`.
 3. **Branch** `chore/upgrade-to-<tag>` от `main`.
 4. **`git rm -rf .` + `git checkout <tag> -- .`** — полная замена дерева на upstream.
@@ -53,7 +54,7 @@ Cross-version поддерживается с **v1.21.0+**. Если шаг сл
 6. `.upstream-version` → нормализованный тег `vX.Y.Z`.
 7. `yarn install` (обновить lockfile).
 8. Commit `chore: upgrade Twenty CRM to <tag>`.
-9. **Регенерация патча**: `git diff <tag> HEAD -- . ':(exclude)we-digital-custom.patch' > we-digital-custom.patch` + `commit --amend`.
+9. **Регенерация патча** без upstream workflow-шумов: весь diff, кроме `we-digital-custom.patch` и `.github/workflows/*`, затем отдельным проходом вернуть только `build-and-push.yaml`, после чего `commit --amend`.
 
 ---
 
@@ -74,7 +75,10 @@ Cross-version поддерживается с **v1.21.0+**. Если шаг сл
 ```bash
 git add -A && git commit
 # затем регенерировать патч ВРУЧНУЮ (скрипт упал на шаге 5):
-git diff <tag> HEAD -- . ':(exclude)we-digital-custom.patch' > we-digital-custom.patch
+git diff <tag> HEAD -- . \
+  ':(exclude)we-digital-custom.patch' \
+  ':(exclude).github/workflows/*' > we-digital-custom.patch
+git diff <tag> HEAD -- .github/workflows/build-and-push.yaml >> we-digital-custom.patch
 git add we-digital-custom.patch
 git commit --amend --no-edit
 ```

@@ -12,6 +12,7 @@ import {
 import { type WorkspaceEntityDuplicateCriteria } from 'src/engine/api/graphql/workspace-query-builder/types/workspace-entity-duplicate-criteria.type';
 import { FieldMetadataEntity } from 'src/engine/metadata-modules/field-metadata/field-metadata.entity';
 import { IndexMetadataEntity } from 'src/engine/metadata-modules/index-metadata/index-metadata.entity';
+import { SearchFieldMetadataEntity } from 'src/engine/metadata-modules/search-field-metadata/search-field-metadata.entity';
 import { type ObjectStandardOverridesDTO } from 'src/engine/metadata-modules/object-metadata/dtos/object-standard-overrides.dto';
 import { FieldPermissionEntity } from 'src/engine/metadata-modules/object-permission/field-permission/field-permission.entity';
 import { ObjectPermissionEntity } from 'src/engine/metadata-modules/object-permission/object-permission.entity';
@@ -95,13 +96,10 @@ export class ObjectMetadataEntity
   @Column({ default: true })
   isUIEditable: boolean;
 
-  // Superseded by isUIEditable. Some self-hosted instances already ran an older
-  // 2.13 step that physically dropped this legacy column, so once the rename
-  // step is considered applied the ORM must stop selecting it.
-  @WasRemovedInUpgrade({
-    upgradeCommandName:
-      RENAME_IS_UI_READ_ONLY_TO_IS_UI_EDITABLE_UPGRADE_COMMAND_NAME,
-  })
+  // Superseded by isUIEditable. Intentionally NOT @WasRemovedInUpgrade: dropping
+  // it in 2.13 would break the previous release's pods mid rolling-deploy, since
+  // they still SELECT it. The WasRemovedInUpgrade<T> type is kept so callers may
+  // omit it; the decorator + physical drop are deferred (core-team-issues#2542).
   @Column({ type: 'boolean', default: false })
   isUIReadOnly: WasRemovedInUpgrade<boolean>;
 
@@ -144,6 +142,15 @@ export class ObjectMetadataEntity
     cascade: true,
   })
   indexMetadatas: Relation<IndexMetadataEntity[]>;
+
+  @OneToMany(
+    () => SearchFieldMetadataEntity,
+    (searchFieldMetadata) => searchFieldMetadata.objectMetadata,
+    {
+      cascade: true,
+    },
+  )
+  searchFieldMetadatas: Relation<SearchFieldMetadataEntity[]>;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
