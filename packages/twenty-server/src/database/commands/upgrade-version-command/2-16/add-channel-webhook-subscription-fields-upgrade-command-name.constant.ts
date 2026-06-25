@@ -1,0 +1,2 @@
+export const ADD_CHANNEL_WEBHOOK_SUBSCRIPTION_FIELDS_UPGRADE_COMMAND_NAME =
+  '2.16.0_AddChannelWebhookSubscriptionFieldsFastInstanceCommand_1782152096938';
