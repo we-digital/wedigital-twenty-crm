@@ -1,7 +1,12 @@
+import { ADD_CHANNEL_WEBHOOK_SUBSCRIPTION_FIELDS_UPGRADE_COMMAND_NAME } from 'src/database/commands/upgrade-version-command/2-16/add-channel-webhook-subscription-fields-upgrade-command-name.constant';
+import { ADD_SERVER_TRIGGER_SETTINGS_TO_LOGIC_FUNCTION_UPGRADE_COMMAND_NAME } from 'src/database/commands/upgrade-version-command/2-16/add-server-trigger-settings-to-logic-function-upgrade-command-name.constant';
 import { WasIntroducedInUpgrade } from 'src/engine/core-modules/upgrade/decorators/was-introduced-in-upgrade.decorator';
 import { WasRemovedInUpgrade } from 'src/engine/core-modules/upgrade/decorators/was-removed-in-upgrade.decorator';
 import { WasRenamedInUpgrade } from 'src/engine/core-modules/upgrade/decorators/was-renamed-in-upgrade.decorator';
 import { resolveEntityShapeAtUpgradeCursor } from 'src/engine/core-modules/upgrade/utils/resolve-entity-shape-at-upgrade-cursor.util';
+import { CalendarChannelEntity } from 'src/engine/metadata-modules/calendar-channel/entities/calendar-channel.entity';
+import { LogicFunctionEntity } from 'src/engine/metadata-modules/logic-function/logic-function.entity';
+import { MessageChannelEntity } from 'src/engine/metadata-modules/message-channel/entities/message-channel.entity';
 
 const INTRODUCE_CMD = '2.7.0_IntroduceCommand_1800000000000';
 const RENAME_CMD = '2.6.0_RenameCommand_1700000000000';
@@ -260,6 +265,124 @@ describe('resolveEntityShapeAtUpgradeCursor', () => {
       });
 
       expect(result.hiddenPropertyNames).toEqual(new Set(['transientColumn']));
+    });
+  });
+
+  describe('real 2.16 compatibility columns', () => {
+    it('hides channel webhook subscription fields until the 2.16 instance command is applied', () => {
+      const calendarChannelFields = [
+        {
+          propertyName: 'webhookSubscriptionExternalId',
+          databaseName: 'webhookSubscriptionExternalId',
+        },
+        {
+          propertyName: 'webhookSubscriptionExternalResourceId',
+          databaseName: 'webhookSubscriptionExternalResourceId',
+        },
+        {
+          propertyName: 'webhookSubscriptionClientState',
+          databaseName: 'webhookSubscriptionClientState',
+        },
+        {
+          propertyName: 'webhookSubscriptionStatus',
+          databaseName: 'webhookSubscriptionStatus',
+        },
+        {
+          propertyName: 'webhookSubscriptionExpiresAt',
+          databaseName: 'webhookSubscriptionExpiresAt',
+        },
+      ];
+      const messageChannelFields = [
+        {
+          propertyName: 'webhookSubscriptionExternalId',
+          databaseName: 'webhookSubscriptionExternalId',
+        },
+        {
+          propertyName: 'webhookSubscriptionClientState',
+          databaseName: 'webhookSubscriptionClientState',
+        },
+        {
+          propertyName: 'webhookSubscriptionStatus',
+          databaseName: 'webhookSubscriptionStatus',
+        },
+        {
+          propertyName: 'webhookSubscriptionExpiresAt',
+          databaseName: 'webhookSubscriptionExpiresAt',
+        },
+      ];
+
+      expect(
+        resolveEntityShapeAtUpgradeCursor({
+          entityClass: CalendarChannelEntity,
+          currentTableName: 'calendarChannel',
+          currentColumns: calendarChannelFields,
+          isStepApplied: buildPredicate([]),
+        }).hiddenPropertyNames,
+      ).toEqual(
+        new Set(calendarChannelFields.map(({ propertyName }) => propertyName)),
+      );
+
+      expect(
+        resolveEntityShapeAtUpgradeCursor({
+          entityClass: MessageChannelEntity,
+          currentTableName: 'messageChannel',
+          currentColumns: messageChannelFields,
+          isStepApplied: buildPredicate([]),
+        }).hiddenPropertyNames,
+      ).toEqual(
+        new Set(messageChannelFields.map(({ propertyName }) => propertyName)),
+      );
+
+      expect(
+        resolveEntityShapeAtUpgradeCursor({
+          entityClass: CalendarChannelEntity,
+          currentTableName: 'calendarChannel',
+          currentColumns: calendarChannelFields,
+          isStepApplied: buildPredicate([
+            ADD_CHANNEL_WEBHOOK_SUBSCRIPTION_FIELDS_UPGRADE_COMMAND_NAME,
+          ]),
+        }).hiddenPropertyNames.size,
+      ).toBe(0);
+
+      expect(
+        resolveEntityShapeAtUpgradeCursor({
+          entityClass: MessageChannelEntity,
+          currentTableName: 'messageChannel',
+          currentColumns: messageChannelFields,
+          isStepApplied: buildPredicate([
+            ADD_CHANNEL_WEBHOOK_SUBSCRIPTION_FIELDS_UPGRADE_COMMAND_NAME,
+          ]),
+        }).hiddenPropertyNames.size,
+      ).toBe(0);
+    });
+
+    it('hides logic function server route trigger settings until the 2.16 instance command is applied', () => {
+      const currentColumns = [
+        {
+          propertyName: 'serverRouteTriggerSettings',
+          databaseName: 'serverRouteTriggerSettings',
+        },
+      ];
+
+      expect(
+        resolveEntityShapeAtUpgradeCursor({
+          entityClass: LogicFunctionEntity,
+          currentTableName: 'logicFunction',
+          currentColumns,
+          isStepApplied: buildPredicate([]),
+        }).hiddenPropertyNames,
+      ).toEqual(new Set(['serverRouteTriggerSettings']));
+
+      expect(
+        resolveEntityShapeAtUpgradeCursor({
+          entityClass: LogicFunctionEntity,
+          currentTableName: 'logicFunction',
+          currentColumns,
+          isStepApplied: buildPredicate([
+            ADD_SERVER_TRIGGER_SETTINGS_TO_LOGIC_FUNCTION_UPGRADE_COMMAND_NAME,
+          ]),
+        }).hiddenPropertyNames.size,
+      ).toBe(0);
     });
   });
 
