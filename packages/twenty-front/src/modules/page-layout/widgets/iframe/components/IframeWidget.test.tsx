@@ -4,10 +4,10 @@ import { tokenPairState } from '@/auth/states/tokenPairState';
 import { PageLayoutEditModeProviderContext } from '@/page-layout/contexts/PageLayoutEditModeContext';
 import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
 import { IframeWidget } from '@/page-layout/widgets/iframe/components/IframeWidget';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { Provider as JotaiProvider, createStore } from 'jotai';
 import { type ReactNode } from 'react';
-import { ThemeProvider } from 'twenty-ui-deprecated/theme-constants';
+import { ThemeProvider } from 'twenty-ui/theme-constants';
 import {
   OnboardingStatus,
   WidgetType,
@@ -124,8 +124,6 @@ describe('IframeWidget', () => {
   });
 
   it('sends legacy user context on iframe load', () => {
-    const postMessageSpy = jest.spyOn(Window.prototype, 'postMessage');
-
     render(<IframeWidget widget={buildWidget('https://example.com/embed')} />, {
       wrapper: ({ children }) => (
         <Wrapper
@@ -139,7 +137,12 @@ describe('IframeWidget', () => {
       ),
     });
 
-    const iframeElement = screen.getByTitle('Dashboard');
+    const iframeElement = screen.getByTitle('Dashboard') as HTMLIFrameElement;
+    const postMessageSpy = jest.spyOn(
+      iframeElement.contentWindow!,
+      'postMessage',
+    );
+
     fireEvent.load(iframeElement);
 
     expect(postMessageSpy).toHaveBeenCalledWith(
@@ -159,8 +162,6 @@ describe('IframeWidget', () => {
   });
 
   it('responds to widget:ready with auth, workspace member, and host context', () => {
-    const postMessageSpy = jest.spyOn(Window.prototype, 'postMessage');
-
     render(<IframeWidget widget={buildWidget('https://example.com/embed')} />, {
       wrapper: ({ children }) => (
         <Wrapper
@@ -177,21 +178,24 @@ describe('IframeWidget', () => {
 
     const iframeElement = screen.getByTitle('Dashboard') as HTMLIFrameElement;
     const iframeWindow = iframeElement.contentWindow;
+    const postMessageSpy = jest.spyOn(iframeWindow!, 'postMessage');
 
-    window.dispatchEvent(
-      new MessageEvent('message', {
-        data: {
-          source: 'widget',
-          target: 'host',
-          version: 1,
-          type: 'widget:ready',
-          requestId: 'widget-ready-id',
-          payload: {},
-        },
-        origin: 'https://example.com',
-        source: iframeWindow,
-      }),
-    );
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: {
+            source: 'widget',
+            target: 'host',
+            version: 1,
+            type: 'widget:ready',
+            requestId: 'widget-ready-id',
+            payload: {},
+          },
+          origin: 'https://example.com',
+          source: iframeWindow,
+        }),
+      );
+    });
 
     expect(postMessageSpy).toHaveBeenCalledWith(
       {
@@ -221,7 +225,7 @@ describe('IframeWidget', () => {
   });
 
   it('renders fallback when URL is not valid', () => {
-    render(<IframeWidget widget={buildWidget('not-a-valid-url')} />, {
+    render(<IframeWidget widget={buildWidget('javascript:alert(1)')} />, {
       wrapper: ({ children }) => <Wrapper>{children}</Wrapper>,
     });
 

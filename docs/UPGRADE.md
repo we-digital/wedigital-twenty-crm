@@ -25,6 +25,8 @@ cat .upstream-version               # текущий тег
 git remote -v                       # upstream → twentyhq/twenty.git
 ```
 
+Начиная с линейки `2.10.x`, upstream публикует релизы Twenty под namespaced ref'ами вида `twenty/v2.15.0`, но в нашем форке `.upstream-version` и GHCR-теги остаются в нормализованном формате `v2.15.0`.
+
 Проверить, поддерживается ли cross-version jump до целевого тега:
 
 ```bash
@@ -38,20 +40,20 @@ Cross-version поддерживается с **v1.21.0+**. Если шаг сл
 ## 2. Запуск апгрейда
 
 ```bash
-./scripts/upgrade-upstream.sh v2.3.0    # пример
+./scripts/upgrade-upstream.sh twenty/v2.15.0    # пример
 ```
 
 Что скрипт делает (в этом порядке):
 
 1. **Safety tag** `pre-<tag>-upgrade` на `main` — точка отката.
-2. **Fetch** upstream-тега (`upstream` remote = `twentyhq/twenty.git`, добавляется автоматически).
+2. **Fetch** upstream-тега/ref'а (`upstream` remote = `twentyhq/twenty.git`, добавляется автоматически). Если передан `v2.15.0`, скрипт умеет fallback на `twenty/v2.15.0`.
 3. **Branch** `chore/upgrade-to-<tag>` от `main`.
 4. **`git rm -rf .` + `git checkout <tag> -- .`** — полная замена дерева на upstream.
 5. **`git apply --3way we-digital-custom.patch`** — наложение наших правок.
-6. `.upstream-version` → новый тег.
+6. `.upstream-version` → нормализованный тег `vX.Y.Z`.
 7. `yarn install` (обновить lockfile).
 8. Commit `chore: upgrade Twenty CRM to <tag>`.
-9. **Регенерация патча**: `git diff <tag> HEAD > we-digital-custom.patch` + `commit --amend`.
+9. **Регенерация патча**: `git diff <tag> HEAD -- . ':(exclude)we-digital-custom.patch' > we-digital-custom.patch` + `commit --amend`.
 
 ---
 
@@ -93,7 +95,7 @@ gh pr create --repo we-digital/wedigital-twenty-crm \
 
 **Критично: `--repo we-digital/...`.** Без флага `gh pr create` уходит в upstream `twentyhq/twenty` (был инцидент — PR #19778, пришлось закрывать и чистить body).
 
-После merge в `main` — `build-and-push.yaml` сам собирает образ и пушит в GHCR с тегами `<tag>`, `<tag>-N`, `latest`.
+После merge в `main` — `build-and-push.yaml` сам собирает образ и пушит в GHCR с нормализованными тегами `vX.Y.Z`, `sha-<short>`, `latest`.
 
 ---
 
