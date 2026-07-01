@@ -20,8 +20,6 @@ import {
   WebhookSubscriptionStatus,
 } from 'twenty-shared/types';
 
-import { ADD_CHANNEL_WEBHOOK_SUBSCRIPTION_FIELDS_UPGRADE_COMMAND_NAME } from 'src/database/commands/upgrade-version-command/2-16/add-channel-webhook-subscription-fields-upgrade-command-name.constant';
-import { WasIntroducedInUpgrade } from 'src/engine/core-modules/upgrade/decorators/was-introduced-in-upgrade.decorator';
 import { ConnectedAccountEntity } from 'src/engine/metadata-modules/connected-account/entities/connected-account.entity';
 import { WorkspaceRelatedEntity } from 'src/engine/workspace-manager/types/workspace-related-entity';
 
@@ -100,31 +98,15 @@ export class CalendarChannelEntity extends WorkspaceRelatedEntity {
   @Column({ type: 'integer', nullable: false, default: 0 })
   throttleFailureCount: number;
 
-  @WasIntroducedInUpgrade({
-    upgradeCommandName:
-      ADD_CHANNEL_WEBHOOK_SUBSCRIPTION_FIELDS_UPGRADE_COMMAND_NAME,
-  })
   @Column({ type: 'varchar', nullable: true })
   webhookSubscriptionExternalId: string | null;
 
-  @WasIntroducedInUpgrade({
-    upgradeCommandName:
-      ADD_CHANNEL_WEBHOOK_SUBSCRIPTION_FIELDS_UPGRADE_COMMAND_NAME,
-  })
   @Column({ type: 'varchar', nullable: true })
   webhookSubscriptionExternalResourceId: string | null;
 
-  @WasIntroducedInUpgrade({
-    upgradeCommandName:
-      ADD_CHANNEL_WEBHOOK_SUBSCRIPTION_FIELDS_UPGRADE_COMMAND_NAME,
-  })
   @Column({ type: 'varchar', nullable: true })
   webhookSubscriptionClientState: string | null;
 
-  @WasIntroducedInUpgrade({
-    upgradeCommandName:
-      ADD_CHANNEL_WEBHOOK_SUBSCRIPTION_FIELDS_UPGRADE_COMMAND_NAME,
-  })
   @Column({
     type: 'enum',
     enum: WebhookSubscriptionStatus,
@@ -132,10 +114,6 @@ export class CalendarChannelEntity extends WorkspaceRelatedEntity {
   })
   webhookSubscriptionStatus: WebhookSubscriptionStatus | null;
 
-  @WasIntroducedInUpgrade({
-    upgradeCommandName:
-      ADD_CHANNEL_WEBHOOK_SUBSCRIPTION_FIELDS_UPGRADE_COMMAND_NAME,
-  })
   @Column({ type: 'timestamptz', nullable: true })
   webhookSubscriptionExpiresAt: Date | null;
 

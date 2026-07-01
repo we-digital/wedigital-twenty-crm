@@ -17,8 +17,6 @@ import {
   WorkflowActionTriggerSettings,
 } from 'twenty-shared/application';
 
-import { ADD_SERVER_TRIGGER_SETTINGS_TO_LOGIC_FUNCTION_UPGRADE_COMMAND_NAME } from 'src/database/commands/upgrade-version-command/2-16/add-server-trigger-settings-to-logic-function-upgrade-command-name.constant';
-import { WasIntroducedInUpgrade } from 'src/engine/core-modules/upgrade/decorators/was-introduced-in-upgrade.decorator';
 import { SyncableEntity } from 'src/engine/workspace-manager/types/syncable-entity.interface';
 import { type JsonbProperty } from 'src/engine/workspace-manager/workspace-migration/universal-flat-entity/types/jsonb-property.type';
 
@@ -88,10 +86,6 @@ export class LogicFunctionEntity
   @Column({ nullable: true, type: 'jsonb' })
   httpRouteTriggerSettings: JsonbProperty<HttpRouteTriggerSettings> | null;
 
-  @WasIntroducedInUpgrade({
-    upgradeCommandName:
-      ADD_SERVER_TRIGGER_SETTINGS_TO_LOGIC_FUNCTION_UPGRADE_COMMAND_NAME,
-  })
   @Column({ nullable: true, type: 'jsonb' })
   serverRouteTriggerSettings: JsonbProperty<ServerRouteTriggerSettings> | null;
 
