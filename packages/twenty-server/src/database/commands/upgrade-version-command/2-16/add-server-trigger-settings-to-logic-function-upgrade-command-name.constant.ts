@@ -1,2 +1,0 @@
-export const ADD_SERVER_TRIGGER_SETTINGS_TO_LOGIC_FUNCTION_UPGRADE_COMMAND_NAME =
-  '2.16.0_AddServerTriggerSettingsToLogicFunctionFastInstanceCommand_1782211913427';
