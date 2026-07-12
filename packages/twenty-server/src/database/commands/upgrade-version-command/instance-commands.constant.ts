@@ -93,12 +93,21 @@ import { AddPendingQuestionMessageIdToAgentChatThreadFastInstanceCommand } from 
 import { AddWorkspaceDiscoverabilityToWorkspaceFastInstanceCommand } from './2-19/2-19-instance-command-fast-1783004140000-add-workspace-discoverability-to-workspace';
 import { AddStatusToFileFastInstanceCommand } from './2-19/2-19-instance-command-fast-1783082964705-add-status-to-file';
 import { AddPendingMimeCheckToFileFastInstanceCommand } from './2-19/2-19-instance-command-fast-1783094691548-add-pending-mime-check-to-file';
-import { DropMetadataStandardOverridesColumnFastInstanceCommand } from './2-20/2-20-instance-command-fast-1825000000000-drop-metadata-standard-overrides-column';
+import { DropMetadataStandardOverridesColumnFastInstanceCommand } from './2-20/2-20-instance-command-fast-1783511477234-drop-metadata-standard-overrides-column';
 import { AddLogoToApplicationRegistrationFastInstanceCommand } from './2-19/2-19-instance-command-fast-1783069672191-add-logo-to-application-registration';
 import { BackfillLogoOnApplicationRegistrationSlowInstanceCommand } from './2-19/2-19-instance-command-slow-1783069673191-backfill-logo-on-application-registration';
 import { AddDisplayFieldsToApplicationRegistrationFastInstanceCommand } from './2-19/2-19-instance-command-fast-1783073776590-add-display-fields-to-application-registration';
 import { BackfillDisplayFieldsOnApplicationRegistrationSlowInstanceCommand } from './2-19/2-19-instance-command-slow-1783073776591-backfill-display-fields-on-application-registration';
 import { BackfillIsFeaturedOnApplicationRegistrationSlowInstanceCommand } from './2-19/2-19-instance-command-slow-1783120000000-backfill-is-featured-on-application-registration';
+import { AllowServerScopedFileFastInstanceCommand } from 'src/database/commands/upgrade-version-command/2-20/2-20-instance-command-fast-1783499671541-allow-server-scoped-file';
+import { CreateWorkflowVersionCoreTableFastInstanceCommand } from './2-20/2-20-instance-command-fast-1783512000000-create-workflow-version-core-table';
+import { BackfillNameFieldIsSystemSideEffectSlowInstanceCommand } from './2-20/2-20-instance-command-slow-1783529458168-backfill-name-field-is-system-side-effect';
+import { RenameIsFeaturedToIsVettedOnApplicationRegistrationFastInstanceCommand } from './2-20/2-20-instance-command-fast-1783527064000-rename-is-featured-to-is-vetted-on-application-registration';
+import { AddIsSystemSideEffectToSearchFieldMetadataFastInstanceCommand } from './2-20/2-20-instance-command-fast-1783580127637-add-is-system-side-effect-to-search-field-metadata';
+import { CreateWorkflowCoreTableFastInstanceCommand } from './2-20/2-20-instance-command-fast-1783603454479-create-workflow-core-table';
+import { AddGalleryImagesToApplicationRegistrationFastInstanceCommand } from './2-20/2-20-instance-command-fast-1783615890055-add-gallery-images-to-application-registration';
+import { BackfillGalleryImagesOnApplicationRegistrationSlowInstanceCommand } from './2-20/2-20-instance-command-slow-1783615890056-backfill-gallery-images-on-application-registration';
+import { AddWorkflowVersionSyncableColumnsFastInstanceCommand } from './2-20/2-20-instance-command-fast-1783603454480-add-workflow-version-syncable-columns';
 
 export const INSTANCE_COMMANDS = [
   AddViewFieldGroupIdIndexOnViewFieldFastInstanceCommand,
@@ -200,4 +209,13 @@ export const INSTANCE_COMMANDS = [
   AddStatusToFileFastInstanceCommand,
   AddPendingMimeCheckToFileFastInstanceCommand,
   BackfillIsFeaturedOnApplicationRegistrationSlowInstanceCommand,
+  AllowServerScopedFileFastInstanceCommand,
+  CreateWorkflowVersionCoreTableFastInstanceCommand,
+  BackfillNameFieldIsSystemSideEffectSlowInstanceCommand,
+  RenameIsFeaturedToIsVettedOnApplicationRegistrationFastInstanceCommand,
+  AddIsSystemSideEffectToSearchFieldMetadataFastInstanceCommand,
+  CreateWorkflowCoreTableFastInstanceCommand,
+  AddGalleryImagesToApplicationRegistrationFastInstanceCommand,
+  BackfillGalleryImagesOnApplicationRegistrationSlowInstanceCommand,
+  AddWorkflowVersionSyncableColumnsFastInstanceCommand,
 ];

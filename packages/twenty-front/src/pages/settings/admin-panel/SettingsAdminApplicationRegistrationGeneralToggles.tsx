@@ -114,13 +114,13 @@ export const SettingsAdminApplicationRegistrationGeneralToggles = ({
             Icon={IconShield}
             title={t`Vetted`}
             description={t`Mark this app as reviewed and approved`}
-            checked={registration.isFeatured}
+            checked={registration.isVetted}
             onChange={(checked) =>
               updateRegistration({
                 variables: {
                   input: {
                     id: registration.id,
-                    update: { isFeatured: checked },
+                    update: { isVetted: checked },
                   },
                 },
               })
