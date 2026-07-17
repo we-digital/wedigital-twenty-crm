@@ -9,19 +9,22 @@ import { isDefined } from 'twenty-shared/utils';
 import { ILike, IsNull, type FindOptionsWhere, type Repository } from 'typeorm';
 import { v4 } from 'uuid';
 
-import { ALL_OAUTH_SCOPES } from 'src/engine/core-modules/application/application-oauth/constants/oauth-scopes';
+import { CoreEntityCacheService } from 'src/engine/core-entity-cache/services/core-entity-cache.service';
 import { shouldRefreshApplicationRegistrationOnInstall } from 'src/engine/core-modules/application/application-install/utils/should-refresh-application-registration-on-install.util';
-import { CacheLockService } from 'src/engine/core-modules/cache-lock/cache-lock.service';
+import { MARKETPLACE_CATALOG_CACHE_ENTITY_ID } from 'src/engine/core-modules/application/application-marketplace/constants/marketplace-apps-cache.constant';
+import { MARKETPLACE_VETTED_APPLICATIONS } from 'src/engine/core-modules/application/application-marketplace/constants/marketplace-vetted-applications.constant';
+import { ALL_OAUTH_SCOPES } from 'src/engine/core-modules/application/application-oauth/constants/oauth-scopes';
+import { ApplicationRegistrationVariableService } from 'src/engine/core-modules/application/application-registration-variable/application-registration-variable.service';
+import { ApplicationRegistrationAssetUrlService } from 'src/engine/core-modules/application/application-registration/application-registration-asset-url.service';
 import { ApplicationRegistrationEntity } from 'src/engine/core-modules/application/application-registration/application-registration.entity';
-import { TWENTY_CLI_APPLICATION_REGISTRATION } from 'src/engine/workspace-manager/twenty-standard-application/constants/twenty-cli-application-registration.constant';
 import {
   ApplicationRegistrationException,
   ApplicationRegistrationExceptionCode,
 } from 'src/engine/core-modules/application/application-registration/application-registration.exception';
 import { type ApplicationRegistrationInstalledWorkspacesDTO } from 'src/engine/core-modules/application/application-registration/dtos/application-registration-installed-workspaces.dto';
-import { type PaginatedApplicationRegistrationsDTO } from 'src/engine/core-modules/application/application-registration/dtos/paginated-application-registrations.dto';
 import { type ApplicationRegistrationStatsDTO } from 'src/engine/core-modules/application/application-registration/dtos/application-registration-stats.dto';
 import { type CreateApplicationRegistrationInput } from 'src/engine/core-modules/application/application-registration/dtos/create-application-registration.input';
+import { type PaginatedApplicationRegistrationsDTO } from 'src/engine/core-modules/application/application-registration/dtos/paginated-application-registrations.dto';
 import { type PublicApplicationRegistrationDTO } from 'src/engine/core-modules/application/application-registration/dtos/public-application-registration.dto';
 import {
   type UpdateApplicationRegistrationInput,
@@ -31,15 +34,24 @@ import { ApplicationRegistrationSourceType } from 'src/engine/core-modules/appli
 import { fromManifestApplicationToDisplayFields } from 'src/engine/core-modules/application/application-registration/utils/from-manifest-application-to-display-fields.util';
 import { ApplicationEntity } from 'src/engine/core-modules/application/application.entity';
 import { validateRedirectUri } from 'src/engine/core-modules/auth/utils/validate-redirect-uri.util';
+import { CacheLockService } from 'src/engine/core-modules/cache-lock/cache-lock.service';
+import { ServerFileStorageService } from 'src/engine/core-modules/file-storage/services/server-file-storage.service';
+import { MetricsService } from 'src/engine/core-modules/metrics/metrics.service';
+import { MetricsKeys } from 'src/engine/core-modules/metrics/types/metrics-keys.type';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
-import { ApplicationRegistrationVariableService } from 'src/engine/core-modules/application/application-registration-variable/application-registration-variable.service';
-import { CoreEntityCacheService } from 'src/engine/core-entity-cache/services/core-entity-cache.service';
-import { MARKETPLACE_CATALOG_CACHE_ENTITY_ID } from 'src/engine/core-modules/application/application-marketplace/constants/marketplace-apps-cache.constant';
-import { MARKETPLACE_VETTED_APPLICATIONS } from 'src/engine/core-modules/application/application-marketplace/constants/marketplace-vetted-applications.constant';
+import { TWENTY_CLI_APPLICATION_REGISTRATION } from 'src/engine/workspace-manager/twenty-standard-application/constants/twenty-cli-application-registration.constant';
 
 const BCRYPT_SALT_ROUNDS = 10;
 
 const MAX_APPLICATION_REGISTRATIONS_PAGE_SIZE = 100;
+
+// Sized well above the manifest save + variable schema sync duration so the
+// lease cannot expire mid-update and let a concurrent refresh interleave.
+const APPLICATION_REGISTRATION_UPDATE_LOCK_OPTIONS = {
+  ttl: 60_000,
+  ms: 500,
+  maxRetries: 120,
+};
 
 const APPLICATION_REGISTRATION_WITHOUT_MANIFEST_SELECT: (keyof ApplicationRegistrationEntity)[] =
   [
@@ -59,6 +71,7 @@ const APPLICATION_REGISTRATION_WITHOUT_MANIFEST_SELECT: (keyof ApplicationRegist
     'isVetted',
     'isPreInstalled',
     'logo',
+    'logoFileId',
     'description',
     'author',
     'category',
@@ -97,8 +110,11 @@ export class ApplicationRegistrationService {
     @InjectRepository(WorkspaceEntity)
     private readonly workspaceRepository: Repository<WorkspaceEntity>,
     private readonly applicationRegistrationVariableService: ApplicationRegistrationVariableService,
+    private readonly applicationRegistrationAssetUrlService: ApplicationRegistrationAssetUrlService,
+    private readonly serverFileStorageService: ServerFileStorageService,
     private readonly cacheLockService: CacheLockService,
     private readonly coreEntityCacheService: CoreEntityCacheService,
+    private readonly metricsService: MetricsService,
   ) {}
 
   private async invalidateMarketplaceAppsCache(): Promise<void> {
@@ -110,6 +126,50 @@ export class ApplicationRegistrationService {
     } catch (error) {
       this.logger.error('Failed to invalidate marketplace apps cache', error);
     }
+  }
+
+  emitRegistrationPublishMetric({
+    isNewRegistration,
+    universalIdentifier,
+    name,
+    sourceType,
+    version,
+  }: {
+    isNewRegistration: boolean;
+    universalIdentifier: string;
+    name: string;
+    sourceType: string;
+    version?: string | null;
+  }): void {
+    this.metricsService.incrementCounterBy({
+      key: isNewRegistration
+        ? MetricsKeys.AppRegistrationCreated
+        : MetricsKeys.AppRegistrationVersionPublished,
+      amount: 1,
+      attributes: {
+        universal_identifier: universalIdentifier,
+        app_name: name,
+        source_type: sourceType,
+        version: version ?? 'unknown',
+      },
+    });
+  }
+
+  async setLatestAvailableVersionIfChanged(
+    applicationRegistrationId: string,
+    newVersion: string | null,
+  ): Promise<boolean> {
+    const result = await this.applicationRegistrationRepository
+      .createQueryBuilder()
+      .update(ApplicationRegistrationEntity)
+      .set({ latestAvailableVersion: newVersion })
+      .where('id = :id', { id: applicationRegistrationId })
+      .andWhere('"latestAvailableVersion" IS DISTINCT FROM :newVersion', {
+        newVersion,
+      })
+      .execute();
+
+    return (result.affected ?? 0) > 0;
   }
 
   async findMany(
@@ -225,7 +285,17 @@ export class ApplicationRegistrationService {
   ): Promise<PublicApplicationRegistrationDTO | null> {
     const registration = await this.applicationRegistrationRepository.findOne({
       where: { oAuthClientId: clientId },
-      select: ['id', 'name', 'logo', 'websiteUrl', 'oAuthScopes'],
+      select: [
+        'id',
+        'name',
+        'logo',
+        'logoFileId',
+        'sourceType',
+        'sourcePackage',
+        'latestAvailableVersion',
+        'websiteUrl',
+        'oAuthScopes',
+      ],
     });
 
     if (!registration) {
@@ -235,7 +305,8 @@ export class ApplicationRegistrationService {
     return {
       id: registration.id,
       name: registration.name,
-      logoUrl: registration.logo,
+      logoUrl:
+        this.applicationRegistrationAssetUrlService.buildLogoUrl(registration),
       websiteUrl: registration.websiteUrl,
       oAuthScopes: registration.oAuthScopes,
     };
@@ -367,46 +438,99 @@ export class ApplicationRegistrationService {
     sourceType?: ApplicationRegistrationSourceType;
     latestAvailableVersion?: string;
     preventVersionDowngrade?: boolean;
-  }): Promise<void> {
-    await this.cacheLockService.withLock(async () => {
-      const existing =
-        await this.applicationRegistrationRepository.findOneOrFail({
-          where: { id: applicationRegistrationId },
-        });
+  }): Promise<boolean> {
+    return this.cacheLockService.withLock(
+      async () => {
+        const existing =
+          await this.applicationRegistrationRepository.findOneOrFail({
+            where: { id: applicationRegistrationId },
+          });
 
-      if (
-        preventVersionDowngrade &&
-        isDefined(latestAvailableVersion) &&
-        !shouldRefreshApplicationRegistrationOnInstall({
-          installedVersion: latestAvailableVersion,
-          latestAvailableVersion: existing.latestAvailableVersion,
-        })
-      ) {
-        this.logger.log(
-          `Skipping registration update for ${existing.universalIdentifier}: version ${latestAvailableVersion} is older than latest available version ${existing.latestAvailableVersion}`,
+        if (
+          preventVersionDowngrade &&
+          isDefined(latestAvailableVersion) &&
+          !shouldRefreshApplicationRegistrationOnInstall({
+            installedVersion: latestAvailableVersion,
+            latestAvailableVersion: existing.latestAvailableVersion,
+          })
+        ) {
+          this.logger.log(
+            `Skipping registration update for ${existing.universalIdentifier}: version ${latestAvailableVersion} is older than latest available version ${existing.latestAvailableVersion}`,
+          );
+
+          return false;
+        }
+
+        const displayFields = fromManifestApplicationToDisplayFields(
+          manifest.application,
         );
 
-        return;
-      }
+        // Gallery image files are stored by the source-specific flows (tarball
+        // upload, dev sync); keep their fileIds for paths that did not change.
+        const existingFileIdByPath = new Map(
+          (existing.galleryImages ?? []).map(({ path, fileId }) => [
+            path,
+            fileId,
+          ]),
+        );
 
-      await this.applicationRegistrationRepository.save({
-        ...existing,
-        name: manifest.application.displayName,
-        manifest,
-        ...fromManifestApplicationToDisplayFields(manifest.application),
-        ...(sourceType !== undefined && { sourceType }),
-        ...(latestAvailableVersion !== undefined && {
-          latestAvailableVersion,
-        }),
-      });
+        // One transaction so the registration row and its variable schemas
+        // always come from the same manifest, even when the sync fails midway.
+        await this.applicationRegistrationRepository.manager.transaction(
+          async (entityManager) => {
+            await entityManager
+              .getRepository(ApplicationRegistrationEntity)
+              .save({
+                ...existing,
+                name: manifest.application.displayName,
+                manifest,
+                ...displayFields,
+                galleryImages: displayFields.galleryImages.map(
+                  (galleryImage) => ({
+                    ...galleryImage,
+                    fileId: existingFileIdByPath.get(galleryImage.path) ?? null,
+                  }),
+                ),
+                ...(sourceType !== undefined && { sourceType }),
+                ...(latestAvailableVersion !== undefined && {
+                  latestAvailableVersion,
+                }),
+              });
 
-      await this.invalidateMarketplaceAppsCache();
-    }, `application-registration-update:${applicationRegistrationId}`);
+            if (isDefined(manifest.application.serverVariables)) {
+              await this.applicationRegistrationVariableService.syncVariableSchemas(
+                applicationRegistrationId,
+                manifest.application.serverVariables,
+                entityManager,
+              );
+            }
+          },
+        );
+
+        await this.invalidateMarketplaceAppsCache();
+
+        return true;
+      },
+      `application-registration-update:${applicationRegistrationId}`,
+      APPLICATION_REGISTRATION_UPDATE_LOCK_OPTIONS,
+    );
   }
 
   async delete(id: string, ownerWorkspaceId: string): Promise<boolean> {
     await this.findOneById(id, ownerWorkspaceId);
-    await this.applicationRegistrationRepository.softDelete(id);
+
+    // Stored assets (logo, gallery images) go with the registration; deleting
+    // them first also removes the bytes, which the row FK cascade cannot do.
+    try {
+      await this.serverFileStorageService.deleteByApplicationRegistrationId(id);
+    } catch (error) {
+      this.logger.error(
+        `Failed to delete server files for registration ${id}`,
+        error,
+      );
+    }
+
+    await this.applicationRegistrationRepository.delete(id);
 
     await this.invalidateMarketplaceAppsCache();
 
@@ -464,6 +588,22 @@ export class ApplicationRegistrationService {
     const isVetted = vettedIdentifiers.has(params.universalIdentifier);
 
     if (isDefined(existing)) {
+      const displayFields = fromManifestApplicationToDisplayFields(
+        params.manifest?.application,
+      );
+
+      const existingFileIdByPath = new Map(
+        (existing.galleryImages ?? []).map(({ path, fileId }) => [
+          path,
+          fileId,
+        ]),
+      );
+
+      const isNewVersion = await this.setLatestAvailableVersionIfChanged(
+        existing.id,
+        params.latestAvailableVersion ?? null,
+      );
+
       await this.applicationRegistrationRepository.save({
         ...existing,
         name: params.name,
@@ -472,8 +612,22 @@ export class ApplicationRegistrationService {
         latestAvailableVersion: params.latestAvailableVersion,
         isVetted,
         manifest: params.manifest,
-        ...fromManifestApplicationToDisplayFields(params.manifest?.application),
+        ...displayFields,
+        galleryImages: displayFields.galleryImages.map((galleryImage) => ({
+          ...galleryImage,
+          fileId: existingFileIdByPath.get(galleryImage.path) ?? null,
+        })),
       });
+
+      if (isNewVersion) {
+        this.emitRegistrationPublishMetric({
+          isNewRegistration: false,
+          universalIdentifier: params.universalIdentifier,
+          name: params.name,
+          sourceType: params.sourceType,
+          version: params.latestAvailableVersion,
+        });
+      }
     } else {
       const registration = this.applicationRegistrationRepository.create({
         universalIdentifier: params.universalIdentifier,
@@ -492,6 +646,14 @@ export class ApplicationRegistrationService {
       });
 
       await this.applicationRegistrationRepository.save(registration);
+
+      this.emitRegistrationPublishMetric({
+        isNewRegistration: true,
+        universalIdentifier: params.universalIdentifier,
+        name: params.name,
+        sourceType: params.sourceType,
+        version: params.latestAvailableVersion,
+      });
     }
 
     await this.invalidateMarketplaceAppsCache();
@@ -552,9 +714,12 @@ export class ApplicationRegistrationService {
         'id',
         'universalIdentifier',
         'name',
+        'sourceType',
         'sourcePackage',
+        'latestAvailableVersion',
         'isVetted',
         'logo',
+        'logoFileId',
         'description',
         'author',
         'category',
@@ -574,7 +739,8 @@ export class ApplicationRegistrationService {
       description: registration.description,
       author: registration.author,
       category: registration.category,
-      logoUrl: registration.logo,
+      logoUrl:
+        this.applicationRegistrationAssetUrlService.buildLogoUrl(registration),
     }));
   }
 
