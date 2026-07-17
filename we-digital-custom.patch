@@ -10,11 +10,11 @@ index 0000000000..785775967e
 +	branch = main
 diff --git a/.upstream-version b/.upstream-version
 new file mode 100644
-index 0000000000..c69240131f
+index 0000000000..41f29001cd
 --- /dev/null
 +++ b/.upstream-version
 @@ -0,0 +1 @@
-+v2.20.0
++v2.21.0
 diff --git a/docs/UPGRADE.md b/docs/UPGRADE.md
 new file mode 100644
 index 0000000000..f8035d2a18
@@ -240,10 +240,10 @@ index 0000000000..f8035d2a18
 +- [ ] `crm.respon.io/healthz` ok, новые строки в `core."upgradeMigration"`, в логах нет ошибок
 diff --git a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.test.tsx b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.test.tsx
 new file mode 100644
-index 0000000000..12ce859b46
+index 0000000000..0b48c29187
 --- /dev/null
 +++ b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.test.tsx
-@@ -0,0 +1,235 @@
+@@ -0,0 +1,233 @@
 +import { currentUserState } from '@/auth/states/currentUserState';
 +import { currentWorkspaceMemberState } from '@/auth/states/currentWorkspaceMemberState';
 +import { tokenPairState } from '@/auth/states/tokenPairState';
@@ -360,9 +360,7 @@ index 0000000000..12ce859b46
 +
 +describe('IframeWidget', () => {
 +  beforeEach(() => {
-+    jest
-+      .spyOn(global.crypto, 'randomUUID')
-+      .mockReturnValue('request-id-123');
++    jest.spyOn(global.crypto, 'randomUUID').mockReturnValue('request-id-123');
 +  });
 +
 +  afterEach(() => {
@@ -471,7 +469,7 @@ index 0000000000..12ce859b46
 +  });
 +
 +  it('renders fallback when URL is not valid', () => {
-+    render(<IframeWidget widget={buildWidget('javascript:alert(1)')} />, {
++    render(<IframeWidget widget={buildWidget('ftp://example.com')} />, {
 +      wrapper: ({ children }) => <Wrapper>{children}</Wrapper>,
 +    });
 +
@@ -480,10 +478,10 @@ index 0000000000..12ce859b46
 +  });
 +});
 diff --git a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
-index 7d46c20801..ca6c291b51 100644
+index 7d46c20801..4e33bd0fad 100644
 --- a/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
 +++ b/packages/twenty-front/src/modules/page-layout/widgets/iframe/components/IframeWidget.tsx
-@@ -1,9 +1,19 @@
+@@ -1,9 +1,25 @@
 +import {
 +  type CurrentUser,
 +  currentUserState,
@@ -500,11 +498,17 @@ index 7d46c20801..ca6c291b51 100644
 +import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
  import { styled } from '@linaria/react';
 -import { useState } from 'react';
-+import { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
++import {
++  type SyntheticEvent,
++  useCallback,
++  useEffect,
++  useRef,
++  useState,
++} from 'react';
  import { getSafeUrl, isDefined } from 'twenty-shared/utils';
  import { themeCssVariables } from 'twenty-ui/theme-constants';
  
-@@ -55,8 +65,80 @@ export type IframeWidgetProps = {
+@@ -55,8 +71,80 @@ export type IframeWidgetProps = {
    widget: PageLayoutWidget;
  };
  
@@ -585,7 +589,7 @@ index 7d46c20801..ca6c291b51 100644
  
    const configuration = widget.configuration;
  
-@@ -69,9 +151,110 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
+@@ -69,9 +157,112 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
  
    const [isLoading, setIsLoading] = useState(true);
    const [hasError, setHasError] = useState(false);
@@ -602,14 +606,14 @@ index 7d46c20801..ca6c291b51 100644
 +  );
 +  const hostContext = buildWidgetHostContext(currentWorkspaceMember);
 +  const targetOrigin = isDefined(safeUrl) ? getUrlOrigin(safeUrl) : null;
-+
+ 
+-  const handleIframeLoad = () => {
 +  const sendContext = useCallback(
 +    (type: WidgetContextMessageType) => {
 +      if (!isDefined(targetOrigin) || !isDefined(iframeRef.current)) {
 +        return;
 +      }
- 
--  const handleIframeLoad = () => {
++
 +      iframeRef.current.contentWindow?.postMessage(
 +        buildWidgetContextMessage(type, accessToken, userContext, hostContext),
 +        targetOrigin,
@@ -657,12 +661,14 @@ index 7d46c20801..ca6c291b51 100644
 +  }, [isWidgetReady, sendContext]);
 +
 +  useEffect(() => {
++    const iframe = iframeRef.current;
++
 +    return () => {
-+      if (!isDefined(targetOrigin) || !isDefined(iframeRef.current)) {
++      if (!isDefined(targetOrigin) || !isDefined(iframe)) {
 +        return;
 +      }
 +
-+      iframeRef.current.contentWindow?.postMessage(
++      iframe.contentWindow?.postMessage(
 +        {
 +          source: 'twenty',
 +          target: 'widget-mrz-input',
@@ -697,7 +703,7 @@ index 7d46c20801..ca6c291b51 100644
    };
  
    const handleIframeError = () => {
-@@ -79,9 +262,6 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
+@@ -79,9 +270,6 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
      setHasError(true);
    };
  
@@ -707,7 +713,7 @@ index 7d46c20801..ca6c291b51 100644
    if (hasError || !isHttpUrl) {
      return (
        <StyledContainer $isEditMode={isPageLayoutInEditMode}>
-@@ -101,6 +281,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
+@@ -101,6 +289,7 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
        )}
        <StyledIframe
          $isEditMode={isPageLayoutInEditMode}
