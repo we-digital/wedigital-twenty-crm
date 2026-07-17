@@ -114,9 +114,7 @@ const Wrapper = ({
 
 describe('IframeWidget', () => {
   beforeEach(() => {
-    jest
-      .spyOn(global.crypto, 'randomUUID')
-      .mockReturnValue('request-id-123');
+    jest.spyOn(global.crypto, 'randomUUID').mockReturnValue('request-id-123');
   });
 
   afterEach(() => {
@@ -225,7 +223,7 @@ describe('IframeWidget', () => {
   });
 
   it('renders fallback when URL is not valid', () => {
-    render(<IframeWidget widget={buildWidget('javascript:alert(1)')} />, {
+    render(<IframeWidget widget={buildWidget('ftp://example.com')} />, {
       wrapper: ({ children }) => <Wrapper>{children}</Wrapper>,
     });
 

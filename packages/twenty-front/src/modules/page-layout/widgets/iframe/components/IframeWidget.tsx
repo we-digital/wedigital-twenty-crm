@@ -13,7 +13,13 @@ import { PageLayoutWidgetNoDataDisplay } from '@/page-layout/widgets/components/
 import { WidgetSkeletonLoader } from '@/page-layout/widgets/components/WidgetSkeletonLoader';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { styled } from '@linaria/react';
-import { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type SyntheticEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { getSafeUrl, isDefined } from 'twenty-shared/utils';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
@@ -218,12 +224,14 @@ export const IframeWidget = ({ widget }: IframeWidgetProps) => {
   }, [isWidgetReady, sendContext]);
 
   useEffect(() => {
+    const iframe = iframeRef.current;
+
     return () => {
-      if (!isDefined(targetOrigin) || !isDefined(iframeRef.current)) {
+      if (!isDefined(targetOrigin) || !isDefined(iframe)) {
         return;
       }
 
-      iframeRef.current.contentWindow?.postMessage(
+      iframe.contentWindow?.postMessage(
         {
           source: 'twenty',
           target: 'widget-mrz-input',
