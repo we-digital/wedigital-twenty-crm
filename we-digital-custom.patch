@@ -10,11 +10,11 @@ index 0000000000..785775967e
 +	branch = main
 diff --git a/.upstream-version b/.upstream-version
 new file mode 100644
-index 0000000000..300a358d2d
+index 0000000000..1a09cfd62a
 --- /dev/null
 +++ b/.upstream-version
 @@ -0,0 +1 @@
-+v2.22.0
++v2.23.2
 diff --git a/docs/UPGRADE.md b/docs/UPGRADE.md
 new file mode 100644
 index 0000000000..f8035d2a18
